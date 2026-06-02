@@ -36,7 +36,8 @@ export default async function MainLayout({
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="bg-background sticky top-0 z-30 flex items-center justify-between gap-4 px-6 py-3">
+      <header className="bg-background sticky top-0 z-30">
+        <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between gap-4 px-6 py-3">
         {/* 좌측: 로고 락업 + 필 내비 */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
@@ -87,6 +88,7 @@ export default async function MainLayout({
               로그아웃
             </button>
           </form>
+        </div>
         </div>
       </header>
 
