@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
+/* ============================================
+   AX 과제 대시보드 — 전역 테마 (기준 1920×1080, D-017)
+   MPRS 색은 동적 적용이라 src/lib/domain/mprs.ts 에서 인라인 style로 처리.
+   여기서는 중립 시맨틱 토큰과 헬스 색만 정의.
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f8fa;
+  --foreground: #18181b;
+
+  --card: #ffffff;
+  --card-foreground: #18181b;
+
+  --muted: #f1f2f4;
+  --muted-foreground: #71717a;
+
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #18181b;
+
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+
+  --accent: #f1f2f4;
+  --accent-foreground: #18181b;
+
+  /* 헬스 (D-023 좌측 컬러바) */
+  --health-green: #16a34a;
+  --health-yellow: #eab308;
+  --health-red: #dc2626;
+
+  --radius: 0.625rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-health-green: var(--health-green);
+  --color-health-yellow: var(--health-yellow);
+  --color-health-red: var(--health-red);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo",
+    "Pretendard", "Malgun Gothic", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
