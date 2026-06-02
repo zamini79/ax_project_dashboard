@@ -23,6 +23,7 @@ export interface ProjectListItem {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
+  fte: number | null;
   headquarter_id: string;
   headquarter_name: string;
   pms: { name: string; department: string | null }[];
@@ -47,6 +48,7 @@ interface RawProjectRow {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
+  fte: number | null;
   headquarter_id: string;
   headquarters: { name: string } | null;
   project_pms: {
@@ -59,7 +61,7 @@ interface RawProjectRow {
 
 const PROJECT_SELECT = `
   id, name, mprs, lifecycle, health, progress_pct,
-  start_date, end_date, total_budget, headquarter_id,
+  start_date, end_date, total_budget, fte, headquarter_id,
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
   project_ai_techs ( ai_techs ( name ) ),
@@ -118,6 +120,7 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     start_date: row.start_date,
     end_date: row.end_date,
     total_budget: row.total_budget,
+    fte: row.fte,
     headquarter_id: row.headquarter_id,
     headquarter_name: row.headquarters?.name ?? "-",
     pms,

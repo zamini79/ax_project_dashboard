@@ -5,7 +5,7 @@ import type {
 } from "@/lib/domain/dashboard";
 
 export type GroupMode = "all" | "mprs";
-export type ViewMode = "card" | "table";
+export type ViewMode = "card" | "table" | "map";
 
 const SORT_KEYS: readonly SortKey[] = [
   "mprs",
@@ -87,11 +87,11 @@ export function dashboardHref(
   if (progress) params.set("progress", progress);
   if (headquarterId) params.set("hq", headquarterId);
   if (group === "mprs") params.set("group", "mprs");
-  if (view === "table") {
-    params.set("view", "table");
-    params.set("year", String(year));
+  if (view === "table" || view === "map") {
+    params.set("view", view);
+    if (view === "table") params.set("year", String(year));
   }
-  // 정렬은 카드/표 양쪽에 적용
+  // 정렬은 표/카드에 적용
   if (sort) {
     params.set("sort", sort);
     if (dir === "desc") params.set("dir", "desc");

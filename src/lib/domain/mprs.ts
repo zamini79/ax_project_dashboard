@@ -15,10 +15,10 @@ export const MPRS_COLORS: Record<
   Mprs,
   { main: string; bg: string; text: string }
 > = {
-  marketing: { main: "#1D9E75", bg: "#9FE1CB", text: "#085041" },
-  production: { main: "#534AB7", bg: "#CECBF6", text: "#3C3489" },
-  research: { main: "#D4537E", bg: "#F4C0D1", text: "#72243E" },
-  support: { main: "#D85A30", bg: "#F5C4B3", text: "#712B13" },
+  marketing: { main: "#1D9E75", bg: "#E2F4EC", text: "#085041" },
+  production: { main: "#534AB7", bg: "#ECEAFA", text: "#3C3489" },
+  research: { main: "#D4537E", bg: "#FBE6EE", text: "#72243E" },
+  support: { main: "#D85A30", bg: "#FBE9E0", text: "#712B13" },
 };
 
 /** 한국어 라벨 (원어 그대로 영문 도메인 용어 유지) */

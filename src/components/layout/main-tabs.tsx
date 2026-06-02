@@ -2,36 +2,45 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  List,
+  TrendingUp,
+  CircleDollarSign,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/", label: "과제 현황" },
-  { href: "/performance", label: "성과 현황" },
-  { href: "/budget", label: "투자비 현황" },
+  { href: "/", label: "대시보드", icon: LayoutDashboard },
+  { href: "/projects", label: "과제 현황", icon: List },
+  { href: "/performance", label: "성과 현황", icon: TrendingUp },
+  { href: "/budget", label: "투자비 현황", icon: CircleDollarSign },
 ] as const;
 
-/** 최상단 메뉴 탭 (과제 현황 / 성과 현황 / 투자비 현황) */
+/** 상단 플로팅 필 내비 (active = navy 배경 + 흰 텍스트) */
 export function MainTabs() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-muted inline-flex rounded-lg p-1 text-sm font-medium">
+    <nav className="bg-card inline-flex gap-0.5 rounded-[13px] border p-1">
       {TABS.map((t) => {
         const active =
           t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);
+        const Icon = t.icon;
         return (
           <Link
             key={t.href}
             href={t.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-md px-4 py-1.5 transition-colors",
+              "inline-flex items-center gap-1.5 rounded-[9px] px-3 py-1.5 text-[13px] font-semibold transition-colors",
               active
-                ? "bg-card text-foreground shadow-sm"
+                ? "bg-navy text-white"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
+            <Icon size={15} strokeWidth={2} />
             {t.label}
           </Link>
         );

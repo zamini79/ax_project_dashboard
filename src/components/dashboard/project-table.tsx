@@ -19,7 +19,6 @@ const ROW_H = 40; // 행 높이 px
 const HEAD_H = 40; // 헤더 높이 px
 const TIMELINE_W = 640; // 일정(타임라인) 고정 표시 폭 px — 전체 폭은 유지, 남는 폭은 좌측 컬럼이 흡수
 const PAD_MONTHS = 1; // 데이터 범위 양쪽 여유 개월
-const BAR_COLOR = "#475569";
 const TODAY_COLOR = "#B70000";
 
 interface LeftCol {
@@ -293,7 +292,12 @@ export function ProjectTable({
                   {hasBar && (
                     <div
                       className="absolute top-1/2 h-2.5 -translate-y-1/2 rounded-full"
-                      style={{ left, width, background: BAR_COLOR }}
+                      style={{
+                        left,
+                        width,
+                        background: MPRS_COLORS[item.mprs].main,
+                        opacity: item.lifecycle === "completed" ? 0.45 : 0.92,
+                      }}
                     />
                   )}
                 </div>

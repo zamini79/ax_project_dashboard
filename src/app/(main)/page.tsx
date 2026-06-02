@@ -1,98 +1,330 @@
+import Link from "next/link";
+import { ArrowRight, ChevronRight } from "lucide-react";
+
 import {
   fetchProjectList,
   fetchHeadquarters,
 } from "@/lib/repositories/projects";
-import {
-  parseFilter,
-  applyFilter,
-  computeKpis,
-  sortProjectList,
-} from "@/lib/domain/dashboard";
-import { KpiSection } from "@/components/dashboard/kpi-section";
-import { FilterControls } from "@/components/dashboard/filter-controls";
-import { ProjectGrid } from "@/components/dashboard/project-grid";
-import { ProjectTable } from "@/components/dashboard/project-table";
-import {
-  parseGroup,
-  parseView,
-  parseYear,
-  parseSort,
-  parseDir,
-} from "@/components/dashboard/url";
+import { fetchMonthlyExecution } from "@/lib/repositories/budget";
+import { computeKpis } from "@/lib/domain/dashboard";
+import { performanceSummary } from "@/lib/domain/analytics";
+import { formatBudgetEok } from "@/lib/domain/format";
+import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
+import { HEALTH_COLOR_VAR, HEALTH_LABEL } from "@/lib/domain/lifecycle";
+import { Donut, MiniBars, Bar, HealthDot } from "@/components/charts/charts";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{
-  lifecycle?: string;
-  progress?: string;
-  hq?: string;
-  group?: string;
-  view?: string;
-  year?: string;
-  sort?: string;
-  dir?: string;
-}>;
+const NAVY = "#0F1830";
+const ACCENT = "#534AB7";
+const LINE = "#ECEEF1";
+const SUB = "#6B7280";
+const FAINT = "#9AA0AB";
+// 단계 도넛 색: 진행전/검토중/진행중/완료
+const DONUT_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A"];
 
-export default async function DashboardHome({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const sp = await searchParams;
+// TODO(013): project_effects 테이블 도입 후 실데이터로 교체 (현재 디자인용 mock)
+const PERF_MOCK = { totalSaveCost: 6.1, totalSaveHours: 1775, appliedCount: 4 };
 
-  const [projects, headquarters] = await Promise.all([
+export default async function DashboardPage() {
+  const now = new Date();
+  const [projects, headquarters, monthly] = await Promise.all([
     fetchProjectList(),
     fetchHeadquarters(),
+    fetchMonthlyExecution(),
   ]);
 
-  const filter = parseFilter(sp);
-  const group = parseGroup(sp.group);
-  const view = parseView(sp.view);
-  const now = new Date();
-  const year = parseYear(sp.year, now.getFullYear());
-  const sort = parseSort(sp.sort);
-  const dir = parseDir(sp.dir);
-  const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-
   const kpis = computeKpis(projects, headquarters, now);
-  const visible = applyFilter(projects, filter, now);
-  // 정렬 컬럼이 지정되면 재정렬(카드·표 공통), 아니면 디폴트 정렬(D-020) 유지
-  const sortedItems = sort ? sortProjectList(visible, sort, dir) : visible;
+  const perf = performanceSummary(projects);
 
-  const state = { filter, group, view, year, sort, dir };
-
-  const hqNameById = Object.fromEntries(
-    headquarters.map((h) => [h.id, h.name]),
-  );
+  const inProgress =
+    kpis.lifecycle.find((l) => l.key === "in_progress")?.count ?? 0;
+  const budgetRate =
+    kpis.budgetTotal.budget > 0
+      ? Math.round((kpis.budgetTotal.executed / kpis.budgetTotal.budget) * 100)
+      : 0;
+  const budgetTotal = kpis.budgetByMprs.reduce((a, b) => a + b.budget, 0);
+  const monthlyBars = monthly.map((m) => ({
+    label: m.year_month.slice(2).replace("-", "."),
+    value: m.amount / 100_000_000,
+  }));
+  const atRisk = perf.atRisk.slice(0, 3);
 
   return (
-    <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-6 py-5">
-      <KpiSection
-        kpis={kpis}
-        filter={filter}
-        group={group}
-        view={view}
-        year={year}
-        sort={sort}
-        dir={dir}
-      />
+    <main className="mx-auto w-full max-w-[1440px] flex-1 px-6 py-5">
+      <div
+        style={{
+          display: "grid",
+          gap: 14,
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gridAutoRows: "162px",
+          gridTemplateAreas:
+            '"hero hero donut week" "hero hero risk risk" "mprs mprs trend trend" "perf perf trend trend"',
+        }}
+      >
+        {/* HERO */}
+        <Tile area="hero" dark pad={24}>
+          <Cap light>포트폴리오 현황</Cap>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "18px 8px",
+              margin: "4px 0 18px",
+            }}
+          >
+            {[
+              { l: "전체 과제", v: kpis.total, u: "건" },
+              { l: "진행 중", v: inProgress, u: "건" },
+              { l: "평균 진행률", v: perf.avgProgress, u: "%" },
+              { l: "투자비 집행률", v: budgetRate, u: "%" },
+            ].map((k) => (
+              <div key={k.l}>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginBottom: 6 }}>
+                  {k.l}
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+                  <span style={{ fontSize: 40, fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                    {k.v}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,.7)" }}>
+                    {k.u}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.5)", marginBottom: 7 }}>
+            진행 현황(헬스)
+          </div>
+          <div style={{ display: "flex", height: 12, borderRadius: 99, overflow: "hidden", marginBottom: 9 }}>
+            {kpis.health.map((h) => (
+              <div
+                key={h.key}
+                style={{
+                  width: `${(h.count / Math.max(1, kpis.total)) * 100}%`,
+                  background: HEALTH_COLOR_VAR[h.key],
+                }}
+              />
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 16 }}>
+            {kpis.health.map((h) => (
+              <span
+                key={h.key}
+                style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "rgba(255,255,255,.8)" }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: 99, background: HEALTH_COLOR_VAR[h.key] }} />
+                {HEALTH_LABEL[h.key]} <b style={{ color: "#fff" }}>{h.count}</b>
+              </span>
+            ))}
+          </div>
+        </Tile>
 
-      <FilterControls
-        filter={filter}
-        group={group}
-        view={view}
-        year={year}
-        sort={sort}
-        dir={dir}
-        resultCount={visible.length}
-        hqNameById={hqNameById}
-      />
+        {/* 단계 도넛 */}
+        <Tile area="donut" style={{ display: "flex", flexDirection: "column" }}>
+          <Cap>과제 단계</Cap>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
+            <Donut
+              size={102}
+              thickness={14}
+              segments={kpis.lifecycle.map((l, i) => ({
+                value: l.count,
+                color: DONUT_COLORS[i],
+              }))}
+            >
+              <div style={{ fontSize: 23, fontWeight: 800 }}>{kpis.total}</div>
+              <div style={{ fontSize: 9.5, color: SUB }}>전체</div>
+            </Donut>
+          </div>
+        </Tile>
 
-      {view === "table" ? (
-        <ProjectTable items={sortedItems} state={state} todayISO={todayISO} />
-      ) : (
-        <ProjectGrid items={sortedItems} group={group} />
-      )}
+        {/* 금주 업데이트 */}
+        <Tile area="week" href="/projects" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <Cap action={<ArrowRight size={15} style={{ color: FAINT }} />}>
+            금주 업데이트
+          </Cap>
+          <div>
+            <div style={{ fontSize: 44, fontWeight: 800, lineHeight: 1, color: ACCENT }}>
+              {kpis.thisWeekCount}
+            </div>
+            <div style={{ fontSize: 11.5, color: SUB, marginTop: 8 }}>
+              이번 주 갱신된 과제
+            </div>
+          </div>
+        </Tile>
+
+        {/* 위험·주의 피드 */}
+        <Tile area="risk">
+          <Cap action={<More href="/projects" />}>
+            위험·주의 과제 · {perf.atRisk.length}건
+          </Cap>
+          {atRisk.map((p, i) => (
+            <Link
+              key={p.id}
+              href={`/projects/${p.id}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                padding: "7px 6px",
+                margin: "0 -6px",
+                borderRadius: 8,
+                borderTop: i === 0 ? "none" : `1px solid ${LINE}`,
+              }}
+            >
+              <HealthDot color={cssHealth(p.health)} size={9} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {p.name}
+              </span>
+              <span style={{ fontSize: 11, color: SUB, whiteSpace: "nowrap" }}>
+                {p.headquarter_name}
+              </span>
+              <div style={{ width: 44 }}>
+                <Bar value={p.progress_pct} color={cssHealth(p.health)} height={5} />
+              </div>
+              <span style={{ fontSize: 11.5, color: SUB, width: 28, textAlign: "right" }}>
+                {p.progress_pct}%
+              </span>
+            </Link>
+          ))}
+        </Tile>
+
+        {/* MPRS 투자 배분 */}
+        <Tile area="mprs" href="/budget">
+          <Cap action={<ArrowRight size={15} style={{ color: FAINT }} />}>
+            MPRS 투자 배분 · 총 {formatBudgetEok(budgetTotal)}
+          </Cap>
+          <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginBottom: 12 }}>
+            {kpis.budgetByMprs.map((b) => (
+              <div
+                key={b.key}
+                style={{
+                  width: `${budgetTotal > 0 ? (b.budget / budgetTotal) * 100 : 0}%`,
+                  background: MPRS_COLORS[b.key].main,
+                }}
+              />
+            ))}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 18px" }}>
+            {kpis.budgetByMprs.map((b) => (
+              <div key={b.key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11.5 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 3, background: MPRS_COLORS[b.key].main }} />
+                <span style={{ color: SUB }}>{MPRS_LABEL[b.key]}</span>
+                <b style={{ marginLeft: "auto" }}>{formatBudgetEok(b.budget)}</b>
+              </div>
+            ))}
+          </div>
+        </Tile>
+
+        {/* 월별 추이 */}
+        <Tile area="trend" style={{ display: "flex", flexDirection: "column" }}>
+          <Cap>월별 집행 추이 · 단위 억</Cap>
+          <div style={{ fontSize: 30, fontWeight: 800 }}>
+            {formatBudgetEok(kpis.budgetTotal.executed)}{" "}
+            <span style={{ fontSize: 13, fontWeight: 600, color: SUB }}>누적 집행</span>
+          </div>
+          <div style={{ flex: 1, display: "flex", alignItems: "flex-end", marginTop: 10 }}>
+            <MiniBars data={monthlyBars} height={146} barW={32} gap={14} accentLast={ACCENT} />
+          </div>
+        </Tile>
+
+        {/* 성과 하이라이트 (mock — 013 도입 후 실데이터) */}
+        <Tile
+          area="perf"
+          href="/performance"
+          style={{ background: "linear-gradient(135deg,#16A34A 0%,#0E7A4E 100%)", border: "none", color: "#fff" }}
+        >
+          <Cap light action={<ArrowRight size={15} style={{ color: "rgba(255,255,255,.8)" }} />}>
+            운영 성과 하이라이트
+          </Cap>
+          <div style={{ display: "flex", gap: 26, alignItems: "flex-end" }}>
+            {[
+              { v: `${PERF_MOCK.totalSaveCost}억`, l: "연간 절감비용" },
+              { v: PERF_MOCK.totalSaveHours.toLocaleString(), l: "월 업무시간 절감(시간)" },
+              { v: PERF_MOCK.appliedCount, l: "운영 적용 과제" },
+            ].map((k) => (
+              <div key={k.l}>
+                <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{k.v}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,.75)", marginTop: 6 }}>{k.l}</div>
+              </div>
+            ))}
+          </div>
+        </Tile>
+      </div>
     </main>
+  );
+}
+
+/** HEALTH_COLOR_VAR는 "var(--health-..)" → 차트 컴포넌트 color prop에 그대로 사용 가능 */
+function cssHealth(h: "green" | "yellow" | "red"): string {
+  return HEALTH_COLOR_VAR[h];
+}
+
+function Tile({
+  area,
+  dark = false,
+  pad = 18,
+  href,
+  style,
+  children,
+}: {
+  area: string;
+  dark?: boolean;
+  pad?: number;
+  href?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const base: React.CSSProperties = {
+    gridArea: area,
+    background: dark ? NAVY : "#fff",
+    border: dark ? "none" : `1px solid ${LINE}`,
+    borderRadius: 18,
+    padding: pad,
+    color: dark ? "#fff" : "inherit",
+    overflow: "hidden",
+    boxShadow: dark
+      ? "0 8px 28px rgba(15,24,48,.22)"
+      : "0 1px 2px rgba(16,24,40,.05)",
+    ...style,
+  };
+  if (href) {
+    return (
+      <Link href={href} style={base} className="transition-shadow hover:shadow-md">
+        {children}
+      </Link>
+    );
+  }
+  return <div style={base}>{children}</div>;
+}
+
+function Cap({
+  light = false,
+  action,
+  children,
+}: {
+  light?: boolean;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: light ? "rgba(255,255,255,.6)" : SUB }}>
+        {children}
+      </span>
+      {action}
+    </div>
+  );
+}
+
+function More({ href }: { href: string }) {
+  return (
+    <Link
+      href={href}
+      style={{ fontSize: 11, fontWeight: 600, color: ACCENT, display: "inline-flex", alignItems: "center", gap: 2 }}
+    >
+      전체 보기 <ChevronRight size={12} />
+    </Link>
   );
 }

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AX 과제 대시보드 — 프로토타입</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; font-family: "Pretendard", sans-serif; background: #EEF0F4; color: #161A22; -webkit-font-smoothing: antialiased; }
+  ::selection { background: #534AB733; }
+  .bento-tile { transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s; }
+  .bento-tile:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(16,24,40,.14) !important; }
+  .p-row:hover { background: #F5F6F8; }
+  .p-hovercard { transition: transform .16s, box-shadow .16s, border-color .16s; }
+  .p-hovercard:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(16,24,40,.12) !important; border-color: #D7DBE0 !important; }
+  .navtab { transition: background .15s, color .15s; }
+</style>
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#0F1830" />
+    <rect x="20" y="22" width="34" height="34" rx="4" fill="#534AB7" />
+    <rect x="58" y="22" width="22" height="16" rx="3" fill="#1D9E75" />
+    <rect x="58" y="42" width="22" height="14" rx="3" fill="#D85A30" />
+    <rect x="20" y="60" width="60" height="18" rx="4" fill="#2A3350" />
+  </svg>
+</template>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="data.js"></script>
+<script type="text/babel" src="ui.jsx"></script>
+<script type="text/babel" src="proto-shared.jsx"></script>
+<script type="text/babel" src="page-dashboard.jsx"></script>
+<script type="text/babel" src="page-projects.jsx"></script>
+<script type="text/babel" src="page-performance.jsx"></script>
+<script type="text/babel" src="page-budget.jsx"></script>
+<script type="text/babel" src="page-form.jsx"></script>
+<script type="text/babel" src="page-masters.jsx"></script>
+<script type="text/babel" src="command-palette.jsx"></script>
+<script type="text/babel" src="drawer-detail.jsx"></script>
+
+<script type="text/babel">
+const { T, Icon } = window;
+
+const TABS = [
+  { key: "dashboard", label: "대시보드", icon: "dashboard" },
+  { key: "projects", label: "과제 현황", icon: "projects" },
+  { key: "performance", label: "성과 현황", icon: "performance" },
+  { key: "budget", label: "투자비 현황", icon: "budget" },
+];
+
+function TopNav({ page, onNav, onSearch, onNew, onMasters }) {
+  return (
+    <header style={{ position: "sticky", top: 0, zIndex: 50, background: "#EEF0F4",
+      display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: T.navy, color: "#fff", fontWeight: 800, fontSize: 13.5, display: "flex", alignItems: "center", justifyContent: "center" }}>AX</div>
+          <div style={{ lineHeight: 1.2 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 700 }}>과제 대시보드</div>
+            <div style={{ fontSize: 10.5, color: T.sub }}>AX추진실</div>
+          </div>
+        </div>
+        <nav style={{ display: "flex", gap: 4, background: "#fff", border: `1px solid ${T.line}`, padding: 4, borderRadius: 13, boxShadow: "0 1px 2px rgba(16,24,40,.04)" }}>
+          {TABS.map((t) => {
+            const active = page === t.key;
+            return (
+              <button key={t.key} className="navtab" onClick={() => onNav(t.key)} style={{
+                display: "flex", alignItems: "center", gap: 7, padding: "7px 15px", borderRadius: 9, cursor: "pointer",
+                border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                background: active ? T.navy : "transparent", color: active ? "#fff" : T.sub,
+              }}>
+                <Icon name={t.icon} size={15} />{t.label}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button onClick={onSearch} style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: `1px solid ${T.line}`, borderRadius: 10, padding: "8px 12px", fontSize: 12.5, color: T.sub, cursor: "pointer", fontFamily: "inherit" }}>
+          <Icon name="search" size={15} /> 과제 검색
+          <span style={{ fontSize: 10.5, fontWeight: 700, background: "#F1F2F4", borderRadius: 5, padding: "1px 6px", color: T.faint }}>⌘K</span>
+        </button>
+        <button onClick={onMasters} title="마스터 관리" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: page === "masters" ? T.navy : "#fff", border: `1px solid ${T.line}`, borderRadius: 10, cursor: "pointer", color: page === "masters" ? "#fff" : T.sub }}>
+          <Icon name="building" size={16} />
+        </button>
+        <button onClick={onNew} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 700, color: "#fff", background: T.accent, padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+          <Icon name="plus" size={15} /> 새 과제
+        </button>
+        <div style={{ width: 32, height: 32, borderRadius: 99, background: "#E6E4F6", color: T.accent, fontWeight: 700, fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 2 }}>김</div>
+      </div>
+    </header>
+  );
+}
+
+function Toast({ msg }) {
+  return (
+    <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 300,
+      background: T.navy, color: "#fff", padding: "12px 20px", borderRadius: 12, fontSize: 13.5, fontWeight: 600,
+      display: "flex", alignItems: "center", gap: 9, boxShadow: "0 12px 36px rgba(15,24,48,.35)" }}>
+      <span style={{ width: 20, height: 20, borderRadius: 99, background: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+      </span>
+      {msg}
+    </div>
+  );
+}
+
+function AppShell() {
+  const [page, setPage] = React.useState("dashboard");
+  const [detail, setDetail] = React.useState(null);
+  const [form, setForm] = React.useState(null);      // { mode, project }
+  const [cmd, setCmd] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
+
+  const onNav = (p) => { setForm(null); setPage(p); window.scrollTo({ top: 0 }); };
+  const open = (id) => { setCmd(false); setDetail(id); };
+  const newProject = () => { setCmd(false); setDetail(null); setForm({ mode: "create", project: null }); window.scrollTo({ top: 0 }); };
+  const editProject = (p) => { setDetail(null); setForm({ mode: "edit", project: p }); window.scrollTo({ top: 0 }); };
+  const gotoMasters = () => { setCmd(false); setForm(null); setPage("masters"); window.scrollTo({ top: 0 }); };
+  const showToast = (m) => { setToast(m); setTimeout(() => setToast(null), 2400); };
+  const submitForm = (values, mode) => {
+    setForm(null); setPage("projects");
+    showToast(mode === "edit" ? `"${values.name}" 변경사항이 저장되었습니다` : `"${values.name}" 과제가 등록되었습니다`);
+  };
+
+  React.useEffect(() => {
+    const h = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); setCmd((v) => !v); }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, []);
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      <TopNav page={form ? null : page} onNav={onNav} onSearch={() => setCmd(true)} onNew={newProject} onMasters={gotoMasters} />
+      <main style={{ maxWidth: 1440, margin: "0 auto", padding: "8px 24px 48px" }}>
+        {form ? (
+          <window.ProjectFormPage mode={form.mode} project={form.project} onSubmit={submitForm} onCancel={() => { setForm(null); }} />
+        ) : (
+          <>
+            {page === "dashboard" && <window.DashboardPage onNav={onNav} onOpenProject={open} />}
+            {page === "projects" && <window.ProjectsPage onOpenProject={open} />}
+            {page === "performance" && <window.PerformancePage onOpenProject={open} />}
+            {page === "budget" && <window.BudgetPage onOpenProject={open} />}
+            {page === "masters" && <window.MastersPage />}
+          </>
+        )}
+      </main>
+      {detail && <window.ProjectDrawer id={detail} onClose={() => setDetail(null)} onEdit={editProject} />}
+      {cmd && <window.CommandPalette onClose={() => setCmd(false)} onNav={onNav} onOpenProject={open} onNew={newProject} onMasters={gotoMasters} />}
+      {toast && <Toast msg={toast} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<AppShell />);
+</script>
+</body>
+</html>

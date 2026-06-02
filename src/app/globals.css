@@ -1,37 +1,40 @@
 @import "tailwindcss";
 
 /* ============================================
-   AX 과제 대시보드 — 전역 테마 (기준 1920×1080, D-017)
+   AX 과제 대시보드 — 전역 테마 (리디자인: navy 크롬 + indigo 액센트)
    MPRS 색은 동적 적용이라 src/lib/domain/mprs.ts 에서 인라인 style로 처리.
-   여기서는 중립 시맨틱 토큰과 헬스 색만 정의.
    ============================================ */
 
 :root {
-  --background: #f7f8fa;
-  --foreground: #18181b;
+  --background: #eef0f4;
+  --foreground: #161a22;
 
   --card: #ffffff;
-  --card-foreground: #18181b;
+  --card-foreground: #161a22;
 
-  --muted: #f1f2f4;
-  --muted-foreground: #71717a;
+  --muted: #f4f5f7;
+  --muted-foreground: #6b7280;
+  --faint: #9aa0ab;
 
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #18181b;
+  --border: #eceef1;
+  --border-strong: #e4e7eb;
+  --input: #e4e7eb;
+  --ring: #534ab7;
 
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
+  /* 크롬(헤더·다크 타일·내비 active)·강조 */
+  --navy: #0f1830;
+  --primary: #534ab7; /* indigo 액센트 */
+  --primary-foreground: #ffffff;
 
-  --accent: #f1f2f4;
-  --accent-foreground: #18181b;
+  --accent: #eef0fb; /* indigo soft (배지/선택칩 배경) */
+  --accent-foreground: #534ab7;
 
-  /* 헬스 (D-023 좌측 컬러바) */
+  /* 헬스 (의미색 유지) */
   --health-green: #16a34a;
-  --health-yellow: #eab308;
+  --health-yellow: #e0a106;
   --health-red: #dc2626;
 
-  --radius: 0.625rem;
+  --radius: 1rem; /* 카드 16px */
 }
 
 @theme inline {
@@ -41,9 +44,12 @@
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-navy: var(--navy);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
@@ -53,8 +59,8 @@
   --color-health-yellow: var(--health-yellow);
   --color-health-red: var(--health-red);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
 
   --font-sans:
@@ -71,4 +77,5 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
