@@ -5,13 +5,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { MultiSelect } from "./multi-select";
 import {
   projectFormSchema,
   type ProjectFormValues,
@@ -27,10 +22,8 @@ import {
   updateProjectAction,
 } from "@/app/projects/actions";
 
-const selectClass =
-  "border-input bg-card focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm outline-none focus-visible:ring-2";
-
-/** "" → undefined, 그 외 → number (NaN이면 zod가 에러 처리) */
+const inputClass =
+  "border-border-strong bg-card focus-visible:ring-ring h-[38px] w-full rounded-[9px] border px-3 text-[13.5px] outline-none focus-visible:ring-2";
 const numOrUndef = (v: unknown) =>
   v === "" || v === null || v === undefined ? undefined : Number(v);
 
@@ -70,27 +63,33 @@ export function ProjectForm({
       mode === "create"
         ? await createProjectAction(values)
         : await updateProjectAction(projectId!, values);
-    // 성공 시 서버 액션이 redirect → 아래는 실패한 경우만 도달
     if (result?.error) setServerError(result.error);
   }
 
   return (
-    <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-4">
-      <Card className="flex flex-col gap-4 p-5">
-        {/* 과제명 */}
-        <Field label="과제명" required error={errors.name?.message}>
-          <Input {...register("name")} placeholder="예: 스마트팩토리 비전검사 고도화" />
-        </Field>
-
-        {/* 설명 */}
-        <Field label="설명" error={errors.description?.message}>
-          <Textarea {...register("description")} rows={3} />
-        </Field>
-
+    <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-3.5">
+      {/* 기본 정보 */}
+      <Card className="p-[22px]">
+        <h2 className="mb-4 text-[13px] font-bold">기본 정보</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* MPRS */}
+          <Field label="과제명" required full error={errors.name?.message}>
+            <input
+              {...register("name")}
+              placeholder="예: 스마트팩토리 비전검사 고도화"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="설명" full error={errors.description?.message}>
+            <textarea
+              {...register("description")}
+              rows={2}
+              placeholder="과제 개요를 입력하세요"
+              className={cn(inputClass, "h-auto resize-y py-2.5 leading-relaxed")}
+            />
+          </Field>
+
           <Field label="분류 (MPRS)" required error={errors.mprs?.message}>
-            <select className={selectClass} {...register("mprs")}>
+            <select className={inputClass} {...register("mprs")}>
               {MPRS_VALUES.map((m) => (
                 <option key={m} value={m}>
                   {MPRS_LABEL[m]}
@@ -98,10 +97,8 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
-
-          {/* 주관 본부 */}
           <Field label="주관 본부" required error={errors.headquarterId?.message}>
-            <select className={selectClass} {...register("headquarterId")}>
+            <select className={inputClass} {...register("headquarterId")}>
               <option value="">선택하세요</option>
               {headquarters.map((h) => (
                 <option key={h.id} value={h.id}>
@@ -110,10 +107,8 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
-
-          {/* 라이프사이클 */}
           <Field label="라이프사이클" required error={errors.lifecycle?.message}>
-            <select className={selectClass} {...register("lifecycle")}>
+            <select className={inputClass} {...register("lifecycle")}>
               {LIFECYCLE_VALUES.map((l) => (
                 <option key={l} value={l}>
                   {LIFECYCLE_LABEL[l]}
@@ -121,10 +116,8 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
-
-          {/* 헬스 */}
           <Field label="헬스" required error={errors.health?.message}>
-            <select className={selectClass} {...register("health")}>
+            <select className={inputClass} {...register("health")}>
               {HEALTH_VALUES.map((h) => (
                 <option key={h} value={h}>
                   {HEALTH_LABEL[h]}
@@ -133,145 +126,212 @@ export function ProjectForm({
             </select>
           </Field>
 
-          {/* 시작일 */}
           <Field label="시작일" error={errors.startDate?.message}>
-            <Input type="date" {...register("startDate")} />
+            <input type="date" {...register("startDate")} className={inputClass} />
           </Field>
-
-          {/* 종료일 */}
           <Field label="종료일" error={errors.endDate?.message}>
-            <Input type="date" {...register("endDate")} />
+            <input type="date" {...register("endDate")} className={inputClass} />
           </Field>
 
-          {/* 투자비 (억) */}
           <Field label="투자비 (억원)" error={errors.budgetEok?.message}>
-            <Input
+            <input
               type="number"
               step="0.1"
               min="0"
               {...register("budgetEok", { setValueAs: numOrUndef })}
               placeholder="예: 12.5"
+              className={inputClass}
             />
           </Field>
-
-          {/* FTE */}
           <Field label="투입 인원 (FTE)" error={errors.fte?.message}>
-            <Input
+            <input
               type="number"
               step="0.5"
               min="0"
               {...register("fte", { setValueAs: numOrUndef })}
               placeholder="예: 2"
+              className={inputClass}
             />
           </Field>
 
-          {/* 진행률 */}
-          <Field label="진행률 (%)" required error={errors.progressPct?.message}>
-            <Input
-              type="number"
-              step="1"
-              min="0"
-              max="100"
-              {...register("progressPct", { setValueAs: numOrUndef })}
-            />
-          </Field>
+          <Controller
+            control={control}
+            name="progressPct"
+            render={({ field }) => (
+              <Field
+                label={`진행률 (${field.value ?? 0}%)`}
+                full
+                error={errors.progressPct?.message}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={field.value ?? 0}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  className="accent-primary w-full"
+                />
+              </Field>
+            )}
+          />
         </div>
       </Card>
 
-      <Card className="flex flex-col gap-4 p-5">
-        <h2 className="text-sm font-semibold">담당 / 분류</h2>
-
-        {/* PM */}
-        <Field label="PM (공동 가능)" error={errors.pmIds?.message}>
-          <Controller
-            control={control}
-            name="pmIds"
-            render={({ field }) => (
-              <MultiSelect
-                options={people.map((p) => ({
-                  id: p.id,
-                  label: p.name,
-                  hint: p.department,
-                }))}
-                value={field.value}
-                onChange={field.onChange}
-                emptyText="등록된 사람이 없습니다."
-              />
-            )}
-          />
-        </Field>
-
-        {/* 유관부서 */}
-        <Field label="유관부서 (담당자는 미정으로 저장)" error={errors.departmentIds?.message}>
-          <Controller
-            control={control}
-            name="departmentIds"
-            render={({ field }) => (
-              <MultiSelect
-                options={departments.map((d) => ({ id: d.id, label: d.name }))}
-                value={field.value}
-                onChange={field.onChange}
-                emptyText="등록된 부서가 없습니다."
-              />
-            )}
-          />
-        </Field>
-
-        {/* AI기술 */}
-        <Field label="AI기술" error={errors.aiTechIds?.message}>
-          <Controller
-            control={control}
-            name="aiTechIds"
-            render={({ field }) => (
-              <MultiSelect
-                options={aiTechs.map((t) => ({ id: t.id, label: t.name }))}
-                value={field.value}
-                onChange={field.onChange}
-                emptyText="등록된 AI기술이 없습니다."
-              />
-            )}
-          />
-        </Field>
+      {/* 담당 / 분류 */}
+      <Card className="p-[22px]">
+        <h2 className="mb-4 text-[13px] font-bold">담당 / 분류</h2>
+        <div className="flex flex-col gap-[18px]">
+          <Field label="PM (공동 가능)" error={errors.pmIds?.message}>
+            <Controller
+              control={control}
+              name="pmIds"
+              render={({ field }) => (
+                <ChipMultiSelect
+                  options={people.map((p) => ({
+                    id: p.id,
+                    label: p.name,
+                    hint: p.department,
+                  }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                  emptyText="등록된 사람이 없습니다."
+                />
+              )}
+            />
+          </Field>
+          <Field label="유관부서" error={errors.departmentIds?.message}>
+            <Controller
+              control={control}
+              name="departmentIds"
+              render={({ field }) => (
+                <ChipMultiSelect
+                  options={departments.map((d) => ({ id: d.id, label: d.name }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                  emptyText="등록된 부서가 없습니다."
+                />
+              )}
+            />
+          </Field>
+          <Field label="AI기술" error={errors.aiTechIds?.message}>
+            <Controller
+              control={control}
+              name="aiTechIds"
+              render={({ field }) => (
+                <ChipMultiSelect
+                  options={aiTechs.map((t) => ({ id: t.id, label: t.name }))}
+                  value={field.value}
+                  onChange={field.onChange}
+                  emptyText="등록된 AI기술이 없습니다."
+                />
+              )}
+            />
+          </Field>
+        </div>
+        <p className="text-faint mt-4 flex items-center gap-1.5 border-t pt-3.5 text-xs">
+          <span className="text-primary">＋</span> 목록에 없으면{" "}
+          <b className="text-muted-foreground">마스터 관리</b>에서 추가할 수 있어요.
+        </p>
       </Card>
 
-      {serverError && (
-        <p className="text-sm text-red-600">{serverError}</p>
-      )}
+      {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
-      <div className="flex justify-end gap-2">
-        <Button
+      <div className="flex justify-end gap-2.5">
+        <button
           type="button"
-          variant="ghost"
           onClick={() => router.back()}
           disabled={isSubmitting}
+          className="border-border-strong text-muted-foreground hover:bg-muted rounded-[10px] border px-[18px] py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-50"
         >
           취소
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="bg-primary text-primary-foreground rounded-[10px] px-5 py-2.5 text-[13px] font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
           {isSubmitting ? "저장 중…" : mode === "create" ? "과제 등록" : "저장"}
-        </Button>
+        </button>
       </div>
     </form>
+  );
+}
+
+interface ChipOption {
+  id: string;
+  label: string;
+  hint?: string | null;
+}
+
+function ChipMultiSelect({
+  options,
+  value,
+  onChange,
+  emptyText,
+}: {
+  options: ChipOption[];
+  value: string[];
+  onChange: (next: string[]) => void;
+  emptyText: string;
+}) {
+  if (options.length === 0) {
+    return (
+      <p className="text-faint rounded-md border border-dashed px-3 py-2 text-xs">
+        {emptyText}
+      </p>
+    );
+  }
+  function toggle(id: string) {
+    onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const on = value.includes(o.id);
+        return (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => toggle(o.id)}
+            aria-pressed={on}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-colors",
+              on
+                ? "border-primary text-accent-foreground"
+                : "border-border-strong text-muted-foreground hover:bg-muted",
+            )}
+            style={on ? { background: "#EEF0FB" } : undefined}
+          >
+            {on && <span className="text-[10px]">✓</span>}
+            {o.label}
+            {o.hint && <span className="text-faint font-normal">· {o.hint}</span>}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
 function Field({
   label,
   required = false,
+  full = false,
   error,
   children,
 }: {
   label: string;
   required?: boolean;
+  full?: boolean;
   error?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label className={cn(error && "text-red-600")}>
+    <div className={cn("flex flex-col gap-[7px]", full && "sm:col-span-2")}>
+      <label className={cn("text-xs font-semibold", error ? "text-red-600" : "text-muted-foreground")}>
         {label}
         {required && <span className="ml-0.5 text-red-500">*</span>}
-      </Label>
+      </label>
       {children}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
