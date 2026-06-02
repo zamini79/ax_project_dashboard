@@ -38,7 +38,7 @@ export default async function PerformancePage() {
   const sortedBySave = [...s.items].sort((a, b) => b.saveCostWon - a.saveCostWon);
 
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-6 py-5">
+    <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-4 px-6 py-5">
       <div>
         <h1 className="text-xl font-extrabold tracking-tight">성과 현황</h1>
         <p className="text-muted-foreground mt-0.5 text-[12.5px]">

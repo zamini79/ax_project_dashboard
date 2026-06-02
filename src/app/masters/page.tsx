@@ -75,7 +75,7 @@ export default async function MastersPage({
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-[920px] flex-1 px-6 py-5">
+      <main className="mx-auto w-full max-w-[1120px] flex-1 px-6 py-5">
         <h1 className="text-xl font-extrabold tracking-tight">마스터 관리</h1>
         <p className="text-muted-foreground mb-4 mt-0.5 text-[12.5px]">
           본부 · 부서 · 사람 · AI기술 기준정보를 추가·수정·삭제합니다.

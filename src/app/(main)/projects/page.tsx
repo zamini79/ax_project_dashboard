@@ -107,7 +107,7 @@ export default async function ProjectsPage({
     });
 
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-6 py-5">
+    <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-4 px-6 py-5">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>

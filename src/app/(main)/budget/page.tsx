@@ -34,7 +34,7 @@ export default async function BudgetPage() {
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-6 py-5">
+    <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-4 px-6 py-5">
       <div>
         <h1 className="text-xl font-extrabold tracking-tight">투자비 현황</h1>
         <p className="text-muted-foreground mt-0.5 text-[12.5px]">

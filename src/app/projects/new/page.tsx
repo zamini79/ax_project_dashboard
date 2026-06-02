@@ -35,7 +35,7 @@ export default async function NewProjectPage() {
         <h1 className="text-xl font-semibold">새 과제 등록</h1>
       </header>
 
-      <main className="mx-auto w-full max-w-[880px] flex-1 px-6 py-5">
+      <main className="mx-auto w-full max-w-[1040px] flex-1 px-6 py-5">
         <ProjectForm
           mode="create"
           defaultValues={emptyFormValues()}

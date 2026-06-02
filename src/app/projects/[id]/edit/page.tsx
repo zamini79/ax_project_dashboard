@@ -70,7 +70,7 @@ export default async function EditProjectPage({ params }: { params: Params }) {
         <h1 className="truncate text-xl font-semibold">{edit.name} · 편집</h1>
       </header>
 
-      <main className="mx-auto w-full max-w-[880px] flex-1 px-6 py-5">
+      <main className="mx-auto w-full max-w-[1040px] flex-1 px-6 py-5">
         <ProjectForm
           mode="edit"
           projectId={edit.id}

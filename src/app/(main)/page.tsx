@@ -51,13 +51,13 @@ export default async function DashboardPage() {
   const atRisk = perf.atRisk.slice(0, 3);
 
   return (
-    <main className="mx-auto w-full max-w-[1440px] flex-1 px-6 py-5">
+    <main className="mx-auto w-full max-w-[1800px] flex-1 px-6 py-5">
       <div
         style={{
           display: "grid",
-          gap: 14,
+          gap: 16,
           gridTemplateColumns: "repeat(4, 1fr)",
-          gridAutoRows: "162px",
+          gridAutoRows: "190px",
           gridTemplateAreas:
             '"hero hero donut week" "hero hero risk risk" "mprs mprs trend trend" "perf perf trend trend"',
         }}

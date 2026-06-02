@@ -32,7 +32,7 @@ export default async function ProjectDetailPage({
     <div className="flex min-h-full flex-col">
       <DetailHeader project={project} />
 
-      <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 px-6 py-5 lg:flex-row">
+      <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-5 px-6 py-5 lg:flex-row">
         <MetaPanel project={project} />
         <UpdateTimeline
           projectId={project.id}
