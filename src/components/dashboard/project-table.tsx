@@ -195,7 +195,7 @@ export function ProjectTable({
                 </Cell>
                 <Cell col="flex-1 min-w-0" truncate>
                   <Link
-                    href={`/projects/${item.id}`}
+                    href={dashboardHref(state, { detail: item.id })}
                     className="font-medium hover:underline"
                   >
                     {item.name}

@@ -46,6 +46,8 @@ export interface DashboardState {
   year: number;
   sort?: SortKey | null;
   dir?: SortDir;
+  base?: string; // 링크 기본 경로 (기본 "/"; 과제현황은 "/projects")
+  detail?: string | null; // 상세 드로어 대상 과제 id
 }
 
 type Override = Partial<{
@@ -57,6 +59,7 @@ type Override = Partial<{
   year: number;
   sort: SortKey | null;
   dir: SortDir;
+  detail: string | null;
 }>;
 
 /**
@@ -81,6 +84,8 @@ export function dashboardHref(
   const year = override.year ?? state.year;
   const sort = "sort" in override ? override.sort : (state.sort ?? null);
   const dir = override.dir ?? state.dir ?? "asc";
+  const detail = "detail" in override ? override.detail : (state.detail ?? null);
+  const base = state.base ?? "/";
 
   const params = new URLSearchParams();
   if (lifecycle) params.set("lifecycle", lifecycle);
@@ -96,9 +101,10 @@ export function dashboardHref(
     params.set("sort", sort);
     if (dir === "desc") params.set("dir", "desc");
   }
+  if (detail) params.set("detail", detail);
 
   const qs = params.toString();
-  return qs ? `/?${qs}` : "/";
+  return qs ? `${base}?${qs}` : base;
 }
 
 /** 슬롯 토글: 현재 값과 같으면 해제(null), 다르면 설정 */

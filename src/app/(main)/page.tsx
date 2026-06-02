@@ -162,7 +162,7 @@ export default async function DashboardPage() {
           {atRisk.map((p, i) => (
             <Link
               key={p.id}
-              href={`/projects/${p.id}`}
+              href={`/projects?detail=${p.id}`}
               style={{
                 display: "flex",
                 alignItems: "center",

@@ -18,6 +18,7 @@ import {
   HEALTH_KPI_ORDER,
 } from "@/lib/domain/lifecycle";
 import { formatBudgetEok } from "@/lib/domain/format";
+import { dashboardHref, type DashboardState } from "./url";
 
 const NAVY = "#0F1830";
 const padL = 50,
@@ -34,7 +35,13 @@ const xticks = [0, 25, 50, 75, 100];
 const yticks = [2, 4, 6, 8, 10, 12];
 
 /** 포트폴리오 맵: X=진행률 / Y=투자비(억) / 크기=FTE / 테두리=헬스. MPRS 범례로 필터. */
-export function PortfolioMap({ items }: { items: ProjectListItem[] }) {
+export function PortfolioMap({
+  items,
+  state,
+}: {
+  items: ProjectListItem[];
+  state: DashboardState;
+}) {
   const router = useRouter();
   const [active, setActive] = useState<Set<Mprs>>(() => new Set(MPRS_ORDER));
   const [hover, setHover] = useState<string | null>(null);
@@ -125,7 +132,7 @@ export function PortfolioMap({ items }: { items: ProjectListItem[] }) {
               <div
                 key={p.id}
                 onMouseEnter={() => setHover(p.id)}
-                onClick={() => router.push(`/projects/${p.id}`)}
+                onClick={() => router.push(dashboardHref(state, { detail: p.id }))}
                 style={{
                   position: "absolute",
                   left: cx(p.progress_pct),

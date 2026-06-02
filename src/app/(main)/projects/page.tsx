@@ -3,7 +3,9 @@ import Link from "next/link";
 import {
   fetchProjectList,
   fetchHeadquarters,
+  fetchProjectDetail,
 } from "@/lib/repositories/projects";
+import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import {
   parseFilter,
   applyFilter,
@@ -34,6 +36,7 @@ type SearchParams = Promise<{
   year?: string;
   sort?: string;
   dir?: string;
+  detail?: string;
 }>;
 
 export default async function ProjectsPage({
@@ -61,10 +64,22 @@ export default async function ProjectsPage({
   const visible = applyFilter(projects, filter, now);
   const sortedItems = sort ? sortProjectList(visible, sort, dir) : visible;
 
-  const state = { filter, group: "all" as const, view, year, sort, dir };
+  const state = {
+    filter,
+    group: "all" as const,
+    view,
+    year,
+    sort,
+    dir,
+    base: "/projects",
+  };
   const hqNameById = Object.fromEntries(
     headquarters.map((h) => [h.id, h.name]),
   );
+
+  // 상세 드로어 (?detail=<id>)
+  const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
+  const closeHref = dashboardHref(state, { detail: null });
 
   const lc = (k: string) => kpis.lifecycle.find((l) => l.key === k)?.count ?? 0;
 
@@ -144,7 +159,15 @@ export default async function ProjectsPage({
       {view === "table" ? (
         <ProjectTable items={sortedItems} state={state} todayISO={todayISO} />
       ) : (
-        <PortfolioMap items={visible} />
+        <PortfolioMap items={visible} state={state} />
+      )}
+
+      {detail && (
+        <ProjectDetailDrawer
+          detail={detail}
+          closeHref={closeHref}
+          todayISO={todayISO}
+        />
       )}
     </main>
   );

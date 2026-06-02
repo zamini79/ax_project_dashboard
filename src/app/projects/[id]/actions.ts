@@ -50,5 +50,6 @@ export async function createUpdateAction(
   }
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/projects"); // 목록/드로어(?detail=) 갱신
   return { ok: true, token: Date.now() };
 }
