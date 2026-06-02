@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ai_techs: {
@@ -26,6 +51,30 @@ export type Database = {
         Update: {
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      capex_items: {
+        Row: {
+          category: string
+          exec_won: number
+          id: string
+          plan_won: number
+          sort: number
+        }
+        Insert: {
+          category: string
+          exec_won?: number
+          id?: string
+          plan_won?: number
+          sort?: number
+        }
+        Update: {
+          category?: string
+          exec_won?: number
+          id?: string
+          plan_won?: number
+          sort?: number
         }
         Relationships: []
       }
@@ -280,6 +329,82 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_confluence_pages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_effect_metrics: {
+        Row: {
+          effect_id: string
+          id: string
+          kind: string
+          label: string
+          sort: number
+          value: string
+        }
+        Insert: {
+          effect_id: string
+          id?: string
+          kind: string
+          label: string
+          sort?: number
+          value: string
+        }
+        Update: {
+          effect_id?: string
+          id?: string
+          kind?: string
+          label?: string
+          sort?: number
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_effect_metrics_effect_id_fkey"
+            columns: ["effect_id"]
+            isOneToOne: false
+            referencedRelation: "project_effects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_effects: {
+        Row: {
+          applied_ym: string | null
+          created_at: string
+          id: string
+          is_pilot: boolean
+          note: string | null
+          project_id: string
+          save_cost_won: number
+          save_hours_month: number
+        }
+        Insert: {
+          applied_ym?: string | null
+          created_at?: string
+          id?: string
+          is_pilot?: boolean
+          note?: string | null
+          project_id: string
+          save_cost_won?: number
+          save_hours_month?: number
+        }
+        Update: {
+          applied_ym?: string | null
+          created_at?: string
+          id?: string
+          is_pilot?: boolean
+          note?: string | null
+          project_id?: string
+          save_cost_won?: number
+          save_hours_month?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_effects_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -636,6 +761,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       classification_method: ["manual", "rule", "llm", "unclassified"],

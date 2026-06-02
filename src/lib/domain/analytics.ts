@@ -1,4 +1,5 @@
 import type { ProjectListItem } from "@/lib/repositories/projects";
+import type { ProjectEffect } from "@/lib/repositories/effects";
 import { type Health } from "@/lib/domain/lifecycle";
 import { type Mprs, MPRS_ORDER } from "@/lib/domain/mprs";
 
@@ -47,6 +48,32 @@ export function performanceSummary(
     avgProgress: total ? Math.round(progressSum / total) : 0,
     health,
     atRisk,
+  };
+}
+
+// ============================================
+// 성과(운영 효과) 요약
+// ============================================
+
+export interface EffectsSummary {
+  appliedCount: number;
+  operatingCount: number; // 정식 운영
+  pilotCount: number;
+  totalSaveCostWon: number; // 연간 절감비용 합(원)
+  totalSaveHours: number; // 월 절감시간 합
+  investAppliedWon: number; // 효과 발생 과제의 관련 투자비 합(원)
+  items: ProjectEffect[];
+}
+
+export function effectsSummary(effects: ProjectEffect[]): EffectsSummary {
+  return {
+    appliedCount: effects.length,
+    operatingCount: effects.filter((e) => !e.isPilot).length,
+    pilotCount: effects.filter((e) => e.isPilot).length,
+    totalSaveCostWon: effects.reduce((a, e) => a + e.saveCostWon, 0),
+    totalSaveHours: effects.reduce((a, e) => a + e.saveHoursMonth, 0),
+    investAppliedWon: effects.reduce((a, e) => a + (e.budgetWon ?? 0), 0),
+    items: effects,
   };
 }
 

@@ -6,8 +6,9 @@ import {
   fetchHeadquarters,
 } from "@/lib/repositories/projects";
 import { fetchMonthlyExecution } from "@/lib/repositories/budget";
+import { fetchProjectEffects } from "@/lib/repositories/effects";
 import { computeKpis } from "@/lib/domain/dashboard";
-import { performanceSummary } from "@/lib/domain/analytics";
+import { performanceSummary, effectsSummary } from "@/lib/domain/analytics";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 import { HEALTH_COLOR_VAR, HEALTH_LABEL } from "@/lib/domain/lifecycle";
@@ -23,19 +24,18 @@ const FAINT = "#9AA0AB";
 // 단계 도넛 색: 진행전/검토중/진행중/완료
 const DONUT_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A"];
 
-// TODO(013): project_effects 테이블 도입 후 실데이터로 교체 (현재 디자인용 mock)
-const PERF_MOCK = { totalSaveCost: 6.1, totalSaveHours: 1775, appliedCount: 4 };
-
 export default async function DashboardPage() {
   const now = new Date();
-  const [projects, headquarters, monthly] = await Promise.all([
+  const [projects, headquarters, monthly, effects] = await Promise.all([
     fetchProjectList(),
     fetchHeadquarters(),
     fetchMonthlyExecution(),
+    fetchProjectEffects(),
   ]);
 
   const kpis = computeKpis(projects, headquarters, now);
   const perf = performanceSummary(projects);
+  const eff = effectsSummary(effects);
 
   const inProgress =
     kpis.lifecycle.find((l) => l.key === "in_progress")?.count ?? 0;
@@ -240,9 +240,9 @@ export default async function DashboardPage() {
           </Cap>
           <div style={{ display: "flex", gap: 26, alignItems: "flex-end" }}>
             {[
-              { v: `${PERF_MOCK.totalSaveCost}억`, l: "연간 절감비용" },
-              { v: PERF_MOCK.totalSaveHours.toLocaleString(), l: "월 업무시간 절감(시간)" },
-              { v: PERF_MOCK.appliedCount, l: "운영 적용 과제" },
+              { v: formatBudgetEok(eff.totalSaveCostWon), l: "연간 절감비용" },
+              { v: eff.totalSaveHours.toLocaleString(), l: "월 업무시간 절감(시간)" },
+              { v: eff.appliedCount, l: "운영 적용 과제" },
             ].map((k) => (
               <div key={k.l}>
                 <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{k.v}</div>

@@ -5,6 +5,7 @@ import {
   fetchHeadquarters,
   fetchProjectDetail,
 } from "@/lib/repositories/projects";
+import { fetchEffectForProject } from "@/lib/repositories/effects";
 import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import {
   parseFilter,
@@ -79,6 +80,7 @@ export default async function ProjectsPage({
 
   // 상세 드로어 (?detail=<id>)
   const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
+  const detailEffect = detail ? await fetchEffectForProject(detail.id) : null;
   const closeHref = dashboardHref(state, { detail: null });
 
   const lc = (k: string) => kpis.lifecycle.find((l) => l.key === k)?.count ?? 0;
@@ -165,6 +167,7 @@ export default async function ProjectsPage({
       {detail && (
         <ProjectDetailDrawer
           detail={detail}
+          effect={detailEffect}
           closeHref={closeHref}
           todayISO={todayISO}
         />

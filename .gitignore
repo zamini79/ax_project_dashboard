@@ -42,3 +42,6 @@ next-env.d.ts
 
 # oh-my-claudecode 작업 상태 (커밋 제외)
 /.omc/
+
+# supabase CLI 임시
+/supabase/.temp/

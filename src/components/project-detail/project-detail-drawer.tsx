@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 import { Bar } from "@/components/charts/charts";
 import { UpdateCompose } from "@/components/project-detail/update-compose";
 import type { ProjectDetail } from "@/lib/repositories/projects";
+import type { ProjectEffect } from "@/lib/repositories/effects";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 import {
   LIFECYCLE_LABEL,
@@ -28,10 +29,12 @@ const ACCENT = "#534AB7";
 /** 과제 상세 우측 슬라이드오버 (createPortal — fixed 오버레이 클리핑 회피, §8.4) */
 export function ProjectDetailDrawer({
   detail: p,
+  effect,
   closeHref,
   todayISO,
 }: {
   detail: ProjectDetail;
+  effect?: ProjectEffect | null;
   closeHref: string;
   todayISO: string;
 }) {
@@ -201,6 +204,40 @@ export function ProjectDetailDrawer({
               </Field>
             </div>
           </Card>
+
+          {/* 운영 효과 (있을 때) */}
+          {effect && (
+            <div
+              className="rounded-2xl border p-4"
+              style={{ background: "#F2FBF5", borderColor: "#CBEFD8" }}
+            >
+              <div className="mb-2.5 flex items-center gap-1.5">
+                <Sparkles size={16} style={{ color: "#16A34A" }} />
+                <span className="text-[13px] font-bold" style={{ color: "#0E7A4E" }}>
+                  운영 효과{effect.isPilot ? " (파일럿)" : ""}
+                </span>
+                <span className="text-muted-foreground ml-auto text-[11px]">
+                  {effect.appliedYm} 적용
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {effect.metrics.map((m, i) => (
+                  <div
+                    key={i}
+                    className="bg-card flex-1 rounded-[9px] border p-2.5"
+                    style={{ borderColor: "#DCEFE3" }}
+                  >
+                    <div className="text-muted-foreground mb-1.5 text-[10px]">
+                      {m.label}
+                    </div>
+                    <div className="text-[15px] font-extrabold tabular-nums">
+                      {m.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 업데이트 타임라인 */}
           <Card>
