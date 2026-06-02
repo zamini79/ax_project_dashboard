@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,6 +102,7 @@ export function EntityManager(props: EntityManagerProps) {
           </label>
         )}
         <Button size="sm" onClick={add} disabled={pending || !name.trim()}>
+          <Plus size={15} />
           {pending ? "추가 중…" : "추가"}
         </Button>
         {error && <p className="w-full text-xs text-red-600">{error}</p>}

@@ -56,35 +56,53 @@ export default async function MastersPage({
   ]);
 
   const deptOptions = departments.map((d) => ({ id: d.id, name: d.name }));
+  const counts: Record<TabKey, number> = {
+    hq: headquarters.length,
+    dept: departments.length,
+    people: people.length,
+    tech: aiTechs.length,
+  };
 
   return (
     <div className="flex min-h-full flex-col">
       <header className="bg-card border-b px-6 py-4">
-        <nav className="text-muted-foreground mb-2 text-xs">
+        <nav className="text-muted-foreground text-xs">
           <Link href="/" className="hover:text-foreground transition-colors">
             대시보드
           </Link>
           <span className="mx-1.5">/</span>
           <span className="text-foreground">마스터 관리</span>
         </nav>
-        <h1 className="text-xl font-semibold">마스터 관리</h1>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-5">
-        {/* 탭 */}
-        <div className="mb-4 flex gap-1 border-b">
+      <main className="mx-auto w-full max-w-[920px] flex-1 px-6 py-5">
+        <h1 className="text-xl font-extrabold tracking-tight">마스터 관리</h1>
+        <p className="text-muted-foreground mb-4 mt-0.5 text-[12.5px]">
+          본부 · 부서 · 사람 · AI기술 기준정보를 추가·수정·삭제합니다.
+        </p>
+
+        {/* 탭 필 */}
+        <div className="bg-card mb-4 inline-flex w-fit gap-1 rounded-xl border p-1">
           {TABS.map((t) => (
             <Link
               key={t.key}
               href={`/masters?tab=${t.key}`}
               className={cn(
-                "border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+                "inline-flex items-center gap-1.5 rounded-[9px] px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
                 active === t.key
-                  ? "border-primary text-foreground"
-                  : "text-muted-foreground hover:text-foreground border-transparent",
+                  ? "bg-navy text-white"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t.label}
+              <span
+                className={cn(
+                  "text-[11px] font-bold",
+                  active === t.key ? "text-white/70" : "text-faint",
+                )}
+              >
+                {counts[t.key]}
+              </span>
             </Link>
           ))}
         </div>
