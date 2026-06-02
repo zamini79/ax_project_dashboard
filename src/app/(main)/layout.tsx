@@ -1,8 +1,13 @@
 import Link from "next/link";
-import { Search, Building2, Plus } from "lucide-react";
+import { Building2, Plus } from "lucide-react";
 
 import { getCurrentUser, signOut } from "@/lib/auth/actions";
+import { fetchProjectList } from "@/lib/repositories/projects";
 import { MainTabs } from "@/components/layout/main-tabs";
+import {
+  CommandMenu,
+  type CommandProject,
+} from "@/components/command/command-menu";
 
 /** 공용 셸: 상단 플로팅 필 내비 (좌측 사이드바 없음) */
 export default async function MainLayout({
@@ -10,10 +15,24 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const currentUser = await getCurrentUser();
+  const [currentUser, projectList] = await Promise.all([
+    getCurrentUser(),
+    fetchProjectList(),
+  ]);
   const userLabel =
     currentUser?.person?.name ?? currentUser?.authUser.email ?? null;
   const initial = userLabel?.trim()?.[0]?.toUpperCase() ?? "U";
+  const cmdProjects: CommandProject[] = projectList.map((p) => ({
+    id: p.id,
+    name: p.name,
+    hq: p.headquarter_name,
+    lifecycle: p.lifecycle,
+    health: p.health,
+    progress: p.progress_pct,
+    mprs: p.mprs,
+    pms: p.pms.map((x) => x.name).join(", "),
+    techs: p.ai_techs.join(" "),
+  }));
 
   return (
     <div className="flex min-h-full flex-col">
@@ -36,17 +55,7 @@ export default async function MainLayout({
 
         {/* 우측: 검색 / 마스터 / 새 과제 / 아바타 */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            title="과제 검색 (⌘K) — 추후 제공"
-            className="text-muted-foreground hover:text-foreground bg-card hidden items-center gap-2 rounded-[9px] border px-3 py-1.5 text-xs transition-colors lg:inline-flex"
-          >
-            <Search size={14} />
-            과제 검색
-            <kbd className="bg-muted text-faint rounded px-1 text-[10px] font-medium">
-              ⌘K
-            </kbd>
-          </button>
+          <CommandMenu projects={cmdProjects} />
 
           <Link
             href="/masters"
