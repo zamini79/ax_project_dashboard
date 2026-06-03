@@ -127,6 +127,29 @@ export function ProjectTable({
     scrollRef.current?.releasePointerCapture(e.pointerId);
   }
 
+  // ── 키보드 패닝 (←/→ 1개월, PageUp/Down 12개월, Home 현재연도) ──
+  function onKeyDown(e: React.KeyboardEvent) {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step =
+      e.key === "ArrowRight"
+        ? MONTH_W
+        : e.key === "ArrowLeft"
+          ? -MONTH_W
+          : e.key === "PageDown"
+            ? MONTH_W * 12
+            : e.key === "PageUp"
+              ? -MONTH_W * 12
+              : null;
+    if (step !== null) {
+      el.scrollBy({ left: step, behavior: "smooth" });
+      e.preventDefault();
+    } else if (e.key === "Home") {
+      scrollToYear(true);
+      e.preventDefault();
+    }
+  }
+
   if (items.length === 0) {
     return (
       <div className="text-muted-foreground flex h-48 flex-col items-center justify-center gap-1 rounded-lg border border-dashed">
@@ -214,6 +237,8 @@ export function ProjectTable({
                 </Cell>
                 <Cell col="w-16 shrink-0" center>
                   <span
+                    role="img"
+                    aria-label={HEALTH_LABEL[item.health]}
                     className="inline-block h-3 w-3 rounded-full"
                     style={{ background: HEALTH_COLOR_VAR[item.health] }}
                     title={HEALTH_LABEL[item.health]}
@@ -229,11 +254,15 @@ export function ProjectTable({
           ref={scrollRef}
           id="schedule-timeline"
           data-home={String(homeLeft)}
+          role="region"
+          aria-label="과제 일정 타임라인 — 좌우 화살표 키로 기간 이동"
+          tabIndex={0}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          className="shrink-0 cursor-grab touch-pan-y select-none overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
+          onKeyDown={onKeyDown}
+          className="focus-visible:outline-primary shrink-0 cursor-grab touch-pan-y select-none overflow-x-auto overflow-y-hidden focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 [&::-webkit-scrollbar]:hidden"
           style={{ width: TIMELINE_W, scrollbarWidth: "none" }}
         >
           <div className="relative" style={{ width: innerW }}>

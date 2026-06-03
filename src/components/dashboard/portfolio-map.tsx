@@ -138,7 +138,7 @@ export function PortfolioMap({
                 key={p.id}
                 role="button"
                 tabIndex={0}
-                aria-label={`${p.name} · 진행률 ${p.progress_pct}% · 투자비 ${formatBudgetEok(p.total_budget)}`}
+                aria-label={`${p.name} · 진행률 ${p.progress_pct}% · 투자비 ${formatBudgetEok(p.total_budget)} · 헬스 ${HEALTH_LABEL[p.health]}`}
                 onMouseEnter={() => setHover(p.id)}
                 onFocus={() => setHover(p.id)}
                 onClick={() => router.push(dashboardHref(state, { detail: p.id }))}

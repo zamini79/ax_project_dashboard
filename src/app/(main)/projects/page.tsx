@@ -124,8 +124,8 @@ export default async function ProjectsPage({
         </div>
         <div className="flex items-center gap-2">
           {view === "table" && (
-            <span className="text-faint hidden text-[11px] lg:inline">
-              타임라인을 드래그해 기간 이동
+            <span className="text-muted-foreground hidden text-[11px] lg:inline">
+              타임라인을 드래그하거나 ←/→ 키로 기간 이동
             </span>
           )}
           {view === "table" && <ScheduleHomeButton />}
