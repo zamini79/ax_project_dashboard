@@ -17,6 +17,7 @@ import { performanceSummary } from "@/lib/domain/analytics";
 import { KpiStrip } from "@/components/dashboard/kpi-strip";
 import { ProjectTable } from "@/components/dashboard/project-table";
 import { PortfolioMap } from "@/components/dashboard/portfolio-map";
+import { ScheduleHomeButton } from "@/components/dashboard/schedule-home-button";
 import {
   parseSort,
   parseDir,
@@ -117,9 +118,17 @@ export default async function ProjectsPage({
             {lc("under_review")} · 완료 {lc("completed")}
           </p>
         </div>
-        <div className="bg-card inline-flex gap-1 rounded-xl border p-1 text-[12.5px] font-semibold">
-          <ViewTab href={dashboardHref(state, { view: "table" })} label="표" active={view === "table"} />
-          <ViewTab href={dashboardHref(state, { view: "map" })} label="맵" active={view === "map"} />
+        <div className="flex items-center gap-2">
+          {view === "table" && (
+            <span className="text-faint hidden text-[11px] lg:inline">
+              타임라인을 드래그해 기간 이동
+            </span>
+          )}
+          {view === "table" && <ScheduleHomeButton />}
+          <div className="bg-card inline-flex gap-1 rounded-xl border p-1 text-[12.5px] font-semibold">
+            <ViewTab href={dashboardHref(state, { view: "table" })} label="표" active={view === "table"} />
+            <ViewTab href={dashboardHref(state, { view: "map" })} label="맵" active={view === "map"} />
+          </div>
         </div>
       </div>
 
