@@ -314,12 +314,16 @@ function Tile({
   };
   if (href) {
     return (
-      <Link href={href} style={base} className="transition-shadow hover:shadow-md">
+      <Link href={href} style={base} className="bento-tile">
         {children}
       </Link>
     );
   }
-  return <div style={base}>{children}</div>;
+  return (
+    <div style={base} className="bento-tile">
+      {children}
+    </div>
+  );
 }
 
 function Cap({

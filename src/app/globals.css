@@ -79,3 +79,47 @@ body {
   -webkit-font-smoothing: antialiased;
   font-variant-numeric: tabular-nums;
 }
+
+/* 벤토 타일 hover 돌출(lift) — 핸드오프 §호버. 인라인 box-shadow를 이기기 위해 !important */
+.bento-tile {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+  will-change: transform;
+}
+.bento-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(16, 24, 40, 0.14) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-tile {
+    transition: box-shadow 0.18s ease;
+  }
+  .bento-tile:hover {
+    transform: none;
+  }
+}
+
+/* 카드 hover 돌출(lift) — 핸드오프 §호버 .p-hovercard (translateY(-2px), .16s) */
+.p-hovercard {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+  will-change: transform;
+}
+.p-hovercard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(16, 24, 40, 0.12) !important;
+  border-color: #d7dbe0 !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .p-hovercard {
+    transition:
+      box-shadow 0.16s ease,
+      border-color 0.16s ease;
+  }
+  .p-hovercard:hover {
+    transform: none;
+  }
+}

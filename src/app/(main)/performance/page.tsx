@@ -88,7 +88,7 @@ export default async function PerformancePage() {
               const mprs = MPRS_COLORS[e.mprs];
               return (
                 <Link key={e.id} href={`/projects?detail=${e.projectId}`}>
-                  <Card className="p-[18px] transition-shadow hover:shadow-md">
+                  <Card className="p-hovercard p-[18px]">
                     <div className="mb-2.5 flex items-center gap-2">
                       <span
                         className="inline-flex h-[22px] items-center rounded px-1.5 text-[11px] font-bold"
