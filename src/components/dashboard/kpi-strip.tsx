@@ -8,7 +8,7 @@ import { LIFECYCLE_LABEL, HEALTH_LABEL, HEALTH_COLOR_VAR } from "@/lib/domain/li
 import { formatBudgetEok } from "@/lib/domain/format";
 import { dashboardHref, toggle, type DashboardState } from "./url";
 
-const ACCENT = "#534AB7";
+const ACCENT = "var(--primary)";
 // 단계 도넛/범례 색: 진행전/검토중/진행중/완료
 const LIFE_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A"];
 

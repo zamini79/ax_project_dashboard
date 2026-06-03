@@ -24,7 +24,7 @@ import {
   formatDateKo,
 } from "@/lib/domain/format";
 
-const ACCENT = "#534AB7";
+const ACCENT = "var(--primary)";
 
 /** 과제 상세 우측 슬라이드오버 (createPortal — fixed 오버레이 클리핑 회피, §8.4) */
 export function ProjectDetailDrawer({

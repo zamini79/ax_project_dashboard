@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-04T00:00:00Z",
+  "title": "Design System: AX 과제 대시보드",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Signal Indigo", "canonical": "#534AB7", "tonalRamp": ["#1E1B3F", "#2C2860", "#3A3585", "#4842A6", "#534AB7", "#7A73CC", "#A8A3DF", "#D7D4F1"] },
+      "navy": { "role": "primary", "displayName": "Control Navy", "canonical": "#0F1830", "tonalRamp": ["#070A16", "#0F1830", "#1B274D", "#2A3A6B", "#3B4F88", "#5A6FA5", "#8A99C2", "#C2CADF"] },
+      "accent-soft": { "role": "secondary", "displayName": "Indigo Soft", "canonical": "#EEF0FB", "tonalRamp": ["#3A3585", "#4842A6", "#534AB7", "#7A73CC", "#A8A3DF", "#CFCCEF", "#E3E1F7", "#EEF0FB"] },
+      "background": { "role": "neutral", "displayName": "Cool Canvas", "canonical": "#EEF0F4", "tonalRamp": ["#161A22", "#2A2F3A", "#454A53", "#6B7280", "#9AA0AB", "#C9CDD4", "#E4E7EB", "#EEF0F4"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#161A22", "tonalRamp": ["#0B0D12", "#161A22", "#2A2F3A", "#454A53", "#6B7280", "#9AA0AB", "#C9CDD4", "#E4E7EB"] },
+      "mprs-marketing": { "role": "tertiary", "displayName": "Marketing Teal", "canonical": "#1D9E75", "tonalRamp": ["#0B3D2E", "#11543E", "#157A5B", "#1D9E75", "#3FBC93", "#79D4B6", "#B0E7D4", "#E2F4EC"] },
+      "mprs-production": { "role": "tertiary", "displayName": "Production Indigo", "canonical": "#534AB7", "tonalRamp": ["#1E1B3F", "#2C2860", "#3A3585", "#4842A6", "#534AB7", "#7A73CC", "#A8A3DF", "#ECEAFA"] },
+      "mprs-research": { "role": "tertiary", "displayName": "Research Pink", "canonical": "#D4537E", "tonalRamp": ["#4E1E2F", "#722440", "#9C3459", "#D4537E", "#E07C9C", "#EBA8BE", "#F4C0D1", "#FBE6EE"] },
+      "mprs-support": { "role": "tertiary", "displayName": "Support Coral", "canonical": "#D85A30", "tonalRamp": ["#4D2113", "#712B13", "#A8421F", "#D85A30", "#E5805C", "#EFA98E", "#F5C4B3", "#FBE9E0"] },
+      "health-green": { "role": "tertiary", "displayName": "Health Green", "canonical": "#16A34A", "tonalRamp": ["#06351A", "#0B5C2E", "#117A3E", "#16A34A", "#3CC069", "#74D497", "#B0E7C4", "#DCFCE7"] },
+      "health-yellow": { "role": "tertiary", "displayName": "Health Amber", "canonical": "#E0A106", "tonalRamp": ["#4A3503", "#6E4F05", "#A07307", "#E0A106", "#EBC04A", "#F2D484", "#F8E7B8", "#FEF3C7"] },
+      "health-red": { "role": "tertiary", "displayName": "Health Red", "canonical": "#DC2626", "tonalRamp": ["#4C0F0F", "#6E1717", "#A01D1D", "#DC2626", "#E85C5C", "#F09494", "#F6C0C0", "#FEE2E2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "KPI 숫자·벤토 히어로 수치. 화면에서 가장 큰 요소, tabular-nums." },
+      "headline": { "displayName": "Headline", "purpose": "페이지 타이틀 (20px/800)." },
+      "title": { "displayName": "Title", "purpose": "카드 제목·섹션 헤더·표 헤더 (13–14px/700)." },
+      "body": { "displayName": "Body", "purpose": "본문·셀·설명 (12.5–13.5px), 산문 65–75ch." },
+      "label": { "displayName": "Label", "purpose": "배지·캡션·KPI 라벨·메타 (11–12px/600)." }
+    },
+    "shadows": [
+      { "name": "rest", "value": "0 1px 2px rgba(16,24,40,.05)", "purpose": "모든 카드의 기본. 거의 평면." },
+      { "name": "hover-lift", "value": "0 14px 36px rgba(16,24,40,.14)", "purpose": "클릭 가능한 타일·카드 호버." },
+      { "name": "navy-tile", "value": "0 8px 28px rgba(15,24,48,.22)", "purpose": "벤토 히어로 등 navy 다크 타일." },
+      { "name": "drawer", "value": "-12px 0 40px rgba(15,24,48,.2)", "purpose": "우측 상세 슬라이드오버." },
+      { "name": "overlay", "value": "0 24px 60px rgba(15,24,48,.35)", "purpose": "⌘K 커맨드 팔레트." }
+    ],
+    "motion": [
+      { "name": "ease-decel", "value": "cubic-bezier(0.2, 0.7, 0.3, 1)", "purpose": "드로어/패널 슬라이드 감속 이징." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "색·투명도 상태 전환 기본." },
+      { "name": "duration-drawer", "value": "280ms", "purpose": "슬라이드오버 진입/퇴장." },
+      { "name": "duration-backdrop", "value": "200ms", "purpose": "백드롭 페이드." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" },
+      { "name": "content-max", "value": "1800px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "주행동(생성·저장·새 과제). indigo 면 + 흰 텍스트.",
+      "html": "<button class=\"ds-btn-primary\">+ 새 과제</button>",
+      "css": ".ds-btn-primary { background:#534AB7; color:#fff; border:none; border-radius:9px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:opacity .15s; } .ds-btn-primary:hover { opacity:.9; } .ds-btn-primary:focus-visible { outline:none; box-shadow:0 0 0 2px rgba(83,74,183,.5); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "보조 행동(마스터 관리·취소·로그아웃). 흰 면 + border-strong.",
+      "html": "<button class=\"ds-btn-outline\">마스터 관리</button>",
+      "css": ".ds-btn-outline { background:#fff; color:#161A22; border:1px solid #E4E7EB; border-radius:9px; padding:8px 12px; font-size:12px; font-weight:500; cursor:pointer; transition:background .15s; } .ds-btn-outline:hover { background:#F4F5F7; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "폼 입력. 흰 면 + border-strong, 9px, 38px 높이, indigo 포커스 링.",
+      "html": "<input class=\"ds-input\" placeholder=\"예: 스마트팩토리 비전검사 고도화\" />",
+      "css": ".ds-input { width:100%; height:38px; background:#fff; color:#161A22; border:1px solid #E4E7EB; border-radius:9px; padding:0 12px; font-size:13.5px; outline:none; transition:box-shadow .15s; } .ds-input::placeholder { color:#9AA0AB; } .ds-input:focus { box-shadow:0 0 0 2px rgba(83,74,183,.5); border-color:#534AB7; }"
+    },
+    {
+      "name": "Nav Tab (active)",
+      "kind": "nav",
+      "refersTo": "nav-tab-active",
+      "description": "상단 플로팅 필 내비의 활성 탭. navy 면 + 흰 텍스트 + 아이콘.",
+      "html": "<div class=\"ds-navbar\"><a class=\"ds-tab ds-tab-active\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"9\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\"/></svg>대시보드</a><a class=\"ds-tab\">과제 현황</a></div>",
+      "css": ".ds-navbar { display:inline-flex; gap:2px; background:#fff; border:1px solid #ECEEF1; border-radius:13px; padding:4px; } .ds-tab { display:inline-flex; align-items:center; gap:6px; border-radius:9px; padding:6px 12px; font-size:13px; font-weight:600; color:#6B7280; text-decoration:none; cursor:pointer; transition:color .15s; } .ds-tab:hover { color:#161A22; } .ds-tab-active { background:#0F1830; color:#fff; } .ds-tab-active:hover { color:#fff; }"
+    },
+    {
+      "name": "Selected Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "폼 멀티셀렉트·맵 범례 필터. 선택 시 indigo 보더 + soft 배경.",
+      "html": "<div style=\"display:flex;gap:6px\"><button class=\"ds-chip ds-chip-on\"><span class=\"ds-check\">✓</span>이지은</button><button class=\"ds-chip\">박서준</button></div>",
+      "css": ".ds-chip { display:inline-flex; align-items:center; gap:6px; border-radius:9999px; padding:6px 12px; font-size:12.5px; font-weight:600; background:#fff; color:#6B7280; border:1px solid #E4E7EB; cursor:pointer; transition:background .15s,border-color .15s; } .ds-chip:hover { background:#F4F5F7; } .ds-chip-on { background:#EEF0FB; color:#534AB7; border-color:#534AB7; } .ds-check { font-size:10px; }"
+    },
+    {
+      "name": "MPRS Badge",
+      "kind": "chip",
+      "refersTo": "badge-mprs",
+      "description": "분류 배지. 옅은 의미색 배경 + 진한 의미색 텍스트(전 화면 일관).",
+      "html": "<div style=\"display:flex;gap:6px\"><span class=\"ds-mprs ds-mprs-prod\">Production</span><span class=\"ds-mprs ds-mprs-mkt\">Marketing</span></div>",
+      "css": ".ds-mprs { display:inline-flex; align-items:center; border-radius:6px; padding:2px 7px; font-size:11px; font-weight:700; } .ds-mprs-prod { background:#ECEAFA; color:#3C3489; } .ds-mprs-mkt { background:#E2F4EC; color:#085041; }"
+    },
+    {
+      "name": "Health Signal",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "진행 신호. 색 + 라벨 병기(색만으로 구분 금지).",
+      "html": "<span class=\"ds-health\"><span class=\"ds-dot\"></span>위험</span>",
+      "css": ".ds-health { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:#6B7280; } .ds-dot { width:9px; height:9px; border-radius:9999px; background:#DC2626; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "기본 표면. 흰 면 16px, 미세 그림자, 클릭 가능 시 호버 부상.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-label\">평균 진행률</div><div class=\"ds-card-num\">52%</div></div>",
+      "css": ".ds-card { background:#fff; border:1px solid #ECEEF1; border-radius:16px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.05); transition:box-shadow .18s, transform .18s; } .ds-card:hover { box-shadow:0 14px 36px rgba(16,24,40,.14); transform:translateY(-3px); } .ds-card-label { font-size:12px; color:#6B7280; } .ds-card-num { margin-top:4px; font-size:26px; font-weight:800; color:#161A22; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "관제탑 (The Control Tower)",
+    "overview": "AX추진실 PM이 수십 개 과제의 진행·헬스·일정·투자비를 한 자리에서 관제하는 공간. navy 크롬이 뼈대를 잡고, cool 그레이 캔버스 위 흰 카드가 정보를 담으며, indigo 액센트와 헬스 신호색이 위험·지연을 즉시 알린다. 색은 장식이 아니라 데이터다. 분위기는 차분한 관제실: 밀도 높은 데이터를 위계·여백·정렬로 읽히게 한다.",
+    "keyCharacteristics": [
+      "navy 크롬 + indigo 신호 + cool 그레이 캔버스 (warm 크림 아님)",
+      "의미 기반 색: MPRS 4색 / 헬스 3색 / 라이프사이클 전역 일관",
+      "평면 기본, 상태(호버·드로어·히어로)에서만 부상",
+      "데이터 밀도 ↑, 위계·여백으로 가독. 1920 기준 max-w 1800 중앙 정렬",
+      "단일 sans(Pretendard) + 굵기·크기 대비 위계, 수치는 tabular-nums"
+    ],
+    "rules": [
+      { "name": "The Signal Rarity Rule", "body": "indigo 액센트는 한 화면의 ≤10%에만. 흔해지면 신호가 아니라 배경이 된다.", "section": "colors" },
+      { "name": "The Color Means Data Rule", "body": "MPRS·헬스 색은 임의로 바꾸지 않는다. 같은 색은 모든 화면에서 같은 뜻.", "section": "colors" },
+      { "name": "The No-Cream Rule", "body": "배경은 cool 그레이(#EEF0F4). warm 크림/샌드/베이지는 금지 — AI 기본값이다.", "section": "colors" },
+      { "name": "The One Family Rule", "body": "서체는 Pretendard 하나. 위계는 굵기·크기로만.", "section": "typography" },
+      { "name": "The Tabular Numbers Rule", "body": "모든 수치는 font-variant-numeric: tabular-nums.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "표면은 쉴 때 평면. 그림자는 상태(호버·부상·포커스)의 반응으로만.", "section": "elevation" },
+      { "name": "The Depth-Is-Navy Rule", "body": "시각적 무게는 그림자가 아니라 navy 면으로 만든다.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do 배경에 cool 그레이(#EEF0F4), 크롬·무게는 navy(#0F1830).",
+      "Do indigo 액센트를 ≤10%로 아껴 신호로 유지.",
+      "Do MPRS·헬스·라이프사이클 색을 전 화면 동일 의미로 재사용.",
+      "Do 모든 수치에 tabular-nums.",
+      "Do 카드는 평면 기본, 그림자는 상태에서만.",
+      "Do 헬스 신호는 색 + 라벨/텍스트 병기 (WCAG AA).",
+      "Do 본문 대비 ≥4.5:1 유지."
+    ],
+    "donts": [
+      "Don't warm 크림/샌드/베이지 배경 (전형적 SaaS 슬롭).",
+      "Don't background-clip:text 그라데이션 헤딩.",
+      "Don't 똑같은 카드 그리드·히어로-메트릭 템플릿 남발.",
+      "Don't 모든 섹션 위 대문자 eyebrow / 01·02·03 번호 마커.",
+      "Don't 회색 표·위계 없는 폼의 올드 행정 UI.",
+      "Don't 과한 애니메이션·이모지·장난스러운 컨슈머 톤.",
+      "Don't 1px 초과 컬러 side-stripe 보더·장식 글래스모피즘·카드 중첩.",
+      "Don't prefers-reduced-motion 대안 없이 모션 출시."
+    ]
+  }
+}

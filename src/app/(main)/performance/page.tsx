@@ -18,8 +18,8 @@ import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 
 export const dynamic = "force-dynamic";
 
-const GREEN = "#16A34A";
-const ACCENT = "#534AB7";
+const GREEN = "var(--health-green)";
+const ACCENT = "var(--primary)";
 const CYAN = "#0EA5E9";
 const metricStyle: Record<string, { color: string; Icon: typeof Target }> = {
   won: { color: GREEN, Icon: CircleDollarSign },

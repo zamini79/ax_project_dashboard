@@ -9,9 +9,9 @@ import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 
 export const dynamic = "force-dynamic";
 
-const ACCENT = "#534AB7";
-const GREEN = "#16A34A";
-const YELLOW = "#E0A106";
+const ACCENT = "var(--primary)";
+const GREEN = "var(--health-green)";
+const YELLOW = "var(--health-yellow)";
 
 export default async function BudgetPage() {
   const [projects, monthly, capex] = await Promise.all([

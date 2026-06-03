@@ -16,11 +16,11 @@ import { Donut, MiniBars, Bar, HealthDot } from "@/components/charts/charts";
 
 export const dynamic = "force-dynamic";
 
-const NAVY = "#0F1830";
-const ACCENT = "#534AB7";
-const LINE = "#ECEEF1";
-const SUB = "#6B7280";
-const FAINT = "#9AA0AB";
+const NAVY = "var(--navy)";
+const ACCENT = "var(--primary)";
+const LINE = "var(--border)";
+const SUB = "var(--muted-foreground)";
+const FAINT = "var(--faint)";
 // 단계 도넛 색: 진행전/검토중/진행중/완료
 const DONUT_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A"];
 

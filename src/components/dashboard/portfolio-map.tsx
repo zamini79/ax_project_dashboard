@@ -20,7 +20,7 @@ import {
 import { formatBudgetEok } from "@/lib/domain/format";
 import { dashboardHref, type DashboardState } from "./url";
 
-const NAVY = "#0F1830";
+const NAVY = "var(--navy)";
 const padL = 50,
   padR = 24,
   padT = 16,
@@ -104,7 +104,7 @@ export function PortfolioMap({
           {yticks.map((v) => (
             <div key={`y${v}`}>
               <div style={{ position: "absolute", left: padL, top: cy(v), width: plotW, height: 1, background: "#F1F2F4" }} />
-              <span style={{ position: "absolute", left: 0, top: cy(v) - 7, width: padL - 8, textAlign: "right", fontSize: 10, color: "#A9AEB8" }}>
+              <span style={{ position: "absolute", left: 0, top: cy(v) - 7, width: padL - 8, textAlign: "right", fontSize: 10, color: "#6E737D" }}>
                 {v}
               </span>
             </div>
@@ -113,7 +113,7 @@ export function PortfolioMap({
           {xticks.map((v) => (
             <div key={`x${v}`}>
               <div style={{ position: "absolute", left: cx(v), top: padT, width: 1, height: plotH, background: v === 50 ? "#E2E4E8" : "#F6F7F8" }} />
-              <span style={{ position: "absolute", left: cx(v) - 12, top: padT + plotH + 8, width: 24, textAlign: "center", fontSize: 10, color: "#A9AEB8" }}>
+              <span style={{ position: "absolute", left: cx(v) - 12, top: padT + plotH + 8, width: 24, textAlign: "center", fontSize: 10, color: "#6E737D" }}>
                 {v}
               </span>
             </div>
@@ -131,8 +131,19 @@ export function PortfolioMap({
             return (
               <div
                 key={p.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`${p.name} · 진행률 ${p.progress_pct}% · 투자비 ${formatBudgetEok(p.total_budget)}`}
                 onMouseEnter={() => setHover(p.id)}
+                onFocus={() => setHover(p.id)}
                 onClick={() => router.push(dashboardHref(state, { detail: p.id }))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(dashboardHref(state, { detail: p.id }));
+                  }
+                }}
+                className="outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F1830]"
                 style={{
                   position: "absolute",
                   left: cx(p.progress_pct),
@@ -152,7 +163,7 @@ export function PortfolioMap({
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#fff",
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: 800,
                 }}
               >

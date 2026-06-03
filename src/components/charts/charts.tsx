@@ -51,7 +51,7 @@ export function Donut({
               cy={size / 2}
               r={r}
               fill="none"
-              stroke={s.color}
+              style={{ stroke: s.color }}
               strokeWidth={thickness}
               strokeDasharray={`${len} ${c - len}`}
               strokeDashoffset={-offsets[i]}
@@ -121,7 +121,7 @@ export function MiniBars({
           <span
             style={{
               fontSize: 9.5,
-              color: "#9AA0AB",
+              color: "#6E737D",
               fontVariantNumeric: "tabular-nums",
             }}
           >
