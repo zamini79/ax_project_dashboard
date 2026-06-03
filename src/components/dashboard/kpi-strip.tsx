@@ -37,42 +37,50 @@ export function KpiStrip({
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.05fr_1.45fr_1fr_1.1fr]">
       {/* 1) 라이프사이클 도넛 + 범례(드릴다운) */}
-      <Card className="flex items-center gap-3.5 p-3.5">
-        <Donut
-          size={70}
-          thickness={11}
-          ariaLabel={`과제 단계 — ${kpis.lifecycle.map((l) => `${LIFECYCLE_LABEL[l.key]} ${l.count}`).join(", ")}`}
-          segments={kpis.lifecycle.map((l, i) => ({
-            value: l.count,
-            color: LIFE_COLORS[i],
-          }))}
-        >
-          <div className="text-xl font-extrabold">{kpis.total}</div>
-        </Donut>
-        <div className="flex flex-col gap-1">
-          {kpis.lifecycle.map((l, i) => (
-            <Link
-              key={l.key}
-              href={dashboardHref(state, {
-                lifecycle: toggle(filter.lifecycle, l.key),
-              })}
-              className={cn(
-                "flex items-center gap-1.5 rounded px-1 text-[11.5px]",
-                filter.lifecycle === l.key
-                  ? "bg-accent font-semibold"
-                  : "hover:bg-muted",
-              )}
-            >
-              <span
-                className="h-2 w-2 rounded-sm"
-                style={{ background: LIFE_COLORS[i] }}
-              />
-              <span className="text-muted-foreground">
-                {LIFECYCLE_LABEL[l.key]}
-              </span>
-              <b className="ml-auto pl-3.5 tabular-nums">{l.count}</b>
-            </Link>
-          ))}
+      <Card className="flex flex-col gap-2 p-3.5">
+        <p className="text-muted-foreground text-[11.5px] font-semibold">
+          과제 단계
+        </p>
+        <div className="flex items-center gap-3.5">
+          <Donut
+            size={70}
+            thickness={11}
+            ariaLabel={`과제 단계 — ${kpis.lifecycle.map((l) => `${LIFECYCLE_LABEL[l.key]} ${l.count}`).join(", ")}`}
+            segments={kpis.lifecycle.map((l, i) => ({
+              value: l.count,
+              color: LIFE_COLORS[i],
+            }))}
+          >
+            <div className="text-xl font-extrabold">{kpis.total}</div>
+          </Donut>
+          <div className="flex flex-1 flex-col gap-1">
+            {kpis.lifecycle.map((l, i) => {
+              const on = filter.lifecycle === l.key;
+              return (
+                <Link
+                  key={l.key}
+                  href={dashboardHref(state, {
+                    lifecycle: toggle(filter.lifecycle, l.key),
+                  })}
+                  aria-pressed={on}
+                  aria-label={`${LIFECYCLE_LABEL[l.key]} ${l.count}건 — 단계 필터 ${on ? "해제" : "적용"}`}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded px-1 text-[11.5px]",
+                    on ? "bg-accent font-semibold" : "hover:bg-muted",
+                  )}
+                >
+                  <span
+                    className="h-2 w-2 rounded-sm"
+                    style={{ background: LIFE_COLORS[i] }}
+                  />
+                  <span className="text-muted-foreground">
+                    {LIFECYCLE_LABEL[l.key]}
+                  </span>
+                  <b className="ml-auto pl-3.5 tabular-nums">{l.count}</b>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </Card>
 
@@ -104,6 +112,8 @@ export function KpiStrip({
                 progress: toggle(filter.progress, h.key),
               })}
               title={HEALTH_HELP[h.key]}
+              aria-pressed={filter.progress === h.key}
+              aria-label={`${HEALTH_LABEL[h.key]} ${h.count}건 — ${HEALTH_HELP[h.key]}. 진행 현황 필터 ${filter.progress === h.key ? "해제" : "적용"}`}
               className={cn(
                 "flex flex-col gap-0.5 rounded px-1",
                 filter.progress === h.key ? "bg-accent" : "hover:bg-muted",
@@ -123,8 +133,10 @@ export function KpiStrip({
             href={dashboardHref(state, {
               progress: toggle(filter.progress, "this_week"),
             })}
+            aria-pressed={filter.progress === "this_week"}
+            aria-label={`금주 업데이트 ${kpis.thisWeekCount}건 — 필터 ${filter.progress === "this_week" ? "해제" : "적용"}`}
             className={cn(
-              "ml-auto flex flex-col gap-0.5 rounded px-1",
+              "ml-auto flex flex-col gap-0.5 rounded border-l pl-3.5 pr-1",
               filter.progress === "this_week" ? "bg-accent" : "hover:bg-muted",
             )}
           >

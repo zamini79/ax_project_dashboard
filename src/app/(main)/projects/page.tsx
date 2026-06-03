@@ -151,6 +151,7 @@ export default async function ProjectsPage({
             <Link
               key={c.label}
               href={c.clearHref}
+              aria-label={`${c.label} 필터 제거`}
               className="bg-accent hover:bg-muted inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors"
             >
               {c.label}
@@ -159,6 +160,18 @@ export default async function ProjectsPage({
               </span>
             </Link>
           ))}
+          {chips.length >= 2 && (
+            <Link
+              href={dashboardHref(state, {
+                lifecycle: null,
+                progress: null,
+                headquarterId: null,
+              })}
+              className="text-muted-foreground hover:text-foreground rounded-full px-2 py-1 text-xs font-medium underline-offset-2 hover:underline"
+            >
+              전체 해제
+            </Link>
+          )}
           {chips.length > 0 && (
             <span className="text-muted-foreground text-sm">
               →{" "}
