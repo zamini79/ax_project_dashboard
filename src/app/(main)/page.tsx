@@ -36,6 +36,7 @@ export default async function DashboardPage() {
   const kpis = computeKpis(projects, headquarters, now);
   const perf = performanceSummary(projects);
   const eff = effectsSummary(effects);
+  const asOf = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
 
   const inProgress =
     kpis.lifecycle.find((l) => l.key === "in_progress")?.count ?? 0;
@@ -55,16 +56,16 @@ export default async function DashboardPage() {
       <div
         style={{
           display: "grid",
-          gap: 16,
+          gap: 14,
           gridTemplateColumns: "repeat(4, 1fr)",
-          gridAutoRows: "190px",
+          gridAutoRows: "172px",
           gridTemplateAreas:
             '"hero hero donut week" "hero hero risk risk" "mprs mprs trend trend" "perf perf trend trend"',
         }}
       >
         {/* HERO */}
         <Tile area="hero" dark pad={24}>
-          <Cap light>포트폴리오 현황</Cap>
+          <Cap light>포트폴리오 현황 · {asOf} 기준</Cap>
           <div
             style={{
               display: "grid",
