@@ -108,7 +108,14 @@ export default async function BudgetPage() {
             </span>
           </div>
           <div className="mt-3.5 flex flex-1 items-end overflow-x-auto">
-            <MiniBars data={monthlyBars} height={120} barW={28} gap={12} accentLast={ACCENT} />
+            <MiniBars
+              data={monthlyBars}
+              height={120}
+              barW={28}
+              gap={12}
+              accentLast={ACCENT}
+              ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(cumulative)}`}
+            />
           </div>
         </Card>
       </div>

@@ -11,7 +11,12 @@ import { computeKpis } from "@/lib/domain/dashboard";
 import { performanceSummary, effectsSummary } from "@/lib/domain/analytics";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
-import { HEALTH_COLOR_VAR, HEALTH_LABEL } from "@/lib/domain/lifecycle";
+import {
+  HEALTH_COLOR_VAR,
+  HEALTH_LABEL,
+  HEALTH_HELP,
+  LIFECYCLE_LABEL,
+} from "@/lib/domain/lifecycle";
 import { Donut, MiniBars, Bar, HealthDot } from "@/components/charts/charts";
 
 export const dynamic = "force-dynamic";
@@ -98,7 +103,11 @@ export default async function DashboardPage() {
           <div style={{ fontSize: 11, color: "rgba(255,255,255,.5)", marginBottom: 7 }}>
             진행 현황(헬스)
           </div>
-          <div style={{ display: "flex", height: 12, borderRadius: 99, overflow: "hidden", marginBottom: 9 }}>
+          <div
+            role="img"
+            aria-label={`진행 현황 — ${kpis.health.map((h) => `${HEALTH_LABEL[h.key]} ${h.count}`).join(", ")}`}
+            style={{ display: "flex", height: 12, borderRadius: 99, overflow: "hidden", marginBottom: 9 }}
+          >
             {kpis.health.map((h) => (
               <div
                 key={h.key}
@@ -113,6 +122,7 @@ export default async function DashboardPage() {
             {kpis.health.map((h) => (
               <span
                 key={h.key}
+                title={HEALTH_HELP[h.key]}
                 style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "rgba(255,255,255,.8)" }}
               >
                 <span style={{ width: 8, height: 8, borderRadius: 99, background: HEALTH_COLOR_VAR[h.key] }} />
@@ -129,6 +139,7 @@ export default async function DashboardPage() {
             <Donut
               size={102}
               thickness={14}
+              ariaLabel={`과제 단계 — ${kpis.lifecycle.map((l) => `${LIFECYCLE_LABEL[l.key]} ${l.count}`).join(", ")}`}
               segments={kpis.lifecycle.map((l, i) => ({
                 value: l.count,
                 color: DONUT_COLORS[i],
@@ -196,7 +207,11 @@ export default async function DashboardPage() {
           <Cap action={<ArrowRight size={15} style={{ color: FAINT }} />}>
             MPRS 투자 배분 · 총 {formatBudgetEok(budgetTotal)}
           </Cap>
-          <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginBottom: 12 }}>
+          <div
+            role="img"
+            aria-label={`MPRS 투자 배분 · 총 ${formatBudgetEok(budgetTotal)}`}
+            style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginBottom: 12 }}
+          >
             {kpis.budgetByMprs.map((b) => (
               <div
                 key={b.key}
@@ -226,7 +241,14 @@ export default async function DashboardPage() {
             <span style={{ fontSize: 13, fontWeight: 600, color: SUB }}>누적 집행</span>
           </div>
           <div style={{ flex: 1, display: "flex", alignItems: "flex-end", marginTop: 10 }}>
-            <MiniBars data={monthlyBars} height={146} barW={32} gap={14} accentLast={ACCENT} />
+            <MiniBars
+              data={monthlyBars}
+              height={146}
+              barW={32}
+              gap={14}
+              accentLast={ACCENT}
+              ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(kpis.budgetTotal.executed)}`}
+            />
           </div>
         </Tile>
 

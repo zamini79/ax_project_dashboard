@@ -36,6 +36,13 @@ export const HEALTH_LABEL: Record<Health, string> = {
   red: "위험",
 };
 
+/** 헬스 의미 (툴팁·도움말용) */
+export const HEALTH_HELP: Record<Health, string> = {
+  green: "진행에 이상 없음",
+  yellow: "지연·리스크 주의 필요",
+  red: "즉시 조치 필요",
+};
+
 /** 헬스 → CSS 변수 색 (좌측 컬러바, D-023) */
 export const HEALTH_COLOR_VAR: Record<Health, string> = {
   green: "var(--health-green)",

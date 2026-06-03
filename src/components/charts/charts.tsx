@@ -14,12 +14,14 @@ export function Donut({
   size = 120,
   thickness = 16,
   gap = 2,
+  ariaLabel,
   children,
 }: {
   segments: DonutSegment[];
   size?: number;
   thickness?: number;
   gap?: number;
+  ariaLabel?: string;
   children?: React.ReactNode;
 }) {
   const total = segments.reduce((a, s) => a + s.value, 0) || 1;
@@ -32,7 +34,12 @@ export function Donut({
   );
 
   return (
-    <div style={{ position: "relative", width: size, height: size }}>
+    <div
+      role={ariaLabel ? "img" : undefined}
+      aria-label={ariaLabel}
+      aria-hidden={ariaLabel ? undefined : true}
+      style={{ position: "relative", width: size, height: size }}
+    >
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
         <circle
           cx={size / 2}
@@ -87,6 +94,7 @@ export function MiniBars({
   gap = 8,
   color = "#D3D8E0",
   accentLast,
+  ariaLabel,
 }: {
   data: { label: string; value: number }[];
   height?: number;
@@ -94,10 +102,16 @@ export function MiniBars({
   gap?: number;
   color?: string;
   accentLast?: string;
+  ariaLabel?: string;
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap }}>
+    <div
+      role={ariaLabel ? "img" : undefined}
+      aria-label={ariaLabel}
+      aria-hidden={ariaLabel ? undefined : true}
+      style={{ display: "flex", alignItems: "flex-end", gap }}
+    >
       {data.map((d, i) => (
         <div
           key={i}
@@ -149,6 +163,7 @@ export function Bar({
 }) {
   return (
     <div
+      aria-hidden
       style={{
         height,
         width: "100%",

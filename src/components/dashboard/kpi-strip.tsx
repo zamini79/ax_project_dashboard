@@ -4,7 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Donut, Bar } from "@/components/charts/charts";
 import { cn } from "@/lib/utils";
 import type { DashboardKpis, DashboardFilter } from "@/lib/domain/dashboard";
-import { LIFECYCLE_LABEL, HEALTH_LABEL, HEALTH_COLOR_VAR } from "@/lib/domain/lifecycle";
+import {
+  LIFECYCLE_LABEL,
+  HEALTH_LABEL,
+  HEALTH_HELP,
+  HEALTH_COLOR_VAR,
+} from "@/lib/domain/lifecycle";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { dashboardHref, toggle, type DashboardState } from "./url";
 
@@ -36,6 +41,7 @@ export function KpiStrip({
         <Donut
           size={70}
           thickness={11}
+          ariaLabel={`과제 단계 — ${kpis.lifecycle.map((l) => `${LIFECYCLE_LABEL[l.key]} ${l.count}`).join(", ")}`}
           segments={kpis.lifecycle.map((l, i) => ({
             value: l.count,
             color: LIFE_COLORS[i],
@@ -75,7 +81,11 @@ export function KpiStrip({
         <p className="text-muted-foreground mb-2.5 text-[11.5px] font-semibold">
           진행 현황(헬스)
         </p>
-        <div className="mb-3 flex h-3 overflow-hidden rounded-full">
+        <div
+          role="img"
+          aria-label={`진행 현황 — ${kpis.health.map((h) => `${HEALTH_LABEL[h.key]} ${h.count}`).join(", ")}`}
+          className="mb-3 flex h-3 overflow-hidden rounded-full"
+        >
           {kpis.health.map((h) => (
             <div
               key={h.key}
@@ -93,6 +103,7 @@ export function KpiStrip({
               href={dashboardHref(state, {
                 progress: toggle(filter.progress, h.key),
               })}
+              title={HEALTH_HELP[h.key]}
               className={cn(
                 "flex flex-col gap-0.5 rounded px-1",
                 filter.progress === h.key ? "bg-accent" : "hover:bg-muted",
@@ -139,6 +150,7 @@ export function KpiStrip({
         <Donut
           size={70}
           thickness={11}
+          ariaLabel={`투자비 집행률 ${budgetRate}%`}
           segments={[
             { value: budgetRate, color: ACCENT },
             { value: 100 - budgetRate, color: "#EEF0F3" },
