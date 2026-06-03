@@ -43,8 +43,13 @@ export function PortfolioMap({
   state: DashboardState;
 }) {
   const router = useRouter();
-  const [active, setActive] = useState<Set<Mprs>>(() => new Set(MPRS_ORDER));
   const [hover, setHover] = useState<string | null>(null);
+
+  // 활성 MPRS는 URL 상태(state.mprs)에서 도출 — 빈 배열 = 전체 (D-019 공유·영속)
+  const active: Set<Mprs> =
+    state.mprs && state.mprs.length > 0
+      ? new Set(state.mprs)
+      : new Set(MPRS_ORDER);
 
   const cx = (prog: number) => padL + (prog / 100) * plotW;
   const cy = (eok: number) =>
@@ -53,20 +58,20 @@ export function PortfolioMap({
   const isOn = (k: Mprs) => active.has(k);
 
   function toggle(k: Mprs) {
-    setActive((s) => {
-      const n = new Set(s);
-      if (n.size === MPRS_ORDER.length) {
-        n.clear();
-        n.add(k);
-      } else if (n.has(k) && n.size === 1) {
-        return new Set(MPRS_ORDER);
-      } else if (n.has(k)) {
-        n.delete(k);
-      } else {
-        n.add(k);
-      }
-      return n.size ? n : new Set(MPRS_ORDER);
-    });
+    const n = new Set(active);
+    if (n.size === MPRS_ORDER.length) {
+      n.clear();
+      n.add(k);
+    } else if (n.has(k) && n.size === 1) {
+      n.clear();
+      MPRS_ORDER.forEach((m) => n.add(m));
+    } else if (n.has(k)) {
+      n.delete(k);
+    } else {
+      n.add(k);
+    }
+    const next = n.size ? [...n] : [...MPRS_ORDER];
+    router.push(dashboardHref(state, { mprs: next }));
   }
 
   const healthCount = (h: Health) =>

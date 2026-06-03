@@ -22,6 +22,7 @@ import {
   parseSort,
   parseDir,
   parseYear,
+  parseMprs,
   dashboardHref,
   type ViewMode,
 } from "@/components/dashboard/url";
@@ -38,6 +39,7 @@ type SearchParams = Promise<{
   year?: string;
   sort?: string;
   dir?: string;
+  mprs?: string;
   detail?: string;
 }>;
 
@@ -59,6 +61,7 @@ export default async function ProjectsPage({
   const year = parseYear(sp.year, now.getFullYear());
   const sort = parseSort(sp.sort);
   const dir = parseDir(sp.dir);
+  const mprs = parseMprs(sp.mprs);
   const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   const kpis = computeKpis(projects, headquarters, now);
@@ -73,6 +76,7 @@ export default async function ProjectsPage({
     year,
     sort,
     dir,
+    mprs,
     base: "/projects",
   };
   const hqNameById = Object.fromEntries(

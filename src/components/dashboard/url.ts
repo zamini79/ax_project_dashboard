@@ -3,6 +3,7 @@ import type {
   SortKey,
   SortDir,
 } from "@/lib/domain/dashboard";
+import { MPRS_ORDER, type Mprs } from "@/lib/domain/mprs";
 
 export type GroupMode = "all" | "mprs";
 export type ViewMode = "card" | "table" | "map";
@@ -33,6 +34,20 @@ export function parseDir(value: string | undefined): SortDir {
   return value === "desc" ? "desc" : "asc";
 }
 
+/**
+ * mprs 파라미터 파싱 (맵 MPRS 필터, D-019 공유·영속).
+ * 콤마 구분 목록 → 유효 MPRS만 중복 없이. 빈 배열 = 전체(필터 없음).
+ */
+export function parseMprs(value: string | undefined): Mprs[] {
+  if (!value) return [];
+  const set = new Set<Mprs>();
+  for (const raw of value.split(",")) {
+    const k = raw.trim() as Mprs;
+    if (MPRS_ORDER.includes(k)) set.add(k);
+  }
+  return [...set];
+}
+
 /** year 파라미터 파싱 (유효하지 않으면 fallback) */
 export function parseYear(value: string | undefined, fallback: number): number {
   const n = Number(value);
@@ -46,6 +61,7 @@ export interface DashboardState {
   year: number;
   sort?: SortKey | null;
   dir?: SortDir;
+  mprs?: Mprs[]; // 맵 MPRS 필터 (빈 배열 = 전체)
   base?: string; // 링크 기본 경로 (기본 "/"; 과제현황은 "/projects")
   detail?: string | null; // 상세 드로어 대상 과제 id
 }
@@ -59,6 +75,7 @@ type Override = Partial<{
   year: number;
   sort: SortKey | null;
   dir: SortDir;
+  mprs: Mprs[];
   detail: string | null;
 }>;
 
@@ -84,6 +101,7 @@ export function dashboardHref(
   const year = override.year ?? state.year;
   const sort = "sort" in override ? override.sort : (state.sort ?? null);
   const dir = override.dir ?? state.dir ?? "asc";
+  const mprs = "mprs" in override ? override.mprs : (state.mprs ?? []);
   const detail = "detail" in override ? override.detail : (state.detail ?? null);
   const base = state.base ?? "/";
 
@@ -100,6 +118,10 @@ export function dashboardHref(
   if (sort) {
     params.set("sort", sort);
     if (dir === "desc") params.set("dir", "desc");
+  }
+  // MPRS 필터는 부분 선택일 때만 (전체/빈 = 생략)
+  if (mprs && mprs.length > 0 && mprs.length < MPRS_ORDER.length) {
+    params.set("mprs", mprs.join(","));
   }
   if (detail) params.set("detail", detail);
 

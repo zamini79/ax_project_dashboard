@@ -139,15 +139,17 @@ export function ProjectTable({
   return (
     <div className="bg-card flex overflow-hidden rounded-lg border text-sm">
         {/* ── 좌측 정보 컬럼 (남는 폭 흡수) ── */}
-        <div className="grow min-w-0 border-r">
+        <div role="table" aria-label="과제 목록" className="grow min-w-0 border-r">
           {/* 헤더 */}
           <div
+            role="row"
             className="text-muted-foreground flex items-end border-b text-xs"
             style={{ height: HEAD_H }}
           >
             {LEFT_COLS.map((c) => (
               <div
                 key={c.key}
+                role="columnheader"
                 className={cn(
                   "px-3 pb-2 font-medium",
                   c.width,
@@ -176,6 +178,7 @@ export function ProjectTable({
             return (
               <div
                 key={item.id}
+                role="row"
                 className="hover:bg-muted/50 flex items-center border-b transition-colors last:border-b-0"
                 style={{ height: ROW_H }}
               >
@@ -275,12 +278,21 @@ export function ProjectTable({
               return (
                 <div
                   key={item.id}
+                  role="img"
+                  aria-label={
+                    hasBar
+                      ? `${item.name} 일정 ${item.start_date ?? "?"} ~ ${item.end_date ?? "?"}`
+                      : `${item.name} 일정 미정`
+                  }
                   className="relative border-b last:border-b-0"
                   style={{ height: ROW_H }}
                   title={`${item.start_date ?? "?"} ~ ${item.end_date ?? "?"}`}
                 >
                   {/* 월 구분선 */}
-                  <div className="pointer-events-none absolute inset-0 flex">
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 flex"
+                  >
                     {months.map((mo) => (
                       <div
                         key={mo.abs}
@@ -352,6 +364,7 @@ function Cell({
 }) {
   return (
     <div
+      role="cell"
       className={cn(
         "px-3",
         col,
