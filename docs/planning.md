@@ -188,6 +188,13 @@ AX추진실에서 진행 중인 AX 과제들의 진행현황을 한눈에 보고
 - 본부는 *예외* — 사전 정의된 6개(+추후 전사)만 사용, 즉석 추가 불가.
 - 미래에 권한 분화 시 admin만 즉석 추가 가능하도록 정책 변경 (현재 단일 역할이라 무관).
 
+**D-030. 투자 유형(investment_type) 도입 + CAPEX 항목별 자동 집계**
+- 신규 enum `investment_type`: `ai`(AI) / `dt`(DT) / `it`(IT) / `security`(보안) / `infra`(인프라).
+- `projects.investment_type` **필수**(NOT NULL) 컬럼. 과제당 단일 값(MPRS와 동일 패턴). 기존 행은 `ai`로 백필 (마이그레이션 015).
+- 투자비 현황의 "CAPEX 항목별 계획 대비 집행"은 더 이상 수동 테이블(`capex_items`)을 쓰지 않고, **과제 투자 유형별 자동 집계**(계획=Σtotal_budget, 집행=Σexecuted_budget)로 산출 → 과제 데이터와 항상 일치. `capex_items` 테이블 폐기(DROP, 015).
+- 집계 순수함수 `capexByInvestmentType` (domain/investment.ts) — 5개 유형 항상 표시(0 포함).
+- 마이그레이션: 015(스키마/백필/DROP), 016(dev 샘플 유형 배정, 과제명 매칭 prod-safe).
+
 ### 🟡 논의 중 / 미정
 
 - 사용자 권한 모델 (RBAC) — 다음 단계

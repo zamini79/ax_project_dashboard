@@ -16,11 +16,21 @@ import {
 
 export type FormActionResult = { error: string } | void;
 
+/**
+ * 편집 진입 시 ?from= 으로 넘어온 복귀 경로를 검증한다.
+ * 오픈 리다이렉트 방지: 같은 사이트 내부 경로("/...")만 허용, "//"(프로토콜-상대)는 차단.
+ */
+function safeReturnTo(from: string | undefined, fallback: string): string {
+  if (from && from.startsWith("/") && !from.startsWith("//")) return from;
+  return fallback;
+}
+
 function toWriteInput(v: ProjectFormValues): ProjectWriteInput {
   return {
     name: v.name,
     description: v.description?.trim() ? v.description.trim() : null,
     mprs: v.mprs,
+    investmentType: v.investmentType,
     headquarterId: v.headquarterId,
     lifecycle: v.lifecycle,
     health: v.health,
@@ -55,10 +65,11 @@ export async function createProjectAction(
   redirect(`/projects/${id}`);
 }
 
-/** 과제 수정 → 성공 시 상세로 이동 */
+/** 과제 수정 → 성공 시 편집 진입 출처(returnTo)로 복귀, 없으면 상세로 이동 */
 export async function updateProjectAction(
   id: string,
   values: ProjectFormValues,
+  returnTo?: string,
 ): Promise<FormActionResult> {
   const parsed = projectFormSchema.safeParse(values);
   if (!parsed.success) {
@@ -72,6 +83,7 @@ export async function updateProjectAction(
   }
 
   revalidatePath("/");
+  revalidatePath("/projects");
   revalidatePath(`/projects/${id}`);
-  redirect(`/projects/${id}`);
+  redirect(safeReturnTo(returnTo, `/projects/${id}`));
 }

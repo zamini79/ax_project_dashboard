@@ -1,11 +1,17 @@
 import Link from "next/link";
 
-import { fetchProjectList } from "@/lib/repositories/projects";
-import { fetchMonthlyExecution, fetchCapexItems } from "@/lib/repositories/budget";
+import {
+  fetchProjectList,
+  fetchProjectDetail,
+} from "@/lib/repositories/projects";
+import { fetchEffectForProject } from "@/lib/repositories/effects";
+import { fetchMonthlyExecution } from "@/lib/repositories/budget";
+import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import { Card } from "@/components/ui/card";
 import { MiniBars, Bar } from "@/components/charts/charts";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
+import { capexByInvestmentType, INVESTMENT_LABEL } from "@/lib/domain/investment";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +19,27 @@ const ACCENT = "var(--primary)";
 const GREEN = "var(--health-green)";
 const YELLOW = "var(--health-yellow)";
 
-export default async function BudgetPage() {
-  const [projects, monthly, capex] = await Promise.all([
+type SearchParams = Promise<{ detail?: string }>;
+
+export default async function BudgetPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const sp = await searchParams;
+  const [projects, monthly] = await Promise.all([
     fetchProjectList(),
     fetchMonthlyExecution(),
-    fetchCapexItems(),
   ]);
+
+  // 상세 드로어 (?detail=<id>) — 투자비 현황 위에 그대로 띄움
+  const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
+  const detailEffect = detail ? await fetchEffectForProject(detail.id) : null;
+  const now = new Date();
+  const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  // CAPEX 항목별 = 과제 투자 유형별 자동 집계 (D-030)
+  const capex = capexByInvestmentType(projects);
 
   const planTotal = capex.reduce((a, c) => a + c.plan_won, 0);
   const execTotal = capex.reduce((a, c) => a + c.exec_won, 0);
@@ -37,7 +58,7 @@ export default async function BudgetPage() {
     <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-4 px-6 py-5">
       <div>
         <h1 className="text-xl font-extrabold tracking-tight">투자비 현황</h1>
-        <p className="text-muted-foreground mt-0.5 text-[12.5px]">
+        <p className="text-muted-foreground mt-0.5 text-[12px]">
           전체 CAPEX 규모와 항목별·과제별 계획 대비 집행 현황
         </p>
       </div>
@@ -65,22 +86,18 @@ export default async function BudgetPage() {
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.2fr_1fr]">
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[13px] font-bold">CAPEX 항목별 계획 대비 집행</h2>
-            <span className="text-faint text-[11px]">막대 = 계획 · 채움 = 집행</span>
+            <h2 className="text-[15px] font-bold">CAPEX 항목별 계획 대비 집행</h2>
+            <span className="text-faint text-[12px]">막대 = 계획 · 채움 = 집행</span>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3.5">
             {capex.map((c) => {
               const cRate = c.plan_won > 0 ? Math.round((c.exec_won / c.plan_won) * 100) : 0;
               return (
-                <div key={c.id}>
-                  <div className="mb-1.5 flex items-baseline justify-between">
-                    <span className="text-[12.5px] font-semibold">{c.category}</span>
-                    <span className="text-muted-foreground text-[11.5px] tabular-nums">
-                      {formatBudgetEok(c.exec_won)} / {formatBudgetEok(c.plan_won)}{" "}
-                      <b className="text-foreground">({cRate}%)</b>
-                    </span>
-                  </div>
-                  <div className="relative h-3 w-full">
+                <div key={c.type} className="flex items-center gap-3">
+                  <span className="w-14 shrink-0 text-[14px] font-semibold">
+                    {c.label}
+                  </span>
+                  <div className="relative h-3 flex-1">
                     <div
                       className="absolute left-0 top-0 h-3 rounded-full"
                       style={{ width: `${(c.plan_won / maxPlan) * 100}%`, background: "#EEF0F3" }}
@@ -90,6 +107,10 @@ export default async function BudgetPage() {
                       style={{ width: `${(c.exec_won / maxPlan) * 100}%`, background: ACCENT }}
                     />
                   </div>
+                  <span className="text-muted-foreground w-[150px] shrink-0 text-right text-[12px] tabular-nums">
+                    {formatBudgetEok(c.exec_won)} / {formatBudgetEok(c.plan_won)}{" "}
+                    <b className="text-foreground">({cRate}%)</b>
+                  </span>
                 </div>
               );
             })}
@@ -98,43 +119,49 @@ export default async function BudgetPage() {
 
         <Card className="flex flex-col p-4">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-[13px] font-bold">월별 집행 추이</h2>
-            <span className="text-faint text-[11px]">단위: 억</span>
+            <h2 className="text-[15px] font-bold">월별 집행 추이</h2>
+            <span className="text-faint text-[12px]">단위: 억</span>
           </div>
-          <div className="text-[28px] font-extrabold tabular-nums">
-            {formatBudgetEok(cumulative)}{" "}
-            <span className="text-muted-foreground text-[13px] font-semibold">
-              누적
-            </span>
-          </div>
-          <div className="mt-3.5 flex flex-1 items-end overflow-x-auto">
-            <MiniBars
-              data={monthlyBars}
-              height={120}
-              barW={28}
-              gap={12}
-              accentLast={ACCENT}
-              ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(cumulative)}`}
-            />
+          <div className="mt-2 flex flex-1 items-end gap-5">
+            <div className="shrink-0">
+              <div className="text-[28px] font-extrabold leading-none tabular-nums">
+                {formatBudgetEok(cumulative)}
+              </div>
+              <div className="text-muted-foreground mt-1.5 text-[12px] font-semibold">
+                누적
+              </div>
+            </div>
+            <div className="flex flex-1 items-end justify-end overflow-x-auto">
+              <MiniBars
+                data={monthlyBars}
+                height={120}
+                barW={28}
+                gap={12}
+                accentLast={ACCENT}
+                ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(cumulative)}`}
+              />
+            </div>
           </div>
         </Card>
       </div>
 
       {/* 과제별 계획 대비 집행 */}
       <Card className="overflow-hidden p-0">
-        <div className="border-b px-4 py-3 text-[13px] font-bold">
+        <div className="border-b px-4 py-3 text-[15px] font-bold">
           과제별 계획 대비 집행{" "}
           <span className="text-muted-foreground font-medium">
             {byBudget.length}건
           </span>
         </div>
-        <div className="text-muted-foreground flex h-9 items-center border-b bg-[#FAFAFB] px-4 text-[11px] font-semibold">
-          <div className="w-[88px] shrink-0">MPRS</div>
-          <div className="min-w-0 flex-1">과제명</div>
-          <div className="w-[130px] shrink-0">본부</div>
-          <div className="w-[72px] shrink-0 text-right">계획</div>
-          <div className="w-[72px] shrink-0 text-right">집행</div>
-          <div className="w-[160px] shrink-0 pl-4">집행률</div>
+        <div className="text-muted-foreground flex h-9 items-center border-b bg-[#FAFAFB] px-4 text-[13px] font-semibold">
+          <div className="w-[87px] shrink-0 text-center">순번</div>
+          <div className="w-[135px] shrink-0 text-center">MPRS</div>
+          <div className="w-[111px] shrink-0 text-center">투자유형</div>
+          <div className="min-w-0 flex-1 text-center">과제명</div>
+          <div className="w-[177px] shrink-0 text-center">본부</div>
+          <div className="w-[119px] shrink-0 text-center">계획</div>
+          <div className="w-[119px] shrink-0 text-center">집행</div>
+          <div className="w-[207px] shrink-0 text-center">집행률</div>
         </div>
         {byBudget.map((p, i) => {
           const r =
@@ -146,32 +173,40 @@ export default async function BudgetPage() {
           return (
             <Link
               key={p.id}
-              href={`/projects?detail=${p.id}`}
-              className={`hover:bg-muted/50 flex h-[42px] items-center px-4 text-[12.5px] transition-colors ${i === byBudget.length - 1 ? "" : "border-b"}`}
+              href={`/budget?detail=${p.id}`}
+              className={`hover:bg-muted/50 flex h-[42px] items-center px-4 text-[14px] transition-colors ${i === byBudget.length - 1 ? "" : "border-b"}`}
             >
-              <div className="w-[88px] shrink-0">
+              <div className="text-muted-foreground w-[87px] shrink-0 text-center tabular-nums">
+                {i + 1}
+              </div>
+              <div className="w-[135px] shrink-0 text-center">
                 <span
-                  className="rounded px-1.5 py-0.5 text-[10.5px] font-bold"
+                  className="rounded px-1.5 py-0.5 text-[12px] font-bold"
                   style={{ background: mprs.bg, color: mprs.text }}
                 >
                   {MPRS_LABEL[p.mprs]}
                 </span>
               </div>
-              <div className="min-w-0 flex-1 truncate pr-2 font-semibold">{p.name}</div>
-              <div className="text-muted-foreground w-[130px] shrink-0 truncate text-[11.5px]">
+              <div className="w-[111px] shrink-0 text-center">
+                <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[12px] font-semibold">
+                  {INVESTMENT_LABEL[p.investment_type]}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1 truncate pl-3 pr-2 font-semibold">{p.name}</div>
+              <div className="text-muted-foreground w-[177px] shrink-0 truncate text-center text-[12px]">
                 {p.headquarter_name}
               </div>
-              <div className="w-[72px] shrink-0 text-right tabular-nums">
+              <div className="w-[119px] shrink-0 text-center tabular-nums">
                 {formatBudgetEok(p.total_budget)}
               </div>
-              <div className="w-[72px] shrink-0 text-right font-semibold tabular-nums">
+              <div className="w-[119px] shrink-0 text-center font-semibold tabular-nums">
                 {formatBudgetEok(p.executed_budget)}
               </div>
-              <div className="flex w-[160px] shrink-0 items-center gap-2 pl-4">
+              <div className="flex w-[207px] shrink-0 items-center gap-2 pl-4">
                 <div className="flex-1">
                   <Bar value={r} color={color} height={6} />
                 </div>
-                <span className="text-muted-foreground w-8 text-right text-[11.5px] tabular-nums">
+                <span className="text-muted-foreground w-8 text-right text-[12px] tabular-nums">
                   {r}%
                 </span>
               </div>
@@ -179,6 +214,15 @@ export default async function BudgetPage() {
           );
         })}
       </Card>
+
+      {detail && (
+        <ProjectDetailDrawer
+          detail={detail}
+          effect={detailEffect}
+          closeHref="/budget"
+          todayISO={todayISO}
+        />
+      )}
     </main>
   );
 }
@@ -198,7 +242,7 @@ function StatCard({
 }) {
   return (
     <Card className="p-4">
-      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="text-muted-foreground text-[13px]">{label}</p>
       <p
         className="mt-1 text-2xl font-extrabold tabular-nums"
         style={valueColor ? { color: valueColor } : undefined}

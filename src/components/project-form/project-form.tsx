@@ -11,10 +11,12 @@ import {
   projectFormSchema,
   type ProjectFormValues,
   MPRS_VALUES,
+  INVESTMENT_VALUES,
   LIFECYCLE_VALUES,
   HEALTH_VALUES,
 } from "@/lib/domain/project-form";
 import { MPRS_LABEL } from "@/lib/domain/mprs";
+import { INVESTMENT_LABEL } from "@/lib/domain/investment";
 import { LIFECYCLE_LABEL, HEALTH_LABEL } from "@/lib/domain/lifecycle";
 import type { MasterOption, PersonOption } from "@/lib/repositories/masters";
 import {
@@ -35,6 +37,7 @@ export function ProjectForm({
   people,
   departments,
   aiTechs,
+  returnTo,
 }: {
   mode: "create" | "edit";
   projectId?: string;
@@ -43,6 +46,8 @@ export function ProjectForm({
   people: PersonOption[];
   departments: MasterOption[];
   aiTechs: MasterOption[];
+  /** 편집 진입 출처 — 저장/취소 시 이곳으로 복귀 (목록·드로어·상세) */
+  returnTo?: string;
 }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string>();
@@ -62,7 +67,7 @@ export function ProjectForm({
     const result =
       mode === "create"
         ? await createProjectAction(values)
-        : await updateProjectAction(projectId!, values);
+        : await updateProjectAction(projectId!, values, returnTo);
     if (result?.error) setServerError(result.error);
   }
 
@@ -93,6 +98,15 @@ export function ProjectForm({
               {MPRS_VALUES.map((m) => (
                 <option key={m} value={m}>
                   {MPRS_LABEL[m]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="투자 유형" required error={errors.investmentType?.message}>
+            <select className={inputClass} {...register("investmentType")}>
+              {INVESTMENT_VALUES.map((t) => (
+                <option key={t} value={t}>
+                  {INVESTMENT_LABEL[t]}
                 </option>
               ))}
             </select>
@@ -240,7 +254,7 @@ export function ProjectForm({
       <div className="flex justify-end gap-2.5">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => (returnTo ? router.push(returnTo) : router.back())}
           disabled={isSubmitting}
           className="border-border-strong text-muted-foreground hover:bg-muted rounded-[10px] border px-[18px] py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-50"
         >

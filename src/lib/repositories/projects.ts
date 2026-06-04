@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Lifecycle, Health } from "@/lib/domain/lifecycle";
 import type { Mprs } from "@/lib/domain/mprs";
+import type { InvestmentType } from "@/lib/domain/investment";
 import type { Enums } from "@/lib/supabase/types";
 
 export type UpdateSource = Enums<"update_source">;
@@ -17,6 +18,7 @@ export interface ProjectListItem {
   id: string;
   name: string;
   mprs: Mprs;
+  investment_type: InvestmentType;
   lifecycle: Lifecycle;
   health: Health;
   progress_pct: number;
@@ -42,6 +44,7 @@ interface RawProjectRow {
   id: string;
   name: string;
   mprs: Mprs;
+  investment_type: InvestmentType;
   lifecycle: Lifecycle;
   health: Health;
   progress_pct: number;
@@ -60,7 +63,7 @@ interface RawProjectRow {
 }
 
 const PROJECT_SELECT = `
-  id, name, mprs, lifecycle, health, progress_pct,
+  id, name, mprs, investment_type, lifecycle, health, progress_pct,
   start_date, end_date, total_budget, fte, headquarter_id,
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
@@ -114,6 +117,7 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     id: row.id,
     name: row.name,
     mprs: row.mprs,
+    investment_type: row.investment_type,
     lifecycle: row.lifecycle,
     health: row.health,
     progress_pct: row.progress_pct,
@@ -175,6 +179,7 @@ export interface ProjectDetail {
   name: string;
   description: string | null;
   mprs: Mprs;
+  investment_type: InvestmentType;
   lifecycle: Lifecycle;
   health: Health;
   progress_pct: number;
@@ -198,6 +203,7 @@ interface RawDetailRow {
   name: string;
   description: string | null;
   mprs: Mprs;
+  investment_type: InvestmentType;
   lifecycle: Lifecycle;
   health: Health;
   progress_pct: number;
@@ -236,7 +242,7 @@ interface RawDetailRow {
 }
 
 const DETAIL_SELECT = `
-  id, name, description, mprs, lifecycle, health, progress_pct,
+  id, name, description, mprs, investment_type, lifecycle, health, progress_pct,
   start_date, end_date, total_budget, fte, last_synced_at,
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
@@ -326,6 +332,7 @@ export async function fetchProjectDetail(
     name: data.name,
     description: data.description,
     mprs: data.mprs,
+    investment_type: data.investment_type,
     lifecycle: data.lifecycle,
     health: data.health,
     progress_pct: data.progress_pct,
@@ -353,6 +360,7 @@ export interface ProjectWriteInput {
   name: string;
   description: string | null;
   mprs: Mprs;
+  investmentType: InvestmentType;
   headquarterId: string;
   lifecycle: Lifecycle;
   health: Health;
@@ -371,6 +379,7 @@ export interface ProjectEditData {
   name: string;
   description: string | null;
   mprs: Mprs;
+  investment_type: InvestmentType;
   headquarter_id: string;
   lifecycle: Lifecycle;
   health: Health;
@@ -391,6 +400,7 @@ function scalarColumns(input: ProjectWriteInput) {
     name: input.name,
     description: input.description,
     mprs: input.mprs,
+    investment_type: input.investmentType,
     headquarter_id: input.headquarterId,
     lifecycle: input.lifecycle,
     health: input.health,
@@ -504,6 +514,7 @@ interface RawEditRow {
   name: string;
   description: string | null;
   mprs: Mprs;
+  investment_type: InvestmentType;
   headquarter_id: string;
   lifecycle: Lifecycle;
   health: Health;
@@ -528,7 +539,7 @@ export async function fetchProjectEditData(
     .from("projects")
     .select(
       `
-      id, name, description, mprs, headquarter_id, lifecycle, health,
+      id, name, description, mprs, investment_type, headquarter_id, lifecycle, health,
       start_date, end_date, total_budget, fte, progress_pct,
       project_pms ( person_id ),
       project_stakeholders ( department_id ),
@@ -549,6 +560,7 @@ export async function fetchProjectEditData(
     name: data.name,
     description: data.description,
     mprs: data.mprs,
+    investment_type: data.investment_type,
     headquarter_id: data.headquarter_id,
     lifecycle: data.lifecycle,
     health: data.health,

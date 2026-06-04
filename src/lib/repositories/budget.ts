@@ -28,22 +28,3 @@ export async function fetchMonthlyExecution(): Promise<MonthlyExecution[]> {
     .map(([year_month, amount]) => ({ year_month, amount }))
     .sort((a, b) => (a.year_month < b.year_month ? -1 : 1));
 }
-
-export interface CapexItem {
-  id: string;
-  category: string;
-  plan_won: number;
-  exec_won: number;
-  sort: number;
-}
-
-/** CAPEX 항목별 계획/집행 (sort 순) */
-export async function fetchCapexItems(): Promise<CapexItem[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("capex_items")
-    .select("id, category, plan_won, exec_won, sort")
-    .order("sort", { ascending: true });
-  if (error) throw new Error(`CAPEX 항목 조회 실패: ${error.message}`);
-  return data ?? [];
-}

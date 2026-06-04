@@ -54,30 +54,6 @@ export type Database = {
         }
         Relationships: []
       }
-      capex_items: {
-        Row: {
-          category: string
-          exec_won: number
-          id: string
-          plan_won: number
-          sort: number
-        }
-        Insert: {
-          category: string
-          exec_won?: number
-          id?: string
-          plan_won?: number
-          sort?: number
-        }
-        Update: {
-          category?: string
-          exec_won?: number
-          id?: string
-          plan_won?: number
-          sort?: number
-        }
-        Relationships: []
-      }
       confluence_classification_rules: {
         Row: {
           assigned_role: Database["public"]["Enums"]["confluence_page_role"]
@@ -555,6 +531,7 @@ export type Database = {
           headquarter_id: string
           health: Database["public"]["Enums"]["project_health"]
           id: string
+          investment_type: Database["public"]["Enums"]["investment_type"]
           is_archived: boolean
           last_synced_at: string | null
           lifecycle: Database["public"]["Enums"]["project_lifecycle"]
@@ -573,6 +550,7 @@ export type Database = {
           headquarter_id: string
           health?: Database["public"]["Enums"]["project_health"]
           id?: string
+          investment_type: Database["public"]["Enums"]["investment_type"]
           is_archived?: boolean
           last_synced_at?: string | null
           lifecycle?: Database["public"]["Enums"]["project_lifecycle"]
@@ -591,6 +569,7 @@ export type Database = {
           headquarter_id?: string
           health?: Database["public"]["Enums"]["project_health"]
           id?: string
+          investment_type?: Database["public"]["Enums"]["investment_type"]
           is_archived?: boolean
           last_synced_at?: string | null
           lifecycle?: Database["public"]["Enums"]["project_lifecycle"]
@@ -626,6 +605,7 @@ export type Database = {
         | "issue"
         | "meeting_note"
         | "other"
+      investment_type: "ai" | "dt" | "it" | "security" | "infra"
       mprs_category: "marketing" | "production" | "research" | "support"
       project_health: "green" | "yellow" | "red"
       project_lifecycle:
@@ -774,6 +754,7 @@ export const Constants = {
         "meeting_note",
         "other",
       ],
+      investment_type: ["ai", "dt", "it", "security", "infra"],
       mprs_category: ["marketing", "production", "research", "support"],
       project_health: ["green", "yellow", "red"],
       project_lifecycle: [

@@ -16,9 +16,17 @@ import { ProjectForm } from "@/components/project-form/project-form";
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ id: string }>;
+type SearchParams = Promise<{ from?: string }>;
 
-export default async function EditProjectPage({ params }: { params: Params }) {
+export default async function EditProjectPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   const { id } = await params;
+  const { from } = await searchParams;
 
   const [edit, headquarters, departments, people, aiTechs] = await Promise.all([
     fetchProjectEditData(id),
@@ -34,6 +42,7 @@ export default async function EditProjectPage({ params }: { params: Params }) {
     name: edit.name,
     description: edit.description ?? "",
     mprs: edit.mprs,
+    investmentType: edit.investment_type,
     headquarterId: edit.headquarter_id,
     lifecycle: edit.lifecycle,
     health: edit.health,
@@ -79,6 +88,7 @@ export default async function EditProjectPage({ params }: { params: Params }) {
           departments={departments}
           people={people}
           aiTechs={aiTechs}
+          returnTo={from}
         />
       </main>
     </div>

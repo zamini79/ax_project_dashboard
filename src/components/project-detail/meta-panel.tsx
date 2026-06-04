@@ -3,6 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import type { ProjectDetail } from "@/lib/repositories/projects";
 import { HEALTH_LABEL, HEALTH_COLOR_VAR } from "@/lib/domain/lifecycle";
+import { INVESTMENT_LABEL } from "@/lib/domain/investment";
 import { PAGE_ROLE_LABEL } from "@/lib/domain/updates";
 import {
   formatBudgetEok,
@@ -42,6 +43,11 @@ export function MetaPanel({ project }: { project: ProjectDetail }) {
       <Card className="flex flex-col gap-3 p-4">
         {/* 주관 본부 */}
         <Row label="주관 본부">{project.headquarter_name}</Row>
+
+        {/* 투자 유형 */}
+        <Row label="투자 유형">
+          {INVESTMENT_LABEL[project.investment_type]}
+        </Row>
 
         {/* 일정 */}
         <Row label="일정">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { X, Sparkles } from "lucide-react";
 
@@ -11,6 +11,7 @@ import { UpdateCompose } from "@/components/project-detail/update-compose";
 import type { ProjectDetail } from "@/lib/repositories/projects";
 import type { ProjectEffect } from "@/lib/repositories/effects";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
+import { INVESTMENT_LABEL } from "@/lib/domain/investment";
 import {
   LIFECYCLE_LABEL,
   HEALTH_LABEL,
@@ -39,6 +40,13 @@ export function ProjectDetailDrawer({
   todayISO: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // 편집 후 이 드로어(현재 필터 포함)로 정확히 복귀시키기 위한 출처 URL
+  const qs = searchParams.toString();
+  const editHref = `/projects/${p.id}/edit?from=${encodeURIComponent(
+    qs ? `${pathname}?${qs}` : pathname,
+  )}`;
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState(false);
 
@@ -122,7 +130,7 @@ export function ProjectDetailDrawer({
             </div>
             <div className="flex items-center gap-1.5">
               <Link
-                href={`/projects/${p.id}/edit`}
+                href={editHref}
                 className="bg-card hover:bg-muted flex h-[30px] items-center rounded-lg border px-3 text-[12.5px] font-semibold transition-colors"
               >
                 편집
@@ -156,6 +164,9 @@ export function ProjectDetailDrawer({
           <Card>
             <div className="grid grid-cols-2 gap-4">
               <Field label="주관 본부">{p.headquarter_name}</Field>
+              <Field label="투자 유형">
+                {INVESTMENT_LABEL[p.investment_type]}
+              </Field>
               <Field label="일정">
                 {formatYearMonth(p.start_date)} ~ {formatYearMonth(p.end_date)}
               </Field>

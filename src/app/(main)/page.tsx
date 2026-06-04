@@ -18,6 +18,10 @@ import {
   LIFECYCLE_LABEL,
 } from "@/lib/domain/lifecycle";
 import { Donut, MiniBars, Bar, HealthDot } from "@/components/charts/charts";
+import {
+  ProjectExplorer,
+  type ExplorerSearchParams,
+} from "@/components/dashboard/project-explorer";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +33,12 @@ const FAINT = "var(--faint)";
 // 단계 도넛 색: 진행전/검토중/진행중/완료
 const DONUT_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A"];
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<ExplorerSearchParams>;
+}) {
+  const sp = await searchParams;
   const now = new Date();
   const [projects, headquarters, monthly, effects] = await Promise.all([
     fetchProjectList(),
@@ -63,20 +72,20 @@ export default async function DashboardPage() {
           display: "grid",
           gap: 14,
           gridTemplateColumns: "repeat(4, 1fr)",
-          gridAutoRows: "172px",
+          gridTemplateRows: "210px 188px 196px",
           gridTemplateAreas:
-            '"hero hero donut week" "hero hero risk risk" "mprs mprs trend trend" "perf perf trend trend"',
+            '"hero hero donut week" "risk risk mprs mprs" "trend trend perf perf"',
         }}
       >
         {/* HERO */}
         <Tile area="hero" dark pad={24}>
-          <Cap light>포트폴리오 현황 · {asOf} 기준</Cap>
+          <Cap light>과제 진행 현황 · {asOf} 기준</Cap>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "18px 8px",
-              margin: "4px 0 18px",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "8px 16px",
+              margin: "2px 0 16px",
             }}
           >
             {[
@@ -233,22 +242,35 @@ export default async function DashboardPage() {
           </div>
         </Tile>
 
-        {/* 월별 추이 */}
+        {/* 월별 추이 — 누적 집행(좌) · 막대(우) */}
         <Tile area="trend" style={{ display: "flex", flexDirection: "column" }}>
           <Cap>월별 집행 추이 · 단위 억</Cap>
-          <div style={{ fontSize: 30, fontWeight: 800 }}>
-            {formatBudgetEok(kpis.budgetTotal.executed)}{" "}
-            <span style={{ fontSize: 13, fontWeight: 600, color: SUB }}>누적 집행</span>
-          </div>
-          <div style={{ flex: 1, display: "flex", alignItems: "flex-end", marginTop: 10 }}>
-            <MiniBars
-              data={monthlyBars}
-              height={146}
-              barW={32}
-              gap={14}
-              accentLast={ACCENT}
-              ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(kpis.budgetTotal.executed)}`}
-            />
+          <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 24 }}>
+            <div style={{ flexShrink: 0 }}>
+              <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1 }}>
+                {formatBudgetEok(kpis.budgetTotal.executed)}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: SUB, marginTop: 7 }}>
+                누적 집행
+              </div>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "flex-end",
+              }}
+            >
+              <MiniBars
+                data={monthlyBars}
+                height={112}
+                barW={28}
+                gap={12}
+                accentLast={ACCENT}
+                ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(kpis.budgetTotal.executed)}`}
+              />
+            </div>
           </div>
         </Tile>
 
@@ -274,6 +296,17 @@ export default async function DashboardPage() {
             ))}
           </div>
         </Tile>
+      </div>
+
+      {/* 과제 목록 (과제 현황 탭과 동일 — KPI 드릴다운·필터·표/맵·드로어 포함) */}
+      <div style={{ marginTop: 22 }}>
+        <ProjectExplorer
+          sp={sp}
+          base="/"
+          heading="과제 목록"
+          showKpis={false}
+          showSummary={false}
+        />
       </div>
     </main>
   );

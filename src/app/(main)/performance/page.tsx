@@ -9,8 +9,13 @@ import {
   Clock,
 } from "lucide-react";
 
-import { fetchProjectEffects } from "@/lib/repositories/effects";
+import {
+  fetchProjectEffects,
+  fetchEffectForProject,
+} from "@/lib/repositories/effects";
+import { fetchProjectDetail } from "@/lib/repositories/projects";
 import { effectsSummary } from "@/lib/domain/analytics";
+import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import { Card } from "@/components/ui/card";
 import { Bar } from "@/components/charts/charts";
 import { formatBudgetEok } from "@/lib/domain/format";
@@ -27,9 +32,22 @@ const metricStyle: Record<string, { color: string; Icon: typeof Target }> = {
   target: { color: CYAN, Icon: Target },
 };
 
-export default async function PerformancePage() {
+type SearchParams = Promise<{ detail?: string }>;
+
+export default async function PerformancePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const sp = await searchParams;
   const effects = await fetchProjectEffects();
   const s = effectsSummary(effects);
+
+  // 상세 드로어 (?detail=<id>) — 성과 현황 위에 그대로 띄움
+  const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
+  const detailEffect = detail ? await fetchEffectForProject(detail.id) : null;
+  const now = new Date();
+  const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const recoverPct =
     s.investAppliedWon > 0
       ? Math.round((s.totalSaveCostWon / s.investAppliedWon) * 100)
@@ -87,7 +105,7 @@ export default async function PerformancePage() {
             {s.items.map((e) => {
               const mprs = MPRS_COLORS[e.mprs];
               return (
-                <Link key={e.id} href={`/projects?detail=${e.projectId}`}>
+                <Link key={e.id} href={`/performance?detail=${e.projectId}`}>
                   <Card className="p-hovercard p-[18px]">
                     <div className="mb-2.5 flex items-center gap-2">
                       <span
@@ -220,6 +238,15 @@ export default async function PerformancePage() {
           </div>
         </Card>
       </div>
+
+      {detail && (
+        <ProjectDetailDrawer
+          detail={detail}
+          effect={detailEffect}
+          closeHref="/performance"
+          todayISO={todayISO}
+        />
+      )}
     </main>
   );
 }

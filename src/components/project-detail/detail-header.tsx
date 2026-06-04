@@ -41,7 +41,7 @@ export function DetailHeader({ project }: { project: ProjectDetail }) {
         </div>
 
         <Link
-          href={`/projects/${project.id}/edit`}
+          href={`/projects/${project.id}/edit?from=${encodeURIComponent(`/projects/${project.id}`)}`}
           className="bg-primary text-primary-foreground shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-90"
         >
           편집

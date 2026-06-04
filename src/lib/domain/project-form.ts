@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { MPRS_ORDER } from "@/lib/domain/mprs";
 import { LIFECYCLE_KPI_ORDER } from "@/lib/domain/lifecycle";
+import { INVESTMENT_ORDER } from "@/lib/domain/investment";
 
 /**
  * 과제 생성/편집 폼 스키마 (클라이언트 RHF + 서버 액션 공용).
@@ -12,6 +13,7 @@ const EOK = 100_000_000;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const MPRS_VALUES = MPRS_ORDER;
+export const INVESTMENT_VALUES = INVESTMENT_ORDER;
 export const LIFECYCLE_VALUES = LIFECYCLE_KPI_ORDER;
 export const HEALTH_VALUES = ["green", "yellow", "red"] as const;
 
@@ -33,6 +35,9 @@ export const projectFormSchema = z
     name: z.string().trim().min(1, "과제명을 입력하세요.").max(200),
     description: z.string().trim().max(2000).optional().or(z.literal("")),
     mprs: z.enum(MPRS_VALUES, { message: "분류를 선택하세요." }),
+    investmentType: z.enum(INVESTMENT_VALUES, {
+      message: "투자 유형을 선택하세요.",
+    }),
     headquarterId: z.string().uuid("주관 본부를 선택하세요."),
     lifecycle: z.enum(LIFECYCLE_VALUES),
     health: z.enum(HEALTH_VALUES),
@@ -74,6 +79,7 @@ export function emptyFormValues(): ProjectFormValues {
     name: "",
     description: "",
     mprs: "marketing",
+    investmentType: "ai",
     headquarterId: "",
     lifecycle: "not_started",
     health: "green",
