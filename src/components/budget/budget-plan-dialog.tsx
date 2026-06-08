@@ -169,6 +169,28 @@ function Summary({ label, value, color, children }: { label: string; value: stri
 
 const inputCls = "border-border-strong bg-card focus-visible:ring-ring h-[34px] rounded-lg border px-2.5 text-[13px] outline-none focus-visible:ring-2";
 
+/** 원 단위 금액 입력 — 표시는 3자리 콤마, 상태는 숫자 문자열(원). */
+function WonInput({
+  value, onChange, placeholder, className,
+}: {
+  value: string; // 원 숫자 문자열 (콤마 없음)
+  onChange: (raw: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const display = value === "" ? "" : Number(value).toLocaleString("ko-KR");
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={display}
+      onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))}
+      placeholder={placeholder}
+      className={className}
+    />
+  );
+}
+
 /** 구분/본부/MPRS 입력 묶음 */
 function AttrSelects({
   inv, setInv, hq, setHq, mprs, setMprs, headquarterOptions,
@@ -231,7 +253,7 @@ function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOp
       <div className="flex flex-wrap items-center gap-2">
         <AttrSelects inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명 (예: AI 비전검사 사업)" className={cn(inputCls, "min-w-[200px] flex-1")} />
-        <input type="number" step="1" min="0" value={planWon} onChange={(e) => setPlanWon(e.target.value)} placeholder="총투자비(원)" className={cn(inputCls, "w-[160px]")} />
+        <WonInput value={planWon} onChange={setPlanWon} placeholder="총투자비(원)" className={cn(inputCls, "w-[170px] text-right")} />
         <button type="button" onClick={submit} disabled={pending} className="bg-primary text-primary-foreground inline-flex h-[34px] items-center gap-1 rounded-lg px-3 text-[13px] font-bold disabled:opacity-50">
           <Plus size={15} /> 추가
         </button>
@@ -313,7 +335,7 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
         <AttrSelects inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명" className={cn(inputCls, "min-w-[200px] flex-1")} />
         <div className="flex flex-col">
-          <input type="number" step="1" min="0" value={planWon} onChange={(e) => setPlanWon(e.target.value)} placeholder="총투자비(원)" className={cn(inputCls, "w-[160px]")} />
+          <WonInput value={planWon} onChange={setPlanWon} placeholder="총투자비(원)" className={cn(inputCls, "w-[170px] text-right")} />
           {planWon && <span className="text-faint text-[10px]">≈ {eok2(Number(planWon) || 0)}억</span>}
         </div>
       </div>
@@ -346,7 +368,7 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
           {item.monthly.map((m, i) => (
             <div key={m.key} className="flex flex-col gap-0.5">
               <span className="text-faint text-[10px]">{m.label}</span>
-              <input type="number" step="1" min="0" value={monthly[i]} onChange={(e) => setMonthly((arr) => arr.map((v, j) => (j === i ? e.target.value : v)))} className={cn(inputCls, "h-[30px] w-full px-1.5 text-[12px]")} />
+              <WonInput value={monthly[i]} onChange={(raw) => setMonthly((arr) => arr.map((v, j) => (j === i ? raw : v)))} className={cn(inputCls, "h-[30px] w-full px-1.5 text-right text-[12px]")} />
               <span className="text-faint text-right text-[9.5px] tabular-nums">실 {eok2(m.exec)}</span>
             </div>
           ))}
