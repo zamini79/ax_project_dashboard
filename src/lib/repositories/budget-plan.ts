@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import type { InvestmentType } from "@/lib/domain/investment";
+import type { Mprs } from "@/lib/domain/mprs";
 
 /**
  * 투자비 사업계획 저장소 (D-031). ★ Supabase 호출은 repositories/ 에만 (D-014).
@@ -18,6 +20,10 @@ export interface PlanItemRow {
   name: string;
   plan_amount: number;
   sort: number;
+  investment_type: InvestmentType | null;
+  headquarter_id: string | null;
+  headquarter_name: string | null;
+  mprs: Mprs | null;
   projects: PlanItemProject[];
   monthlyPlan: { year_month: string; plan_amount: number }[];
 }
@@ -27,6 +33,10 @@ interface RawPlanItem {
   name: string;
   plan_amount: number;
   sort: number;
+  investment_type: InvestmentType | null;
+  headquarter_id: string | null;
+  mprs: Mprs | null;
+  headquarters: { name: string } | null;
   budget_plan_item_projects: {
     project_id: string;
     projects: {
@@ -38,7 +48,8 @@ interface RawPlanItem {
 }
 
 const PLAN_SELECT = `
-  id, name, plan_amount, sort,
+  id, name, plan_amount, sort, investment_type, headquarter_id, mprs,
+  headquarters ( name ),
   budget_plan_item_projects (
     project_id,
     projects ( name, project_budget_monthly ( year_month, amount ) )
@@ -65,6 +76,10 @@ export async function fetchBudgetPlanItems(
     name: it.name,
     plan_amount: it.plan_amount,
     sort: it.sort,
+    investment_type: it.investment_type,
+    headquarter_id: it.headquarter_id,
+    headquarter_name: it.headquarters?.name ?? null,
+    mprs: it.mprs,
     projects: (it.budget_plan_item_projects ?? [])
       .filter((p) => p.projects != null)
       .map((p) => ({
@@ -82,22 +97,32 @@ export async function fetchBudgetPlanItems(
   }));
 }
 
-export interface PlanItemInput {
-  fiscalYear: number;
+export interface PlanItemAttrs {
   name: string;
   planAmount: number; // 원
+  investmentType: InvestmentType | null;
+  headquarterId: string | null;
+  mprs: Mprs | null;
+}
+
+function attrColumns(a: PlanItemAttrs) {
+  return {
+    name: a.name,
+    plan_amount: a.planAmount,
+    investment_type: a.investmentType,
+    headquarter_id: a.headquarterId,
+    mprs: a.mprs,
+  };
 }
 
 /** 항목 생성 → id 반환 */
-export async function createPlanItem(input: PlanItemInput): Promise<string> {
+export async function createPlanItem(
+  input: PlanItemAttrs & { fiscalYear: number },
+): Promise<string> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("budget_plan_items")
-    .insert({
-      fiscal_year: input.fiscalYear,
-      name: input.name,
-      plan_amount: input.planAmount,
-    })
+    .insert({ fiscal_year: input.fiscalYear, ...attrColumns(input) })
     .select("id")
     .single();
   if (error || !data) {
@@ -106,15 +131,15 @@ export async function createPlanItem(input: PlanItemInput): Promise<string> {
   return data.id;
 }
 
-/** 항목 수정 (이름·연간계획) */
+/** 항목 수정 (속성) */
 export async function updatePlanItem(
   id: string,
-  patch: { name: string; planAmount: number },
+  patch: PlanItemAttrs,
 ): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase
     .from("budget_plan_items")
-    .update({ name: patch.name, plan_amount: patch.planAmount })
+    .update(attrColumns(patch))
     .eq("id", id);
   if (error) throw new Error(`사업계획 항목 수정 실패: ${error.message}`);
 }

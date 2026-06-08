@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   fetchProjectList,
   fetchProjectDetail,
+  fetchHeadquarters,
 } from "@/lib/repositories/projects";
 import { fetchEffectForProject } from "@/lib/repositories/effects";
 import { fetchMonthlyExecution } from "@/lib/repositories/budget";
@@ -32,10 +33,11 @@ export default async function BudgetPage({
   const sp = await searchParams;
   const now = new Date();
   const fiscalYear = now.getFullYear();
-  const [projects, monthly, planRows] = await Promise.all([
+  const [projects, monthly, planRows, headquarters] = await Promise.all([
     fetchProjectList(),
     fetchMonthlyExecution(),
     fetchBudgetPlanItems(fiscalYear),
+    fetchHeadquarters(),
   ]);
 
   // 상세 드로어 (?detail=<id>) — 투자비 현황 위에 그대로 띄움
@@ -76,7 +78,7 @@ export default async function BudgetPage({
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
         {/* 사업계획 (클릭 → 팝업) */}
-        <BudgetPlanCard year={fiscalYear} view={plan} projectOptions={projectOptions} />
+        <BudgetPlanCard year={fiscalYear} view={plan} projectOptions={projectOptions} headquarterOptions={headquarters} />
 
         {/* 집행 누계 = 전체 집행 + 계획/계획외 분해 */}
         <StatCard

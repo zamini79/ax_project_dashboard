@@ -9,6 +9,8 @@ import {
   setItemProjects,
   setItemMonthlyPlan,
 } from "@/lib/repositories/budget-plan";
+import type { InvestmentType } from "@/lib/domain/investment";
+import type { Mprs } from "@/lib/domain/mprs";
 
 /** 사업계획 서버 액션 (D-031). 화면은 억 단위 입력 → 저장은 원 단위. */
 
@@ -17,15 +19,29 @@ const toWon = (eok: number) => Math.round((eok || 0) * EOK);
 
 export type PlanActionResult = { error: string } | { ok: true };
 
+export interface PlanItemForm {
+  name: string;
+  planEok: number;
+  investmentType: InvestmentType | null;
+  headquarterId: string | null;
+  mprs: Mprs | null;
+}
+
+const toAttrs = (f: PlanItemForm) => ({
+  name: f.name.trim(),
+  planAmount: toWon(f.planEok),
+  investmentType: f.investmentType,
+  headquarterId: f.headquarterId,
+  mprs: f.mprs,
+});
+
 export async function createPlanItemAction(
   fiscalYear: number,
-  name: string,
-  planEok: number,
+  form: PlanItemForm,
 ): Promise<PlanActionResult> {
-  const n = name.trim();
-  if (!n) return { error: "항목명을 입력하세요." };
+  if (!form.name.trim()) return { error: "항목명(계획명)을 입력하세요." };
   try {
-    await createPlanItem({ fiscalYear, name: n, planAmount: toWon(planEok) });
+    await createPlanItem({ fiscalYear, ...toAttrs(form) });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "항목 생성 실패" };
   }
@@ -35,13 +51,11 @@ export async function createPlanItemAction(
 
 export async function updatePlanItemAction(
   id: string,
-  name: string,
-  planEok: number,
+  form: PlanItemForm,
 ): Promise<PlanActionResult> {
-  const n = name.trim();
-  if (!n) return { error: "항목명을 입력하세요." };
+  if (!form.name.trim()) return { error: "항목명(계획명)을 입력하세요." };
   try {
-    await updatePlanItem(id, { name: n, planAmount: toWon(planEok) });
+    await updatePlanItem(id, toAttrs(form));
   } catch (e) {
     return { error: e instanceof Error ? e.message : "항목 수정 실패" };
   }

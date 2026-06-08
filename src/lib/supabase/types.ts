@@ -117,7 +117,10 @@ export type Database = {
         Row: {
           created_at: string
           fiscal_year: number
+          headquarter_id: string | null
           id: string
+          investment_type: Database["public"]["Enums"]["investment_type"] | null
+          mprs: Database["public"]["Enums"]["mprs_category"] | null
           name: string
           plan_amount: number
           sort: number
@@ -125,7 +128,12 @@ export type Database = {
         Insert: {
           created_at?: string
           fiscal_year: number
+          headquarter_id?: string | null
           id?: string
+          investment_type?:
+            | Database["public"]["Enums"]["investment_type"]
+            | null
+          mprs?: Database["public"]["Enums"]["mprs_category"] | null
           name: string
           plan_amount?: number
           sort?: number
@@ -133,12 +141,25 @@ export type Database = {
         Update: {
           created_at?: string
           fiscal_year?: number
+          headquarter_id?: string | null
           id?: string
+          investment_type?:
+            | Database["public"]["Enums"]["investment_type"]
+            | null
+          mprs?: Database["public"]["Enums"]["mprs_category"] | null
           name?: string
           plan_amount?: number
           sort?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "budget_plan_items_headquarter_id_fkey"
+            columns: ["headquarter_id"]
+            isOneToOne: false
+            referencedRelation: "headquarters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       confluence_classification_rules: {
         Row: {
