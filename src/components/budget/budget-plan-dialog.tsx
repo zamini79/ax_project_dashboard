@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { X, Plus, Pencil, Trash2, ChevronDown } from "lucide-react";
+import { X, Plus, Pencil, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { formatBudgetEok } from "@/lib/domain/format";
@@ -23,6 +23,7 @@ import {
 const ACCENT = "var(--primary)";
 const EOK = 100_000_000;
 const wonToEok = (won: number) => (won ? Math.round((won / EOK) * 10) / 10 : 0);
+const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 
 export interface Option {
   id: string;
@@ -146,7 +147,7 @@ function PlanDialog({
             )}
           </div>
 
-          <MonthlyTable monthly={view.monthly} />
+          <PlanMatrix view={view} />
         </div>
       </div>
     </div>,
@@ -282,7 +283,6 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
   const [mprs, setMprs] = useState<string>(item.mprs ?? "");
   const [picked, setPicked] = useState<string[]>(item.projectIds);
   const [monthly, setMonthly] = useState<string[]>(item.monthly.map((m) => String(wonToEok(m.plan) || "")));
-  const [showMonthly, setShowMonthly] = useState(false);
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string>();
 
@@ -332,20 +332,19 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
         )}
       </div>
 
-      <div>
-        <button type="button" onClick={() => setShowMonthly((v) => !v)} className="text-muted-foreground flex items-center gap-1 text-[12px] font-semibold">
-          <ChevronDown size={14} className={showMonthly ? "rotate-180" : ""} /> 월별 투자비 계획 (억) — 전년 · 1~12월 · 차년
-        </button>
-        {showMonthly && (
-          <div className="mt-2 grid grid-cols-7 gap-1.5">
-            {item.monthly.map((m, i) => (
-              <div key={m.key} className="flex flex-col gap-0.5">
-                <span className="text-faint text-[10px]">{m.label}</span>
-                <input type="number" step="0.1" min="0" value={monthly[i]} onChange={(e) => setMonthly((arr) => arr.map((v, j) => (j === i ? e.target.value : v)))} className={cn(inputCls, "h-[30px] w-full px-1.5 text-[12px]")} />
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-muted-foreground text-[11px] font-semibold">
+          월별 투자비 계획 (억) — 전년 · 1~12월 · 차년 &nbsp;<span className="text-faint font-normal">실적은 매핑 과제에서 자동(아래 회색)</span>
+        </label>
+        <div className="grid grid-cols-7 gap-1.5">
+          {item.monthly.map((m, i) => (
+            <div key={m.key} className="flex flex-col gap-0.5">
+              <span className="text-faint text-[10px]">{m.label}</span>
+              <input type="number" step="0.1" min="0" value={monthly[i]} onChange={(e) => setMonthly((arr) => arr.map((v, j) => (j === i ? e.target.value : v)))} className={cn(inputCls, "h-[30px] w-full px-1.5 text-[12px]")} />
+              <span className="text-faint text-right text-[9.5px] tabular-nums">실 {m.exec ? wonToEok(m.exec) : "-"}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {err && <p className="text-xs text-red-600">{err}</p>}
@@ -357,30 +356,62 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
   );
 }
 
-function MonthlyTable({ monthly }: { monthly: { key: string; label: string; plan: number; exec: number }[] }) {
-  const has = monthly.some((m) => m.plan > 0 || m.exec > 0);
-  if (!has) return null;
+/** 항목 × 월 스프레드시트 (계획/실적 토글). 행=계획별, 열=전년·1~12월·차년, 합계 포함. */
+function PlanMatrix({ view }: { view: BudgetPlanView }) {
+  const [mode, setMode] = useState<"plan" | "exec">("plan");
+  if (view.items.length === 0) return null;
+
+  const val = (m: { plan: number; exec: number }) => (mode === "plan" ? m.plan : m.exec);
+  const cell = (won: number) => (won ? wonToEok(won) : "-");
+  const colTotals = view.monthly.map((_, ci) => sum(view.items.map((it) => val(it.monthly[ci]))));
+  const grand = sum(colTotals);
+
+  const tab = (m: "plan" | "exec", label: string) => (
+    <button type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
+      className={cn("rounded-md px-3 py-1 transition-colors", mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+      {label}
+    </button>
+  );
+
   return (
-    <div className="overflow-x-auto rounded-xl border">
-      <div className="border-b px-3 py-2.5 text-[13px] font-bold">월별 투자비 계획 vs 집행 (단위: 억)</div>
-      <table className="w-full min-w-[860px] text-[12px] tabular-nums">
-        <thead>
-          <tr className="text-muted-foreground bg-[#FAFAFB]">
-            <th className="px-2 py-1.5 text-left font-semibold">구분</th>
-            {monthly.map((m) => <th key={m.key} className="px-2 py-1.5 text-right font-semibold">{m.label}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-t">
-            <td className="px-2 py-1.5 font-semibold">계획</td>
-            {monthly.map((m) => <td key={m.key} className="px-2 py-1.5 text-right">{m.plan ? wonToEok(m.plan) : "-"}</td>)}
-          </tr>
-          <tr className="border-t">
-            <td className="text-primary px-2 py-1.5 font-semibold">집행</td>
-            {monthly.map((m) => <td key={m.key} className="text-primary px-2 py-1.5 text-right">{m.exec ? wonToEok(m.exec) : "-"}</td>)}
-          </tr>
-        </tbody>
-      </table>
+    <div className="rounded-xl border">
+      <div className="flex items-center justify-between border-b px-3 py-2.5">
+        <span className="text-[13px] font-bold">계획별 월별 {mode === "plan" ? "계획" : "실적"} (단위: 억)</span>
+        <div className="bg-card inline-flex gap-1 rounded-lg border p-0.5 text-[12px] font-semibold">
+          {tab("plan", "계획")}
+          {tab("exec", "실적")}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[960px] text-[12px] tabular-nums">
+          <thead>
+            <tr className="text-muted-foreground bg-[#FAFAFB]">
+              <th className="px-2 py-1.5 text-left font-semibold">계획명</th>
+              {view.monthly.map((m) => <th key={m.key} className="px-2 py-1.5 text-right font-semibold">{m.label}</th>)}
+              <th className="px-2 py-1.5 text-right font-semibold">합계</th>
+            </tr>
+          </thead>
+          <tbody>
+            {view.items.map((it) => {
+              const rowTotal = sum(it.monthly.map(val));
+              return (
+                <tr key={it.id} className="border-t">
+                  <td className="px-2 py-1.5 font-semibold whitespace-nowrap">{it.name}</td>
+                  {it.monthly.map((m) => (
+                    <td key={m.key} className={cn("px-2 py-1.5 text-right", mode === "exec" && "text-primary")}>{cell(val(m))}</td>
+                  ))}
+                  <td className="px-2 py-1.5 text-right font-bold">{cell(rowTotal)}</td>
+                </tr>
+              );
+            })}
+            <tr className="border-t-2 font-bold">
+              <td className="px-2 py-1.5">합계</td>
+              {colTotals.map((t, ci) => <td key={ci} className="px-2 py-1.5 text-right">{cell(t)}</td>)}
+              <td className="px-2 py-1.5 text-right">{cell(grand)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

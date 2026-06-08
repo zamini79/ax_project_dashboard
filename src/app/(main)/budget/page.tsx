@@ -169,10 +169,10 @@ export default async function BudgetPage({
         </Card>
       </div>
 
-      {/* 과제별 계획 대비 집행 */}
+      {/* 과제별 투자비 집행 현황 */}
       <Card className="overflow-hidden p-0">
         <div className="border-b px-4 py-3 text-[15px] font-bold">
-          과제별 계획 대비 집행{" "}
+          과제별 투자비 집행 현황{" "}
           <span className="text-muted-foreground font-medium">
             {byBudget.length}건
           </span>
