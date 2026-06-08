@@ -130,11 +130,11 @@ function PlanDialog({
           <AddItemForm year={year} headquarterOptions={headquarterOptions} />
 
           <div className="overflow-x-auto rounded-xl border">
-            <div className="text-muted-foreground flex h-9 min-w-[820px] items-center border-b bg-[#FAFAFB] px-3 text-[12px] font-semibold">
-              <div className="w-[60px]">구분</div>
-              <div className="w-[110px]">본부</div>
-              <div className="w-[84px]">MPRS</div>
-              <div className="flex-1">계획명 / 매핑 과제</div>
+            <div className="text-muted-foreground flex h-9 min-w-[880px] items-center border-b bg-[#FAFAFB] px-3 text-[12px] font-semibold">
+              <div className="w-[72px] text-center">구분</div>
+              <div className="w-[132px] text-center">본부</div>
+              <div className="w-[101px] text-center">MPRS</div>
+              <div className="flex-1">투자명 / 매핑 과제</div>
               <div className="w-[88px] text-right">총투자비</div>
               <div className="w-[88px] text-right">집행</div>
               <div className="w-[64px] text-right">집행률</div>
@@ -276,10 +276,10 @@ function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemV
 
   return (
     <div className="border-b last:border-b-0">
-      <div className="flex min-w-[820px] items-center px-3 py-2.5 text-[13px]">
-        <div className="text-muted-foreground w-[60px] text-[12px]">{item.investmentType ? INVESTMENT_LABEL[item.investmentType] : "-"}</div>
-        <div className="text-muted-foreground w-[110px] truncate text-[12px]">{item.headquarterName ?? "-"}</div>
-        <div className="text-muted-foreground w-[84px] text-[12px]">{item.mprs ? MPRS_LABEL[item.mprs] : "-"}</div>
+      <div className="flex min-w-[880px] items-center px-3 py-2.5 text-[13px]">
+        <div className="text-muted-foreground w-[72px] text-center text-[12px]">{item.investmentType ? INVESTMENT_LABEL[item.investmentType] : "-"}</div>
+        <div className="text-muted-foreground w-[132px] truncate text-center text-[12px]">{item.headquarterName ?? "-"}</div>
+        <div className="text-muted-foreground w-[101px] text-center text-[12px]">{item.mprs ? MPRS_LABEL[item.mprs] : "-"}</div>
         <div className="min-w-0 flex-1 pr-2">
           <div className="font-semibold">{item.name}</div>
           <div className="text-muted-foreground truncate text-[11.5px]">
@@ -415,7 +415,7 @@ function PlanMatrix({ view }: { view: BudgetPlanView }) {
         <table className="w-full min-w-[960px] text-[12px] tabular-nums">
           <thead>
             <tr className="text-muted-foreground bg-[#FAFAFB]">
-              <th className="px-2 py-1.5 text-left font-semibold">계획명</th>
+              <th className="px-2 py-1.5 text-left font-semibold">투자명</th>
               {view.monthly.map((m) => <th key={m.key} className="px-2 py-1.5 text-right font-semibold">{m.label}</th>)}
               <th className="px-2 py-1.5 text-right font-semibold">합계</th>
             </tr>
