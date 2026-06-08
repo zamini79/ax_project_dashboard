@@ -202,16 +202,16 @@ function AttrSelects({
 }) {
   return (
     <>
-      <select value={inv} onChange={(e) => setInv(e.target.value)} className={cn(inputCls, "w-[110px]")}>
-        <option value="">구분</option>
+      <select value={inv} onChange={(e) => setInv(e.target.value)} className={cn(inputCls, "w-[110px]", !inv && "text-muted-foreground")}>
+        <option value="" disabled hidden>구분</option>
         {INVESTMENT_ORDER.map((t) => <option key={t} value={t}>{INVESTMENT_LABEL[t]}</option>)}
       </select>
-      <select value={hq} onChange={(e) => setHq(e.target.value)} className={cn(inputCls, "w-[150px]")}>
-        <option value="">본부</option>
+      <select value={hq} onChange={(e) => setHq(e.target.value)} className={cn(inputCls, "w-[150px]", !hq && "text-muted-foreground")}>
+        <option value="" disabled hidden>본부</option>
         {headquarterOptions.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
       </select>
-      <select value={mprs} onChange={(e) => setMprs(e.target.value)} className={cn(inputCls, "w-[130px]")}>
-        <option value="">MPRS</option>
+      <select value={mprs} onChange={(e) => setMprs(e.target.value)} className={cn(inputCls, "w-[130px]", !mprs && "text-muted-foreground")}>
+        <option value="" disabled hidden>MPRS</option>
         {MPRS_ORDER.map((m) => <option key={m} value={m}>{MPRS_LABEL[m]}</option>)}
       </select>
     </>
@@ -240,6 +240,7 @@ function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOp
 
   function submit() {
     setErr(undefined);
+    if (!inv || !hq || !mprs) { setErr("구분·본부·MPRS를 모두 선택하세요."); return; }
     start(async () => {
       const r = await createPlanItemAction(year, buildForm(name, planWon, inv, hq, mprs));
       if ("error" in r) { setErr(r.error); return; }
@@ -313,6 +314,7 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
 
   function save() {
     setErr(undefined);
+    if (!inv || !hq || !mprs) { setErr("구분·본부·MPRS를 모두 선택하세요."); return; }
     start(async () => {
       const r1 = await updatePlanItemAction(item.id, buildForm(name, planWon, inv, hq, mprs));
       if ("error" in r1) { setErr(r1.error); return; }
