@@ -6,16 +6,13 @@
 const EOK = 100_000_000; // 1억
 
 /**
- * 원 단위 금액 → "12.3억" 형태 문자열.
- * null/0 처리. 소수 1자리, 정수면 소수점 생략.
+ * 원 단위 금액 → "12.34억" 형태 문자열.
+ * null/0 처리. 억 단위, 소수가 있으면 최대 2자리(불필요한 0 제거).
  */
 export function formatBudgetEok(won: number | null | undefined): string {
   if (won == null || won === 0) return "-";
-  const eok = won / EOK;
-  const str =
-    Number.isInteger(eok) || Math.abs(eok) >= 100
-      ? Math.round(eok).toLocaleString("ko-KR")
-      : eok.toFixed(1);
+  const eok = Math.round((won / EOK) * 100) / 100;
+  const str = eok.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
   return `${str}억`;
 }
 

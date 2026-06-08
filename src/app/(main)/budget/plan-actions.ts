@@ -12,16 +12,13 @@ import {
 import type { InvestmentType } from "@/lib/domain/investment";
 import type { Mprs } from "@/lib/domain/mprs";
 
-/** 사업계획 서버 액션 (D-031). 화면은 억 단위 입력 → 저장은 원 단위. */
-
-const EOK = 100_000_000;
-const toWon = (eok: number) => Math.round((eok || 0) * EOK);
+/** 사업계획 서버 액션 (D-031). 투자비 금액은 원 단위로 입력·저장. */
 
 export type PlanActionResult = { error: string } | { ok: true };
 
 export interface PlanItemForm {
   name: string;
-  planEok: number;
+  planWon: number; // 원
   investmentType: InvestmentType | null;
   headquarterId: string | null;
   mprs: Mprs | null;
@@ -29,7 +26,7 @@ export interface PlanItemForm {
 
 const toAttrs = (f: PlanItemForm) => ({
   name: f.name.trim(),
-  planAmount: toWon(f.planEok),
+  planAmount: Math.round(f.planWon || 0),
   investmentType: f.investmentType,
   headquarterId: f.headquarterId,
   mprs: f.mprs,
@@ -88,12 +85,12 @@ export async function setItemProjectsAction(
 
 export async function setItemMonthlyPlanAction(
   itemId: string,
-  monthly: { year_month: string; eok: number }[],
+  monthly: { year_month: string; won: number }[],
 ): Promise<PlanActionResult> {
   try {
     await setItemMonthlyPlan(
       itemId,
-      monthly.map((m) => ({ year_month: m.year_month, plan_amount: toWon(m.eok) })),
+      monthly.map((m) => ({ year_month: m.year_month, plan_amount: Math.round(m.won || 0) })),
     );
   } catch (e) {
     return { error: e instanceof Error ? e.message : "월별 계획 저장 실패" };

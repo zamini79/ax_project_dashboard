@@ -22,8 +22,10 @@ import {
 
 const ACCENT = "var(--primary)";
 const EOK = 100_000_000;
-const wonToEok = (won: number) => (won ? Math.round((won / EOK) * 10) / 10 : 0);
 const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
+/** 원 → 억 표시(소수 최대 2자리, 0/빈값은 '-') */
+const eok2 = (won: number) =>
+  won ? (Math.round((won / EOK) * 100) / 100).toLocaleString("ko-KR", { maximumFractionDigits: 2 }) : "-";
 
 export interface Option {
   id: string;
@@ -194,10 +196,10 @@ function AttrSelects({
   );
 }
 
-function buildForm(name: string, planEok: string, inv: string, hq: string, mprs: string): PlanItemForm {
+function buildForm(name: string, planWon: string, inv: string, hq: string, mprs: string): PlanItemForm {
   return {
     name,
-    planEok: Number(planEok) || 0,
+    planWon: Number(planWon) || 0,
     investmentType: (inv || null) as InvestmentType | null,
     headquarterId: hq || null,
     mprs: (mprs || null) as Mprs | null,
@@ -207,7 +209,7 @@ function buildForm(name: string, planEok: string, inv: string, hq: string, mprs:
 function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOptions: Option[] }) {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [planEok, setPlanEok] = useState("");
+  const [planWon, setPlanWon] = useState("");
   const [inv, setInv] = useState("");
   const [hq, setHq] = useState("");
   const [mprs, setMprs] = useState("");
@@ -217,9 +219,9 @@ function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOp
   function submit() {
     setErr(undefined);
     start(async () => {
-      const r = await createPlanItemAction(year, buildForm(name, planEok, inv, hq, mprs));
+      const r = await createPlanItemAction(year, buildForm(name, planWon, inv, hq, mprs));
       if ("error" in r) { setErr(r.error); return; }
-      setName(""); setPlanEok(""); setInv(""); setHq(""); setMprs("");
+      setName(""); setPlanWon(""); setInv(""); setHq(""); setMprs("");
       router.refresh();
     });
   }
@@ -229,11 +231,12 @@ function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOp
       <div className="flex flex-wrap items-center gap-2">
         <AttrSelects inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명 (예: AI 비전검사 사업)" className={cn(inputCls, "min-w-[200px] flex-1")} />
-        <input type="number" step="0.1" min="0" value={planEok} onChange={(e) => setPlanEok(e.target.value)} placeholder="총투자비(억)" className={cn(inputCls, "w-[130px]")} />
+        <input type="number" step="1" min="0" value={planWon} onChange={(e) => setPlanWon(e.target.value)} placeholder="총투자비(원)" className={cn(inputCls, "w-[160px]")} />
         <button type="button" onClick={submit} disabled={pending} className="bg-primary text-primary-foreground inline-flex h-[34px] items-center gap-1 rounded-lg px-3 text-[13px] font-bold disabled:opacity-50">
           <Plus size={15} /> 추가
         </button>
       </div>
+      {planWon && <p className="text-faint text-[11px]">총투자비 ≈ {eok2(Number(planWon) || 0)}억</p>}
       {err && <p className="text-xs text-red-600">{err}</p>}
     </div>
   );
@@ -277,23 +280,23 @@ function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemV
 function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item: PlanItemView; projectOptions: Option[]; headquarterOptions: Option[]; onDone: () => void }) {
   const router = useRouter();
   const [name, setName] = useState(item.name);
-  const [planEok, setPlanEok] = useState(String(wonToEok(item.planWon) || ""));
+  const [planWon, setPlanWon] = useState(String(item.planWon || ""));
   const [inv, setInv] = useState<string>(item.investmentType ?? "");
   const [hq, setHq] = useState<string>(item.headquarterId ?? "");
   const [mprs, setMprs] = useState<string>(item.mprs ?? "");
   const [picked, setPicked] = useState<string[]>(item.projectIds);
-  const [monthly, setMonthly] = useState<string[]>(item.monthly.map((m) => String(wonToEok(m.plan) || "")));
+  const [monthly, setMonthly] = useState<string[]>(item.monthly.map((m) => String(m.plan || "")));
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string>();
 
   function save() {
     setErr(undefined);
     start(async () => {
-      const r1 = await updatePlanItemAction(item.id, buildForm(name, planEok, inv, hq, mprs));
+      const r1 = await updatePlanItemAction(item.id, buildForm(name, planWon, inv, hq, mprs));
       if ("error" in r1) { setErr(r1.error); return; }
       const r2 = await setItemProjectsAction(item.id, picked);
       if ("error" in r2) { setErr(r2.error); return; }
-      const r3 = await setItemMonthlyPlanAction(item.id, item.monthly.map((m, i) => ({ year_month: m.key, eok: Number(monthly[i]) || 0 })));
+      const r3 = await setItemMonthlyPlanAction(item.id, item.monthly.map((m, i) => ({ year_month: m.key, won: Number(monthly[i]) || 0 })));
       if ("error" in r3) { setErr(r3.error); return; }
       onDone();
       router.refresh();
@@ -309,7 +312,10 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
       <div className="flex flex-wrap items-center gap-2">
         <AttrSelects inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명" className={cn(inputCls, "min-w-[200px] flex-1")} />
-        <input type="number" step="0.1" min="0" value={planEok} onChange={(e) => setPlanEok(e.target.value)} placeholder="총투자비(억)" className={cn(inputCls, "w-[130px]")} />
+        <div className="flex flex-col">
+          <input type="number" step="1" min="0" value={planWon} onChange={(e) => setPlanWon(e.target.value)} placeholder="총투자비(원)" className={cn(inputCls, "w-[160px]")} />
+          {planWon && <span className="text-faint text-[10px]">≈ {eok2(Number(planWon) || 0)}억</span>}
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -334,14 +340,14 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
 
       <div className="flex flex-col gap-1.5">
         <label className="text-muted-foreground text-[11px] font-semibold">
-          월별 투자비 계획 (억) — 전년 · 1~12월 · 차년 &nbsp;<span className="text-faint font-normal">실적은 매핑 과제에서 자동(아래 회색)</span>
+          월별 투자비 계획 (원) — 전년 · 1~12월 · 차년 &nbsp;<span className="text-faint font-normal">실적은 매핑 과제에서 자동(아래 회색, 억)</span>
         </label>
         <div className="grid grid-cols-7 gap-1.5">
           {item.monthly.map((m, i) => (
             <div key={m.key} className="flex flex-col gap-0.5">
               <span className="text-faint text-[10px]">{m.label}</span>
-              <input type="number" step="0.1" min="0" value={monthly[i]} onChange={(e) => setMonthly((arr) => arr.map((v, j) => (j === i ? e.target.value : v)))} className={cn(inputCls, "h-[30px] w-full px-1.5 text-[12px]")} />
-              <span className="text-faint text-right text-[9.5px] tabular-nums">실 {m.exec ? wonToEok(m.exec) : "-"}</span>
+              <input type="number" step="1" min="0" value={monthly[i]} onChange={(e) => setMonthly((arr) => arr.map((v, j) => (j === i ? e.target.value : v)))} className={cn(inputCls, "h-[30px] w-full px-1.5 text-[12px]")} />
+              <span className="text-faint text-right text-[9.5px] tabular-nums">실 {eok2(m.exec)}</span>
             </div>
           ))}
         </div>
@@ -362,7 +368,7 @@ function PlanMatrix({ view }: { view: BudgetPlanView }) {
   if (view.items.length === 0) return null;
 
   const val = (m: { plan: number; exec: number }) => (mode === "plan" ? m.plan : m.exec);
-  const cell = (won: number) => (won ? wonToEok(won) : "-");
+  const cell = eok2;
   const colTotals = view.monthly.map((_, ci) => sum(view.items.map((it) => val(it.monthly[ci]))));
   const grand = sum(colTotals);
 
