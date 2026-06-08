@@ -54,6 +54,92 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_plan_item_monthly: {
+        Row: {
+          id: string
+          item_id: string
+          plan_amount: number
+          year_month: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          plan_amount?: number
+          year_month: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          plan_amount?: number
+          year_month?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_plan_item_monthly_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "budget_plan_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_plan_item_projects: {
+        Row: {
+          item_id: string
+          project_id: string
+        }
+        Insert: {
+          item_id: string
+          project_id: string
+        }
+        Update: {
+          item_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_plan_item_projects_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "budget_plan_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_plan_item_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_plan_items: {
+        Row: {
+          created_at: string
+          fiscal_year: number
+          id: string
+          name: string
+          plan_amount: number
+          sort: number
+        }
+        Insert: {
+          created_at?: string
+          fiscal_year: number
+          id?: string
+          name: string
+          plan_amount?: number
+          sort?: number
+        }
+        Update: {
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          name?: string
+          plan_amount?: number
+          sort?: number
+        }
+        Relationships: []
+      }
       confluence_classification_rules: {
         Row: {
           assigned_role: Database["public"]["Enums"]["confluence_page_role"]

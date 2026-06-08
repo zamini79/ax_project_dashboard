@@ -6,12 +6,15 @@ import {
 } from "@/lib/repositories/projects";
 import { fetchEffectForProject } from "@/lib/repositories/effects";
 import { fetchMonthlyExecution } from "@/lib/repositories/budget";
+import { fetchBudgetPlanItems } from "@/lib/repositories/budget-plan";
 import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
+import { BudgetPlanCard } from "@/components/budget/budget-plan-dialog";
 import { Card } from "@/components/ui/card";
 import { MiniBars, Bar } from "@/components/charts/charts";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 import { capexByInvestmentType, INVESTMENT_LABEL } from "@/lib/domain/investment";
+import { buildBudgetPlanView } from "@/lib/domain/budget-plan";
 
 export const dynamic = "force-dynamic";
 
@@ -27,24 +30,31 @@ export default async function BudgetPage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
-  const [projects, monthly] = await Promise.all([
+  const now = new Date();
+  const fiscalYear = now.getFullYear();
+  const [projects, monthly, planRows] = await Promise.all([
     fetchProjectList(),
     fetchMonthlyExecution(),
+    fetchBudgetPlanItems(fiscalYear),
   ]);
 
   // 상세 드로어 (?detail=<id>) — 투자비 현황 위에 그대로 띄움
   const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
   const detailEffect = detail ? await fetchEffectForProject(detail.id) : null;
-  const now = new Date();
   const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   // CAPEX 항목별 = 과제 투자 유형별 자동 집계 (D-030)
   const capex = capexByInvestmentType(projects);
-
-  const planTotal = capex.reduce((a, c) => a + c.plan_won, 0);
-  const execTotal = capex.reduce((a, c) => a + c.exec_won, 0);
-  const rate = planTotal > 0 ? Math.round((execTotal / planTotal) * 100) : 0;
   const maxPlan = Math.max(1, ...capex.map((c) => c.plan_won));
+
+  // 사업계획 (D-031): 계획=수기, 집행=매핑 과제 자동 합산
+  const plan = buildBudgetPlanView(fiscalYear, planRows);
+  const execTotal = capex.reduce((a, c) => a + c.exec_won, 0); // 전체 집행
+  const planExec = plan.planExec; // 계획 집행 (매핑 과제)
+  const outOfPlan = Math.max(0, execTotal - planExec); // 계획 이외 집행
+  const unspent = plan.planTotal - planExec; // 계획대비 미집행
+  const planRate = plan.planTotal > 0 ? Math.round((planExec / plan.planTotal) * 100) : 0;
+  const projectOptions = projects.map((p) => ({ id: p.id, name: p.name }));
   const monthlyBars = monthly.map((m) => ({
     label: m.year_month.slice(2).replace("-", "."),
     value: m.amount / 100_000_000,
@@ -65,20 +75,33 @@ export default async function BudgetPage({
 
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
-        <StatCard label={`${now.getFullYear() % 100}년 투자비 사업계획`} value={formatBudgetEok(planTotal)} sub="전체 과제 투자 예산" />
+        {/* 사업계획 (클릭 → 팝업) */}
+        <BudgetPlanCard year={fiscalYear} view={plan} projectOptions={projectOptions} />
+
+        {/* 집행 누계 = 전체 집행 + 계획/계획외 분해 */}
         <StatCard
           label={`${now.getFullYear() % 100}년 ${now.getMonth() + 1}월 현재 집행 누계`}
           value={formatBudgetEok(execTotal)}
           valueColor={ACCENT}
-          sub={`집행률 ${rate}%`}
         >
-          <Bar value={rate} color={ACCENT} height={6} />
+          <div className="text-muted-foreground mt-1 flex flex-col gap-0.5 text-[12px]">
+            <span>
+              계획 집행 <b className="text-foreground tabular-nums">{formatBudgetEok(planExec)}</b>
+            </span>
+            <span>
+              계획 이외 집행 <b className="text-foreground tabular-nums">{formatBudgetEok(outOfPlan)}</b>
+            </span>
+          </div>
         </StatCard>
+
+        {/* 계획대비 미집행 잔액 */}
         <StatCard
-          label="미집행 잔액"
-          value={formatBudgetEok(planTotal - execTotal)}
-          sub={`계획 대비 ${100 - rate}%`}
-        />
+          label="계획대비 미집행 잔액"
+          value={formatBudgetEok(unspent)}
+          sub={`계획 집행률 ${planRate}%`}
+        >
+          <Bar value={planRate} color={ACCENT} height={6} />
+        </StatCard>
       </div>
 
       {/* 항목별 + 월별 */}
