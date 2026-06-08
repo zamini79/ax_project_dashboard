@@ -64,15 +64,14 @@ export default async function BudgetPage({
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <StatCard label="총 CAPEX (계획)" value={formatBudgetEok(planTotal)} sub="전체 과제 투자 예산" />
+      <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
+        <StatCard label={`${now.getFullYear() % 100}년 투자비 사업계획`} value={formatBudgetEok(planTotal)} sub="전체 과제 투자 예산" />
         <StatCard
-          label="집행 누계"
+          label={`${now.getFullYear() % 100}년 ${now.getMonth() + 1}월 현재 집행 누계`}
           value={formatBudgetEok(execTotal)}
           valueColor={ACCENT}
           sub={`집행률 ${rate}%`}
-        />
-        <StatCard label="집행률" value={`${rate}%`}>
+        >
           <Bar value={rate} color={ACCENT} height={6} />
         </StatCard>
         <StatCard

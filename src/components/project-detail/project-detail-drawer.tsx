@@ -59,11 +59,16 @@ export function ProjectDetailDrawer({
       if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
+    // 스크롤 잠금 시 세로 스크롤바가 사라지며 뒤 화면이 밀리는 현상 방지 —
+    // 사라지는 스크롤바 폭만큼 body에 padding-right로 보정.
+    const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
+    if (scrollbarW > 0) document.body.style.paddingRight = `${scrollbarW}px`;
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
