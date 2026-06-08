@@ -41,8 +41,13 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/auth');
 
   if (!user && !isAuthRoute) {
+    // ⚠️ 임시: 미인증 접속 시 로그인 화면 대신 자동 로그인 라우트로.
+    //    인증 복구(자동 로그인 제거) 시 pathname을 '/login'으로 되돌릴 것.
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
+    const dest = url.pathname + url.search;
+    url.pathname = '/auth/auto-login';
+    url.search = '';
+    url.searchParams.set('next', dest);
     return NextResponse.redirect(url);
   }
 

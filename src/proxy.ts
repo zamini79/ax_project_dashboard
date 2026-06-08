@@ -1,14 +1,12 @@
-import { NextResponse } from 'next/server';
-// import { updateSession } from '@/lib/supabase/middleware';
+import { type NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
 /**
  * 루트 가드 (Next.js 16 — middleware.ts 대신 proxy.ts 컨벤션).
- *
- * ⚠️ 임시: 로그인 가드 비활성화 — 로그인 없이 전체 접속 허용.
- * 인증 복구 시 아래 pass-through를 제거하고 `return await updateSession(request)` 로 되돌릴 것.
+ * 매 요청마다 세션 토큰을 갱신하고 미인증 사용자를 자동 로그인(/auth/auto-login)으로 보낸다.
  */
-export async function proxy() {
-  return NextResponse.next();
+export async function proxy(request: NextRequest) {
+  return await updateSession(request);
 }
 
 export const config = {
