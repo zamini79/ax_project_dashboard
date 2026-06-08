@@ -259,7 +259,6 @@ function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOp
           <Plus size={15} /> 추가
         </button>
       </div>
-      {planWon && <p className="text-faint text-[11px]">총투자비 ≈ {eok2(Number(planWon) || 0)}억</p>}
       {err && <p className="text-xs text-red-600">{err}</p>}
     </div>
   );
