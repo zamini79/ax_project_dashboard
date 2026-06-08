@@ -15,11 +15,16 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const next = searchParams.get('next') || '/';
   const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+  const debug = searchParams.get('debug') === '1';
+  const fail = (step: string, detail: unknown) =>
+    debug
+      ? NextResponse.json({ step, detail: String(detail) }, { status: 500 })
+      : NextResponse.redirect(`${origin}/login`);
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
-    return NextResponse.redirect(`${origin}/login`);
+    return fail('env', `url=${!!url} serviceKey=${!!serviceKey}`);
   }
 
   try {
@@ -31,10 +36,11 @@ export async function GET(request: Request) {
       type: 'magiclink',
       email: AUTO_LOGIN_EMAIL,
     });
+    if (error) return fail('generateLink', error.message);
     const tokenHash = data?.properties?.hashed_token;
     const verifyType = data?.properties?.verification_type;
-    if (error || !tokenHash || !verifyType) {
-      return NextResponse.redirect(`${origin}/login`);
+    if (!tokenHash || !verifyType) {
+      return fail('generateLink-empty', JSON.stringify(data?.properties));
     }
 
     // 2) 쿠키 바인딩된 server client로 verifyOtp → 세션 쿠키 설정
@@ -43,12 +49,10 @@ export async function GET(request: Request) {
       type: verifyType as 'magiclink' | 'email',
       token_hash: tokenHash,
     });
-    if (verifyError) {
-      return NextResponse.redirect(`${origin}/login`);
-    }
+    if (verifyError) return fail('verifyOtp', `${verifyType}: ${verifyError.message}`);
 
     return NextResponse.redirect(`${origin}${safeNext}`);
-  } catch {
-    return NextResponse.redirect(`${origin}/login`);
+  } catch (e) {
+    return fail('exception', e instanceof Error ? e.message : e);
   }
 }
