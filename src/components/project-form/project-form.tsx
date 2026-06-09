@@ -84,6 +84,7 @@ export function ProjectForm({
   const planYears = Array.from(
     new Set([currentYear, ...planItems.map((p) => p.fiscalYear)]),
   ).sort((a, b) => b - a);
+  const [selectedPlan, setSelectedPlan] = useState(defaultValues.budgetPlanItemId);
 
   async function onValid(values: ProjectFormValues) {
     setServerError(undefined);
@@ -217,11 +218,19 @@ export function ProjectForm({
           <Field label="사업계획" error={errors.budgetPlanItemId?.message}>
             <div className="flex gap-2">
               <select
-                className={cn(inputClass, "w-[96px] shrink-0")}
+                className={cn(inputClass, "w-[96px] shrink-0 disabled:opacity-50")}
                 value={planYear}
+                disabled={!selectedPlan}
                 onChange={(e) => {
-                  setPlanYear(Number(e.target.value));
-                  setValue("budgetPlanItemId", ""); // 연도 바뀌면 선택 초기화(사업계획 외)
+                  const y = Number(e.target.value);
+                  setPlanYear(y);
+                  // 연도 변경 시 해당 연도에 선택값이 없으면 그 연도 첫 계획으로(없으면 사업계획 외)
+                  const yearPlans = planItems.filter((p) => p.fiscalYear === y);
+                  if (!yearPlans.some((p) => p.id === selectedPlan)) {
+                    const next = yearPlans[0]?.id ?? "";
+                    setValue("budgetPlanItemId", next);
+                    setSelectedPlan(next);
+                  }
                 }}
               >
                 {planYears.map((y) => (
@@ -230,7 +239,12 @@ export function ProjectForm({
                   </option>
                 ))}
               </select>
-              <select className={cn(inputClass, "min-w-0 flex-1")} {...register("budgetPlanItemId")}>
+              <select
+                className={cn(inputClass, "min-w-0 flex-1")}
+                {...register("budgetPlanItemId", {
+                  onChange: (e) => setSelectedPlan(e.target.value),
+                })}
+              >
                 {planItems
                   .filter((p) => p.fiscalYear === planYear)
                   .map((p) => (
