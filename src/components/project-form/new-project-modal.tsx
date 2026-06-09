@@ -49,7 +49,11 @@ export function NewProjectModal() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (!dirty) close();
+      else setConfirming(true);
+    };
     window.addEventListener("keydown", onKey);
     const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
@@ -59,7 +63,7 @@ export function NewProjectModal() {
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [open]);
+  }, [open, dirty]);
 
   return (
     <>

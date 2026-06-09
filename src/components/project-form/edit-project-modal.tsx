@@ -57,10 +57,14 @@ export function EditProjectModal({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (!dirty) close();
+      else setConfirming(true);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, dirty]);
 
   return (
     <>
