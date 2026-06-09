@@ -117,22 +117,79 @@ export function ProjectForm({
       {/* 기본 정보 */}
       <Card className="p-[22px]">
         <h2 className="mb-4 text-[13px] font-bold">기본 정보</h2>
-        <div className="flex flex-col gap-4">
-          <Field label="과제명" required full error={errors.name?.message}>
-            <input
-              {...register("name")}
-              placeholder="예: 스마트팩토리 비전검사 고도화"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="설명" full error={errors.description?.message}>
-            <textarea
-              {...register("description")}
-              rows={2}
-              placeholder="과제 개요를 입력하세요"
-              className={cn(inputClass, "h-auto resize-y py-2.5 leading-relaxed")}
-            />
-          </Field>
+        <div className="flex flex-col gap-5">
+          {/* 상단: 좌(과제명·설명) / 우(담당·분류) */}
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
+            <div className="flex flex-col gap-4">
+              <Field label="과제명" required full error={errors.name?.message}>
+                <input
+                  {...register("name")}
+                  placeholder="예: 스마트팩토리 비전검사 고도화"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="설명" full error={errors.description?.message}>
+                <textarea
+                  {...register("description")}
+                  rows={6}
+                  placeholder="과제 개요를 입력하세요"
+                  className={cn(inputClass, "h-auto resize-y py-2.5 leading-relaxed")}
+                />
+              </Field>
+            </div>
+            <div className="flex flex-col gap-[18px]">
+              <Field label="PM (공동 가능)" error={errors.pmIds?.message}>
+                <Controller
+                  control={control}
+                  name="pmIds"
+                  render={({ field }) => (
+                    <SearchSelect
+                      options={people.map((p) => ({ id: p.id, label: p.name, hint: p.department, keywords: p.email ?? "" }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="이름 또는 이메일로 검색"
+                      addLabel="PM 추가"
+                      emptyText="등록된 사람이 없습니다."
+                    />
+                  )}
+                />
+              </Field>
+              <Field label="유관부서" error={errors.departmentIds?.message}>
+                <Controller
+                  control={control}
+                  name="departmentIds"
+                  render={({ field }) => (
+                    <SearchSelect
+                      options={departments.map((d) => ({ id: d.id, label: d.name }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="부서명으로 검색"
+                      addLabel="부서 추가"
+                      emptyText="등록된 부서가 없습니다."
+                    />
+                  )}
+                />
+              </Field>
+              <Field label="AI기술" error={errors.aiTechIds?.message}>
+                <Controller
+                  control={control}
+                  name="aiTechIds"
+                  render={({ field }) => (
+                    <ChipMultiSelect
+                      options={aiTechs.map((t) => ({ id: t.id, label: t.name }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      emptyText="등록된 AI기술이 없습니다."
+                    />
+                  )}
+                />
+              </Field>
+              <p className="text-faint flex items-center gap-1.5 text-xs">
+                <span className="text-primary">＋</span> 목록에 없으면{" "}
+                <b className="text-muted-foreground">마스터 관리</b>에서 추가할 수 있어요.
+              </p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="분류 (MPRS)" required error={errors.mprs?.message}>
@@ -261,97 +318,38 @@ export function ProjectForm({
             </div>
           </Field>
           </div>
-          <Controller
-            control={control}
-            name="progressPct"
-            render={({ field }) => (
-              <Field
-                label={`진행률 (${field.value ?? 0}%)`}
-                full
-                error={errors.progressPct?.message}
-              >
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="5"
-                  value={field.value ?? 0}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  className="accent-primary w-full"
-                />
-              </Field>
-            )}
-          />
         </div>
       </Card>
 
-      {/* 담당 / 분류 */}
+      {/* 진행률 / 집행 실적 */}
       <Card className="p-[22px]">
-        <h2 className="mb-4 text-[13px] font-bold">담당 / 분류</h2>
-        <div className="flex flex-col gap-[18px]">
-          <Field label="PM (공동 가능)" error={errors.pmIds?.message}>
-            <Controller
-              control={control}
-              name="pmIds"
-              render={({ field }) => (
-                <SearchSelect
-                  options={people.map((p) => ({
-                    id: p.id,
-                    label: p.name,
-                    hint: p.department,
-                    keywords: p.email ?? "",
-                  }))}
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder="이름 또는 이메일로 검색"
-                  addLabel="PM 추가"
-                  emptyText="등록된 사람이 없습니다."
-                />
-              )}
-            />
-          </Field>
-          <Field label="유관부서" error={errors.departmentIds?.message}>
-            <Controller
-              control={control}
-              name="departmentIds"
-              render={({ field }) => (
-                <SearchSelect
-                  options={departments.map((d) => ({ id: d.id, label: d.name }))}
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder="부서명으로 검색"
-                  addLabel="부서 추가"
-                  emptyText="등록된 부서가 없습니다."
-                />
-              )}
-            />
-          </Field>
-          <Field label="AI기술" error={errors.aiTechIds?.message}>
-            <Controller
-              control={control}
-              name="aiTechIds"
-              render={({ field }) => (
-                <ChipMultiSelect
-                  options={aiTechs.map((t) => ({ id: t.id, label: t.name }))}
-                  value={field.value}
-                  onChange={field.onChange}
-                  emptyText="등록된 AI기술이 없습니다."
-                />
-              )}
-            />
-          </Field>
-        </div>
-        <p className="text-faint mt-4 flex items-center gap-1.5 border-t pt-3.5 text-xs">
-          <span className="text-primary">＋</span> 목록에 없으면{" "}
-          <b className="text-muted-foreground">마스터 관리</b>에서 추가할 수 있어요.
-        </p>
+        <Controller
+          control={control}
+          name="progressPct"
+          render={({ field }) => (
+            <Field
+              label={`진행률 (${field.value ?? 0}%)`}
+              full
+              error={errors.progressPct?.message}
+            >
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={field.value ?? 0}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                className="accent-primary w-full"
+              />
+            </Field>
+          )}
+        />
+        {mode === "edit" && projectId && (
+          <div className="mt-4 border-t pt-4">
+            <ExecutionEditor projectId={projectId} entries={executions} />
+          </div>
+        )}
       </Card>
-
-      {mode === "edit" && projectId && (
-        <Card className="p-[22px]">
-          <ExecutionEditor projectId={projectId} entries={executions} />
-        </Card>
-      )}
 
       {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
