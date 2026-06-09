@@ -44,8 +44,8 @@ export function MetaPanel({ project }: { project: ProjectDetail }) {
         {/* 주관 본부 */}
         <Row label="주관 본부">{project.headquarter_name}</Row>
 
-        {/* 투자 유형 */}
-        <Row label="투자 유형">
+        {/* 과제 유형 */}
+        <Row label="과제 유형">
           {INVESTMENT_LABEL[project.investment_type]}
         </Row>
 
