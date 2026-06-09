@@ -17,6 +17,7 @@ import type { Mprs } from "@/lib/domain/mprs";
 export type PlanActionResult = { error: string } | { ok: true };
 
 export interface PlanItemForm {
+  fiscalYear: number;
   name: string;
   planWon: number; // 원
   investmentType: InvestmentType | null;
@@ -25,6 +26,7 @@ export interface PlanItemForm {
 }
 
 const toAttrs = (f: PlanItemForm) => ({
+  fiscalYear: f.fiscalYear,
   name: f.name.trim(),
   planAmount: Math.round(f.planWon || 0),
   investmentType: f.investmentType,
@@ -33,12 +35,11 @@ const toAttrs = (f: PlanItemForm) => ({
 });
 
 export async function createPlanItemAction(
-  fiscalYear: number,
   form: PlanItemForm,
 ): Promise<PlanActionResult> {
   if (!form.name.trim()) return { error: "항목명(계획명)을 입력하세요." };
   try {
-    await createPlanItem({ fiscalYear, ...toAttrs(form) });
+    await createPlanItem(toAttrs(form));
   } catch (e) {
     return { error: e instanceof Error ? e.message : "항목 생성 실패" };
   }

@@ -13,14 +13,13 @@ import { ProjectForm } from "@/components/project-form/project-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewProjectPage() {
-  const fiscalYear = new Date().getFullYear();
   const [headquarters, departments, people, aiTechs, planItems] =
     await Promise.all([
       fetchHeadquarters(),
       fetchDepartments(),
       fetchPeople(),
       fetchAiTechs(),
-      fetchPlanItemOptions(fiscalYear),
+      fetchPlanItemOptions(),
     ]);
 
   return (

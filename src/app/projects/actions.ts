@@ -154,14 +154,13 @@ export async function loadProjectEditData(id: string) {
 
 /** 과제 폼 옵션 일괄 로드 (모달 오픈 시 호출) */
 export async function loadProjectFormOptions() {
-  const fiscalYear = new Date().getFullYear();
   const [headquarters, departments, people, aiTechs, planItems] =
     await Promise.all([
       fetchHeadquarters(),
       fetchDepartments(),
       fetchPeople(),
       fetchAiTechs(),
-      fetchPlanItemOptions(fiscalYear),
+      fetchPlanItemOptions(),
     ]);
   return { headquarters, departments, people, aiTechs, planItems };
 }

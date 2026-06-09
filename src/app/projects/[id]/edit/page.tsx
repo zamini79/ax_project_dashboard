@@ -29,7 +29,6 @@ export default async function EditProjectPage({
   const { id } = await params;
   const { from } = await searchParams;
 
-  const fiscalYear = new Date().getFullYear();
   const [edit, headquarters, departments, people, aiTechs, planItems] =
     await Promise.all([
       fetchProjectEditData(id),
@@ -37,7 +36,7 @@ export default async function EditProjectPage({
       fetchDepartments(),
       fetchPeople(),
       fetchAiTechs(),
-      fetchPlanItemOptions(fiscalYear),
+      fetchPlanItemOptions(),
     ]);
 
   if (!edit) notFound();

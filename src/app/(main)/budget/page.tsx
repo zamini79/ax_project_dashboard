@@ -36,7 +36,7 @@ export default async function BudgetPage({
   const [projects, monthly, planRows, headquarters] = await Promise.all([
     fetchProjectList(),
     fetchMonthlyExecution(),
-    fetchBudgetPlanItems(fiscalYear),
+    fetchBudgetPlanItems(), // 전체 연도 (팝업에서 연도 컬럼 표시)
     fetchHeadquarters(),
   ]);
 
@@ -50,7 +50,12 @@ export default async function BudgetPage({
   const maxPlan = Math.max(1, ...capex.map((c) => c.plan_won));
 
   // 사업계획 (D-031): 계획=수기, 집행=매핑 과제 자동 합산
-  const plan = buildBudgetPlanView(fiscalYear, planRows);
+  // KPI 카드는 현재 연도만, 팝업(planAll)은 전체 연도(연도 컬럼)
+  const plan = buildBudgetPlanView(
+    fiscalYear,
+    planRows.filter((r) => r.fiscal_year === fiscalYear),
+  );
+  const planAll = buildBudgetPlanView(fiscalYear, planRows);
   const execTotal = capex.reduce((a, c) => a + c.exec_won, 0); // 전체 집행
   const planExec = plan.planExec; // 계획 집행 (매핑 과제)
   const outOfPlan = Math.max(0, execTotal - planExec); // 계획 이외 집행
@@ -78,7 +83,7 @@ export default async function BudgetPage({
       {/* KPI */}
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
         {/* 사업계획 (클릭 → 팝업) */}
-        <BudgetPlanCard year={fiscalYear} view={plan} projectOptions={projectOptions} headquarterOptions={headquarters} />
+        <BudgetPlanCard year={fiscalYear} cardView={plan} view={planAll} projectOptions={projectOptions} headquarterOptions={headquarters} />
 
         {/* 집행 누계 = 전체 집행 + 계획/계획외 분해 */}
         <StatCard

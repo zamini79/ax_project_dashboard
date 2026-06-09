@@ -52,8 +52,8 @@ export function ProjectForm({
   people: PersonOption[];
   departments: MasterOption[];
   aiTechs: MasterOption[];
-  /** 사업계획 매핑 콤보 옵션 (해당 연도 사업계획 항목) */
-  planItems: { id: string; name: string }[];
+  /** 사업계획 매핑 콤보 옵션 (전체 연도; 폼에서 연도별 필터) */
+  planItems: { id: string; name: string; fiscalYear: number }[];
   /** 편집 진입 출처 — 저장/취소 시 이곳으로 복귀 (목록·드로어·상세) */
   returnTo?: string;
   /** 모달(임베드) 모드: 생성 성공 시 redirect 대신 호출 → 모달 닫고 배경 갱신 */
@@ -68,11 +68,22 @@ export function ProjectForm({
     register,
     control,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues,
   });
+
+  // 사업계획 연도 필터 (기본: 선택된 계획의 연도, 없으면 올해)
+  const currentYear = new Date().getFullYear();
+  const [planYear, setPlanYear] = useState<number>(
+    planItems.find((p) => p.id === defaultValues.budgetPlanItemId)?.fiscalYear ??
+      currentYear,
+  );
+  const planYears = Array.from(
+    new Set([currentYear, ...planItems.map((p) => p.fiscalYear)]),
+  ).sort((a, b) => b - a);
 
   async function onValid(values: ProjectFormValues) {
     setServerError(undefined);
@@ -204,14 +215,32 @@ export function ProjectForm({
             }}
           />
           <Field label="사업계획" error={errors.budgetPlanItemId?.message}>
-            <select className={inputClass} {...register("budgetPlanItemId")}>
-              {planItems.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-              <option value="">사업계획 외 과제</option>
-            </select>
+            <div className="flex gap-2">
+              <select
+                className={cn(inputClass, "w-[96px] shrink-0")}
+                value={planYear}
+                onChange={(e) => {
+                  setPlanYear(Number(e.target.value));
+                  setValue("budgetPlanItemId", ""); // 연도 바뀌면 선택 초기화(사업계획 외)
+                }}
+              >
+                {planYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}년
+                  </option>
+                ))}
+              </select>
+              <select className={cn(inputClass, "min-w-0 flex-1")} {...register("budgetPlanItemId")}>
+                {planItems
+                  .filter((p) => p.fiscalYear === planYear)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                <option value="">사업계획 외 과제</option>
+              </select>
+            </div>
           </Field>
           </div>
           <Controller

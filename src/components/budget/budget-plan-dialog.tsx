@@ -35,12 +35,14 @@ export interface Option {
 /** 투자비 사업계획 KPI 카드 + 상세 팝업 (D-031). */
 export function BudgetPlanCard({
   year,
+  cardView,
   view,
   projectOptions,
   headquarterOptions,
 }: {
   year: number;
-  view: BudgetPlanView;
+  cardView: BudgetPlanView; // 현재 연도 요약(카드 표시용)
+  view: BudgetPlanView; // 전체 연도(팝업)
   projectOptions: Option[];
   headquarterOptions: Option[];
 }) {
@@ -53,8 +55,8 @@ export function BudgetPlanCard({
         className="bg-card hover:border-primary/60 flex flex-col rounded-xl border p-4 text-left transition-colors"
       >
         <p className="text-muted-foreground text-[13px]">{year % 100}년 투자비 사업계획</p>
-        <p className="mt-1 text-2xl font-extrabold tabular-nums">{formatBudgetEok(view.planTotal)}</p>
-        <p className="text-primary mt-0.5 text-xs font-semibold">항목 {view.items.length}개 · 클릭하여 상세 ↗</p>
+        <p className="mt-1 text-2xl font-extrabold tabular-nums">{formatBudgetEok(cardView.planTotal)}</p>
+        <p className="text-primary mt-0.5 text-xs font-semibold">항목 {cardView.items.length}개 · 클릭하여 상세 ↗</p>
       </button>
       {open && (
         <PlanDialog
@@ -111,7 +113,7 @@ function PlanDialog({
     >
       <div onClick={(e) => e.stopPropagation()} className="bg-background w-full max-w-[1180px] rounded-2xl shadow-2xl">
         <div className="bg-card sticky top-0 z-[2] flex items-center justify-between rounded-t-2xl border-b px-5 py-4">
-          <h2 className="text-[16px] font-extrabold">{year}년 투자비 사업계획</h2>
+          <h2 className="text-[16px] font-extrabold">투자비 사업계획 (전체 연도)</h2>
           <button type="button" onClick={onClose} aria-label="닫기" className="text-muted-foreground hover:bg-muted flex h-8 w-8 items-center justify-center rounded-lg border">
             <X size={16} />
           </button>
@@ -130,7 +132,8 @@ function PlanDialog({
           <AddItemForm year={year} headquarterOptions={headquarterOptions} />
 
           <div className="overflow-x-auto rounded-xl border">
-            <div className="text-muted-foreground flex h-9 min-w-[880px] items-center border-b bg-[#FAFAFB] px-3 text-[12px] font-semibold">
+            <div className="text-muted-foreground flex h-9 min-w-[936px] items-center border-b bg-[#FAFAFB] px-3 text-[12px] font-semibold">
+              <div className="w-[56px] text-center">년도</div>
               <div className="w-[72px] text-center">구분</div>
               <div className="w-[132px] text-center">본부</div>
               <div className="w-[101px] text-center">MPRS</div>
@@ -191,17 +194,25 @@ function WonInput({
   );
 }
 
-/** 구분/본부/MPRS 입력 묶음 */
+/** 연도/구분/본부/MPRS 입력 묶음 */
 function AttrSelects({
-  inv, setInv, hq, setHq, mprs, setMprs, headquarterOptions,
+  year, setYear, inv, setInv, hq, setHq, mprs, setMprs, headquarterOptions,
 }: {
+  year: number; setYear: (y: number) => void;
   inv: string; setInv: (v: string) => void;
   hq: string; setHq: (v: string) => void;
   mprs: string; setMprs: (v: string) => void;
   headquarterOptions: Option[];
 }) {
+  const cur = new Date().getFullYear();
+  const yearOpts = Array.from(new Set([cur - 2, cur - 1, cur, cur + 1, cur + 2, year])).sort(
+    (a, b) => a - b,
+  );
   return (
     <>
+      <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={cn(inputCls, "w-[90px]")}>
+        {yearOpts.map((y) => <option key={y} value={y}>{y}년</option>)}
+      </select>
       <select value={inv} onChange={(e) => setInv(e.target.value)} className={cn(inputCls, "w-[110px]", !inv && "text-muted-foreground")}>
         <option value="" disabled hidden>구분</option>
         {INVESTMENT_ORDER.map((t) => <option key={t} value={t}>{INVESTMENT_LABEL[t]}</option>)}
@@ -218,8 +229,9 @@ function AttrSelects({
   );
 }
 
-function buildForm(name: string, planWon: string, inv: string, hq: string, mprs: string): PlanItemForm {
+function buildForm(fiscalYear: number, name: string, planWon: string, inv: string, hq: string, mprs: string): PlanItemForm {
   return {
+    fiscalYear,
     name,
     planWon: Number(planWon) || 0,
     investmentType: (inv || null) as InvestmentType | null,
@@ -230,6 +242,7 @@ function buildForm(name: string, planWon: string, inv: string, hq: string, mprs:
 
 function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOptions: Option[] }) {
   const router = useRouter();
+  const [fyear, setFyear] = useState(year);
   const [name, setName] = useState("");
   const [planWon, setPlanWon] = useState("");
   const [inv, setInv] = useState("");
@@ -242,7 +255,7 @@ function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOp
     setErr(undefined);
     if (!inv || !hq || !mprs) { setErr("구분·본부·MPRS를 모두 선택하세요."); return; }
     start(async () => {
-      const r = await createPlanItemAction(year, buildForm(name, planWon, inv, hq, mprs));
+      const r = await createPlanItemAction(buildForm(fyear, name, planWon, inv, hq, mprs));
       if ("error" in r) { setErr(r.error); return; }
       setName(""); setPlanWon(""); setInv(""); setHq(""); setMprs("");
       router.refresh();
@@ -252,7 +265,7 @@ function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOp
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-dashed p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <AttrSelects inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
+        <AttrSelects year={fyear} setYear={setFyear} inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명 (예: AI 비전검사 사업)" className={cn(inputCls, "min-w-[200px] flex-1")} />
         <WonInput value={planWon} onChange={setPlanWon} placeholder="총투자비(원)" className={cn(inputCls, "w-[170px] text-right")} />
         <button type="button" onClick={submit} disabled={pending} className="bg-primary text-primary-foreground inline-flex h-[34px] items-center gap-1 rounded-lg px-3 text-[13px] font-bold disabled:opacity-50">
@@ -276,7 +289,8 @@ function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemV
 
   return (
     <div className="border-b last:border-b-0">
-      <div className="flex min-w-[880px] items-center px-3 py-2.5 text-[13px]">
+      <div className="flex min-w-[936px] items-center px-3 py-2.5 text-[13px]">
+        <div className="text-muted-foreground w-[56px] text-center text-[12px] tabular-nums">{item.fiscalYear % 100}년</div>
         <div className="text-muted-foreground w-[72px] text-center text-[12px]">{item.investmentType ? INVESTMENT_LABEL[item.investmentType] : "-"}</div>
         <div className="text-muted-foreground w-[132px] truncate text-center text-[12px]">{item.headquarterName ?? "-"}</div>
         <div className="text-muted-foreground w-[101px] text-center text-[12px]">{item.mprs ? MPRS_LABEL[item.mprs] : "-"}</div>
@@ -301,6 +315,7 @@ function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemV
 
 function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item: PlanItemView; projectOptions: Option[]; headquarterOptions: Option[]; onDone: () => void }) {
   const router = useRouter();
+  const [fyear, setFyear] = useState(item.fiscalYear);
   const [name, setName] = useState(item.name);
   const [planWon, setPlanWon] = useState(String(item.planWon || ""));
   const [inv, setInv] = useState<string>(item.investmentType ?? "");
@@ -315,7 +330,7 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
     setErr(undefined);
     if (!inv || !hq || !mprs) { setErr("구분·본부·MPRS를 모두 선택하세요."); return; }
     start(async () => {
-      const r1 = await updatePlanItemAction(item.id, buildForm(name, planWon, inv, hq, mprs));
+      const r1 = await updatePlanItemAction(item.id, buildForm(fyear, name, planWon, inv, hq, mprs));
       if ("error" in r1) { setErr(r1.error); return; }
       const r2 = await setItemProjectsAction(item.id, picked);
       if ("error" in r2) { setErr(r2.error); return; }
@@ -333,7 +348,7 @@ function ItemEditor({ item, projectOptions, headquarterOptions, onDone }: { item
   return (
     <div className="bg-[#FAFAFB] flex flex-col gap-3 border-t px-3 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <AttrSelects inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
+        <AttrSelects year={fyear} setYear={setFyear} inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명" className={cn(inputCls, "min-w-[200px] flex-1")} />
         <div className="flex flex-col">
           <WonInput value={planWon} onChange={setPlanWon} placeholder="총투자비(원)" className={cn(inputCls, "w-[170px] text-right")} />

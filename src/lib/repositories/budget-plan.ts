@@ -18,6 +18,7 @@ export interface PlanItemProject {
 export interface PlanItemRow {
   id: string;
   name: string;
+  fiscal_year: number;
   plan_amount: number;
   sort: number;
   investment_type: InvestmentType | null;
@@ -31,6 +32,7 @@ export interface PlanItemRow {
 interface RawPlanItem {
   id: string;
   name: string;
+  fiscal_year: number;
   plan_amount: number;
   sort: number;
   investment_type: InvestmentType | null;
@@ -48,7 +50,7 @@ interface RawPlanItem {
 }
 
 const PLAN_SELECT = `
-  id, name, plan_amount, sort, investment_type, headquarter_id, mprs,
+  id, name, fiscal_year, plan_amount, sort, investment_type, headquarter_id, mprs,
   headquarters ( name ),
   budget_plan_item_projects (
     project_id,
@@ -57,15 +59,15 @@ const PLAN_SELECT = `
   budget_plan_item_monthly ( year_month, plan_amount )
 ` as const;
 
-/** 연도별 사업계획 항목 + 매핑 과제(+월별 집행) + 월별 계획 */
+/** 사업계획 항목 + 매핑 과제(+월별 집행) + 월별 계획. 연도 미지정 시 전체. */
 export async function fetchBudgetPlanItems(
-  fiscalYear: number,
+  fiscalYear?: number,
 ): Promise<PlanItemRow[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("budget_plan_items")
-    .select(PLAN_SELECT)
-    .eq("fiscal_year", fiscalYear)
+  let query = supabase.from("budget_plan_items").select(PLAN_SELECT);
+  if (fiscalYear != null) query = query.eq("fiscal_year", fiscalYear);
+  const { data, error } = await query
+    .order("fiscal_year", { ascending: false })
     .order("sort", { ascending: true })
     .returns<RawPlanItem[]>();
 
@@ -74,6 +76,7 @@ export async function fetchBudgetPlanItems(
   return (data ?? []).map((it) => ({
     id: it.id,
     name: it.name,
+    fiscal_year: it.fiscal_year,
     plan_amount: it.plan_amount,
     sort: it.sort,
     investment_type: it.investment_type,
@@ -97,18 +100,22 @@ export async function fetchBudgetPlanItems(
   }));
 }
 
-/** 과제 폼용 — 연도별 사업계획 항목 옵션(id, name) */
-export async function fetchPlanItemOptions(
-  fiscalYear: number,
-): Promise<{ id: string; name: string }[]> {
+/** 과제 폼용 — 사업계획 항목 옵션(id, name, 연도). 전체 연도. */
+export async function fetchPlanItemOptions(): Promise<
+  { id: string; name: string; fiscalYear: number }[]
+> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("budget_plan_items")
-    .select("id, name")
-    .eq("fiscal_year", fiscalYear)
+    .select("id, name, fiscal_year")
+    .order("fiscal_year", { ascending: false })
     .order("sort", { ascending: true });
   if (error) throw new Error(`사업계획 옵션 조회 실패: ${error.message}`);
-  return data ?? [];
+  return (data ?? []).map((d) => ({
+    id: d.id,
+    name: d.name,
+    fiscalYear: d.fiscal_year,
+  }));
 }
 
 /**
@@ -135,6 +142,7 @@ export async function setProjectPlanItem(
 }
 
 export interface PlanItemAttrs {
+  fiscalYear: number;
   name: string;
   planAmount: number; // 원
   investmentType: InvestmentType | null;
@@ -144,6 +152,7 @@ export interface PlanItemAttrs {
 
 function attrColumns(a: PlanItemAttrs) {
   return {
+    fiscal_year: a.fiscalYear,
     name: a.name,
     plan_amount: a.planAmount,
     investment_type: a.investmentType,
@@ -153,13 +162,11 @@ function attrColumns(a: PlanItemAttrs) {
 }
 
 /** 항목 생성 → id 반환 */
-export async function createPlanItem(
-  input: PlanItemAttrs & { fiscalYear: number },
-): Promise<string> {
+export async function createPlanItem(input: PlanItemAttrs): Promise<string> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("budget_plan_items")
-    .insert({ fiscal_year: input.fiscalYear, ...attrColumns(input) })
+    .insert(attrColumns(input))
     .select("id")
     .single();
   if (error || !data) {

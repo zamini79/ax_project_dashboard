@@ -18,6 +18,7 @@ export interface MonthBucket {
 export interface PlanItemView {
   id: string;
   name: string;
+  fiscalYear: number;
   investmentType: InvestmentType | null;
   headquarterId: string | null;
   headquarterName: string | null;
@@ -86,6 +87,7 @@ export function buildBudgetPlanView(
     return {
       id: it.id,
       name: it.name,
+      fiscalYear: it.fiscal_year,
       investmentType: it.investment_type,
       headquarterId: it.headquarter_id,
       headquarterName: it.headquarter_name,
