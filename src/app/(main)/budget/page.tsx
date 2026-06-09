@@ -23,7 +23,9 @@ const ACCENT = "var(--primary)";
 const GREEN = "var(--health-green)";
 const YELLOW = "var(--health-yellow)";
 
-type SearchParams = Promise<{ detail?: string }>;
+type BudgetSortKey = "mprs" | "type" | "name" | "hq" | "plan" | "exec" | "rate";
+
+type SearchParams = Promise<{ detail?: string; sort?: string; dir?: string }>;
 
 export default async function BudgetPage({
   searchParams,
@@ -31,6 +33,8 @@ export default async function BudgetPage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
+  const sortKey = (sp.sort as BudgetSortKey | undefined) ?? "plan";
+  const sortDir = sp.dir === "asc" ? "asc" : "desc";
   const now = new Date();
   const fiscalYear = now.getFullYear();
   const [projects, monthly, planRows, headquarters] = await Promise.all([
@@ -67,9 +71,44 @@ export default async function BudgetPage({
     value: m.amount / 100_000_000,
   }));
   const cumulative = monthly.reduce((a, m) => a + m.amount, 0);
-  const byBudget = [...projects].sort(
-    (a, b) => (b.total_budget ?? 0) - (a.total_budget ?? 0),
-  );
+  const byBudget = [...projects]
+    .map((p) => ({
+      ...p,
+      _rate:
+        (p.total_budget ?? 0) > 0
+          ? p.executed_budget / (p.total_budget ?? 1)
+          : 0,
+    }))
+    .sort((a, b) => {
+      let v = 0;
+      switch (sortKey) {
+        case "mprs":
+          v = a.mprs.localeCompare(b.mprs);
+          break;
+        case "type":
+          v = a.investment_type.localeCompare(b.investment_type);
+          break;
+        case "name":
+          v = a.name.localeCompare(b.name, "ko");
+          break;
+        case "hq":
+          v = (a.headquarter_name ?? "").localeCompare(
+            b.headquarter_name ?? "",
+            "ko",
+          );
+          break;
+        case "plan":
+          v = (a.total_budget ?? 0) - (b.total_budget ?? 0);
+          break;
+        case "exec":
+          v = a.executed_budget - b.executed_budget;
+          break;
+        case "rate":
+          v = a._rate - b._rate;
+          break;
+      }
+      return sortDir === "asc" ? v : -v;
+    });
 
   return (
     <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-4 px-6 py-5">
@@ -184,13 +223,13 @@ export default async function BudgetPage({
         </div>
         <div className="text-muted-foreground flex h-9 items-center border-b bg-[#FAFAFB] px-4 text-[13px] font-semibold">
           <div className="w-[87px] shrink-0 text-center">순번</div>
-          <div className="w-[135px] shrink-0 text-center">MPRS</div>
-          <div className="w-[111px] shrink-0 text-center">투자유형</div>
-          <div className="min-w-0 flex-1 text-center">과제명</div>
-          <div className="w-[177px] shrink-0 text-center">본부</div>
-          <div className="w-[119px] shrink-0 text-center">계획</div>
-          <div className="w-[119px] shrink-0 text-center">집행</div>
-          <div className="w-[207px] shrink-0 text-center">집행률</div>
+          <SortTh col="mprs" label="MPRS" cls="w-[135px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
+          <SortTh col="type" label="투자유형" cls="w-[111px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
+          <SortTh col="name" label="과제명" cls="min-w-0 flex-1 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
+          <SortTh col="hq" label="본부" cls="w-[177px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
+          <SortTh col="plan" label="계획" cls="w-[119px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
+          <SortTh col="exec" label="집행" cls="w-[119px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
+          <SortTh col="rate" label="집행률" cls="w-[207px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
         </div>
         {byBudget.map((p, i) => {
           const r =
@@ -253,6 +292,38 @@ export default async function BudgetPage({
         />
       )}
     </main>
+  );
+}
+
+function SortTh({
+  col,
+  label,
+  cls,
+  cur,
+  dir,
+  detail,
+}: {
+  col: BudgetSortKey;
+  label: string;
+  cls: string;
+  cur: BudgetSortKey;
+  dir: "asc" | "desc";
+  detail?: string;
+}) {
+  const active = cur === col;
+  const nextDir = active && dir === "asc" ? "desc" : "asc";
+  const params = new URLSearchParams({ sort: col, dir: nextDir });
+  if (detail) params.set("detail", detail);
+  return (
+    <Link
+      href={`/budget?${params.toString()}`}
+      className={`${cls} hover:text-foreground inline-flex items-center justify-center gap-0.5 transition-colors`}
+    >
+      {label}
+      <span className={active ? "text-foreground" : "text-muted-foreground/40"}>
+        {active ? (dir === "asc" ? "↑" : "↓") : "↕"}
+      </span>
+    </Link>
   );
 }
 

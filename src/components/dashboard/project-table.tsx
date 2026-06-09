@@ -31,8 +31,8 @@ interface LeftCol {
 
 const LEFT_COLS: LeftCol[] = [
   { key: "idx", label: "순번", width: "w-12 shrink-0", sort: null, align: "center" },
-  { key: "mprs", label: "MPRS", width: "w-28 shrink-0", sort: "mprs" },
-  { key: "hq", label: "본부", width: "w-36 shrink-0", sort: "hq" },
+  { key: "mprs", label: "MPRS", width: "w-28 shrink-0", sort: "mprs", align: "center" },
+  { key: "hq", label: "본부", width: "w-36 shrink-0", sort: "hq", align: "center" },
   { key: "name", label: "과제명", width: "flex-1 min-w-0", sort: "name" },
   { key: "aitech", label: "AI기술", width: "w-28 shrink-0", sort: "aitech" },
   { key: "lifecycle", label: "과제현황", width: "w-24 shrink-0", sort: "lifecycle" },
@@ -208,7 +208,7 @@ export function ProjectTable({
                 <Cell col="w-12 shrink-0" center muted>
                   {idx + 1}
                 </Cell>
-                <Cell col="w-28 shrink-0">
+                <Cell col="w-28 shrink-0" center>
                   <span
                     className="inline-flex h-5 items-center rounded px-1.5 text-xs font-semibold"
                     style={{ background: mprs.bg, color: mprs.text }}
@@ -216,7 +216,7 @@ export function ProjectTable({
                     {MPRS_LABEL[item.mprs]}
                   </span>
                 </Cell>
-                <Cell col="w-36 shrink-0" muted truncate>
+                <Cell col="w-36 shrink-0" center muted truncate>
                   {item.headquarter_name}
                 </Cell>
                 <Cell col="flex-1 min-w-0" truncate>

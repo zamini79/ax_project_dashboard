@@ -87,6 +87,7 @@ function PlanDialog({
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [filterYear, setFilterYear] = useState<number>(year);
   const [fyear, setFyear] = useState(year);
   const [name, setName] = useState("");
   const [planWon, setPlanWon] = useState("");
@@ -132,8 +133,17 @@ function PlanDialog({
 
   if (!mounted) return null;
 
-  const remain = view.planTotal - view.planExec;
-  const rate = view.planTotal > 0 ? Math.round((view.planExec / view.planTotal) * 100) : 0;
+  const allYears = Array.from(new Set(view.items.map((it) => it.fiscalYear))).sort(
+    (a, b) => a - b,
+  );
+  const filteredItems =
+    filterYear === 0 ? view.items : view.items.filter((it) => it.fiscalYear === filterYear);
+  const filteredPlanTotal = filteredItems.reduce((a, it) => a + it.planWon, 0);
+  const filteredPlanExec = filteredItems.reduce((a, it) => a + it.execWon, 0);
+  const filteredView = { ...view, items: filteredItems, planTotal: filteredPlanTotal, planExec: filteredPlanExec };
+
+  const remain = filteredPlanTotal - filteredPlanExec;
+  const rate = filteredPlanTotal > 0 ? Math.round((filteredPlanExec / filteredPlanTotal) * 100) : 0;
 
   return createPortal(
     <div
@@ -141,8 +151,20 @@ function PlanDialog({
       style={{ position: "fixed", inset: 0, background: "rgba(15,24,48,.45)", zIndex: 120, display: "flex", justifyContent: "center", alignItems: "flex-start", overflowY: "auto", padding: "32px 16px" }}
     >
       <div onClick={(e) => e.stopPropagation()} className="bg-background w-full max-w-[1180px] rounded-2xl shadow-2xl">
-        <div className="bg-card sticky top-0 z-[2] flex items-center justify-between rounded-t-2xl border-b px-5 py-4">
-          <h2 className="text-[16px] font-extrabold">투자비 사업계획 (전체 연도)</h2>
+        <div className="bg-card flex items-center justify-between rounded-t-2xl border-b px-5 py-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[16px] font-extrabold">투자비 사업계획</h2>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(Number(e.target.value))}
+              className="text-muted-foreground hover:bg-muted cursor-pointer rounded-md bg-transparent px-2 py-1 text-[13px] font-semibold outline-none transition-colors"
+            >
+              <option value={0}>전체</option>
+              {allYears.map((y) => (
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-1.5">
             {showAdd ? (
               <>
@@ -166,8 +188,8 @@ function PlanDialog({
 
         <div className="flex flex-col gap-4 p-5">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Summary label="계획 총액" value={formatBudgetEok(view.planTotal)} />
-            <Summary label="계획 집행" value={formatBudgetEok(view.planExec)} color={ACCENT} />
+            <Summary label="계획 총액" value={formatBudgetEok(filteredPlanTotal)} />
+            <Summary label="계획 집행" value={formatBudgetEok(filteredPlanExec)} color={ACCENT} />
             <Summary label="계획대비 미집행" value={formatBudgetEok(remain)} />
             <Summary label="집행률" value={`${rate}%`}>
               <Bar value={rate} color={ACCENT} height={6} />
@@ -197,16 +219,18 @@ function PlanDialog({
               <div className="w-[64px] text-right">집행률</div>
               <div className="w-[76px] text-right">관리</div>
             </div>
-            {view.items.length === 0 ? (
-              <p className="text-muted-foreground px-3 py-6 text-center text-[13px]">등록된 사업계획 항목이 없습니다. 위에서 추가하세요.</p>
+            {filteredItems.length === 0 ? (
+              <p className="text-muted-foreground px-3 py-6 text-center text-[13px]">
+                {view.items.length === 0 ? "등록된 사업계획 항목이 없습니다. 위에서 추가하세요." : "선택한 연도의 항목이 없습니다."}
+              </p>
             ) : (
-              view.items.map((it) => (
+              filteredItems.map((it) => (
                 <ItemRow key={it.id} item={it} projectOptions={projectOptions} headquarterOptions={headquarterOptions} />
               ))
             )}
           </div>
 
-          <PlanMatrix view={view} />
+          <PlanMatrix view={filteredView} />
         </div>
       </div>
     </div>,
@@ -297,6 +321,7 @@ function buildForm(fiscalYear: number, name: string, planWon: string, inv: strin
 function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemView; projectOptions: Option[]; headquarterOptions: Option[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [showProjects, setShowProjects] = useState(false);
   const [pending, start] = useTransition();
 
   function remove() {
@@ -313,9 +338,18 @@ function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemV
         <div className="text-muted-foreground w-[101px] text-center text-[12px]">{item.mprs ? MPRS_LABEL[item.mprs] : "-"}</div>
         <div className="min-w-0 flex-1 pr-2">
           <div className="font-semibold">{item.name}</div>
-          <div className="text-muted-foreground truncate text-[11.5px]">
-            {item.projectNames.length ? `과제 ${item.projectNames.length}: ${item.projectNames.join(", ")}` : "매핑 과제 없음"}
-          </div>
+          {item.projects.length ? (
+            <button
+              type="button"
+              onClick={() => setShowProjects(true)}
+              className="text-primary block max-w-full truncate text-left text-[11.5px] font-medium hover:underline"
+              title="매핑 과제 목록 보기"
+            >
+              과제 {item.projects.length}: {item.projectNames.join(", ")}
+            </button>
+          ) : (
+            <div className="text-muted-foreground text-[11.5px]">매핑 과제 없음</div>
+          )}
         </div>
         <div className="w-[88px] text-right tabular-nums">{formatBudgetEok(item.planWon)}</div>
         <div className="w-[88px] text-right font-semibold tabular-nums">{formatBudgetEok(item.execWon)}</div>
@@ -326,7 +360,53 @@ function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemV
         </div>
       </div>
       {editing && <ItemEditor item={item} projectOptions={projectOptions} headquarterOptions={headquarterOptions} onDone={() => setEditing(false)} />}
+      {showProjects && <ProjectsPopup item={item} onClose={() => setShowProjects(false)} />}
     </div>
+  );
+}
+
+/** 사업계획 항목에 매핑된 과제 목록 팝업 (과제명 + 집행액). */
+function ProjectsPopup({ item, onClose }: { item: PlanItemView; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(15,24,48,.5)", zIndex: 130, display: "flex", justifyContent: "center", alignItems: "center", padding: 16 }}
+    >
+      <div onClick={(e) => e.stopPropagation()} className="bg-background flex max-h-[80vh] w-full max-w-[480px] flex-col rounded-2xl shadow-2xl">
+        <div className="flex items-start justify-between gap-2 border-b px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-muted-foreground text-[12px]">매핑 과제 · {item.projects.length}건</p>
+            <h3 className="truncate text-[15px] font-extrabold">{item.name}</h3>
+          </div>
+          <button type="button" onClick={onClose} aria-label="닫기" className="text-muted-foreground hover:bg-muted flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-2 py-2">
+          <div className="text-muted-foreground flex h-8 items-center px-3 text-[12px] font-semibold">
+            <div className="flex-1">과제명</div>
+            <div className="w-[88px] text-right">집행</div>
+          </div>
+          {item.projects.map((p) => (
+            <div key={p.id} className="hover:bg-muted/50 flex items-center rounded-lg px-3 py-2 text-[13px] transition-colors">
+              <div className="min-w-0 flex-1 truncate font-medium">{p.name}</div>
+              <div className="w-[88px] text-right font-semibold tabular-nums">{formatBudgetEok(p.execWon)}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between border-t px-5 py-3 text-[13px]">
+          <span className="text-muted-foreground font-semibold">집행 합계</span>
+          <span className="font-extrabold tabular-nums">{formatBudgetEok(sum(item.projects.map((p) => p.execWon)))}</span>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

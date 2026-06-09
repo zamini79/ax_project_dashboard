@@ -28,6 +28,7 @@ export interface PlanItemView {
   rate: number; // 집행률 %
   projectIds: string[];
   projectNames: string[];
+  projects: { id: string; name: string; execWon: number }[];
   monthly: MonthBucket[];
 }
 
@@ -97,6 +98,11 @@ export function buildBudgetPlanView(
       rate: rateOf(execWon, it.plan_amount),
       projectIds: it.projects.map((p) => p.id),
       projectNames: it.projects.map((p) => p.name),
+      projects: it.projects.map((p) => ({
+        id: p.id,
+        name: p.name,
+        execWon: sum(p.monthly.map((m) => m.amount)),
+      })),
       monthly: buckets.map((b) => ({
         key: b.key,
         label: b.label,
