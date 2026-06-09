@@ -152,7 +152,7 @@ export function ProjectForm({
             </select>
           </Field>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <Field label="진행 현황" required error={errors.lifecycle?.message}>
             <select className={inputClass} {...register("lifecycle")}>
               {LIFECYCLE_VALUES.map((l) => (
@@ -171,9 +171,6 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
-
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="시작일" error={errors.startDate?.message}>
             <input type="date" {...register("startDate")} className={inputClass} />
           </Field>
