@@ -31,8 +31,6 @@ const inputClass =
 const EOK = 100_000_000; // 투자비: 폼은 억 단위 보관, 입력/표시는 원 단위
 const searchInputClass =
   "border-border-strong bg-card focus-visible:ring-ring h-[34px] w-[220px] rounded-[9px] border px-3 text-[13px] outline-none focus-visible:ring-2";
-const numOrUndef = (v: unknown) =>
-  v === "" || v === null || v === undefined ? undefined : Number(v);
 
 export function ProjectForm({
   mode,
@@ -205,18 +203,6 @@ export function ProjectForm({
               );
             }}
           />
-          <Field label="투입 인원 (FTE)" error={errors.fte?.message}>
-            <input
-              type="number"
-              step="0.5"
-              min="0"
-              {...register("fte", { setValueAs: numOrUndef })}
-              placeholder="예: 2"
-              className={inputClass}
-            />
-          </Field>
-
-          </div>
           <Field label="사업계획" error={errors.budgetPlanItemId?.message}>
             <select className={inputClass} {...register("budgetPlanItemId")}>
               {planItems.map((p) => (
@@ -227,6 +213,7 @@ export function ProjectForm({
               <option value="">사업계획 외 과제</option>
             </select>
           </Field>
+          </div>
           <Controller
             control={control}
             name="progressPct"
