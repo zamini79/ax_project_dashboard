@@ -10,6 +10,7 @@ export interface MasterOption {
 export interface PersonOption {
   id: string;
   name: string;
+  email: string | null;
   department: string | null;
 }
 
@@ -29,12 +30,13 @@ export async function fetchPeople(): Promise<PersonOption[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("people")
-    .select("id, name, departments ( name )")
+    .select("id, name, email, departments ( name )")
     .order("name", { ascending: true });
   if (error) throw new Error(`사람 목록 조회 실패: ${error.message}`);
   return (data ?? []).map((p) => ({
     id: p.id,
     name: p.name,
+    email: p.email ?? null,
     department:
       (p.departments as { name: string } | null)?.name ?? null,
   }));

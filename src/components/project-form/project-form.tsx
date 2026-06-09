@@ -261,14 +261,17 @@ export function ProjectForm({
               control={control}
               name="pmIds"
               render={({ field }) => (
-                <ChipMultiSelect
+                <SearchSelect
                   options={people.map((p) => ({
                     id: p.id,
                     label: p.name,
                     hint: p.department,
+                    keywords: p.email ?? "",
                   }))}
                   value={field.value}
                   onChange={field.onChange}
+                  placeholder="이름 또는 이메일로 검색"
+                  addLabel="PM 추가"
                   emptyText="등록된 사람이 없습니다."
                 />
               )}
@@ -279,10 +282,12 @@ export function ProjectForm({
               control={control}
               name="departmentIds"
               render={({ field }) => (
-                <ChipMultiSelect
+                <SearchSelect
                   options={departments.map((d) => ({ id: d.id, label: d.name }))}
                   value={field.value}
                   onChange={field.onChange}
+                  placeholder="부서명으로 검색"
+                  addLabel="부서 추가"
                   emptyText="등록된 부서가 없습니다."
                 />
               )}
@@ -383,6 +388,131 @@ function ChipMultiSelect({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+interface SearchOption {
+  id: string;
+  label: string;
+  hint?: string | null;
+  keywords?: string; // 추가 검색 키워드(예: 이메일)
+}
+
+/** 검색 후 선택하는 다중 선택 (칩 + ＋추가 버튼 → 검색 드롭다운). */
+function SearchSelect({
+  options,
+  value,
+  onChange,
+  placeholder,
+  addLabel,
+  emptyText,
+}: {
+  options: SearchOption[];
+  value: string[];
+  onChange: (next: string[]) => void;
+  placeholder: string;
+  addLabel: string;
+  emptyText: string;
+}) {
+  const [q, setQ] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  if (options.length === 0) {
+    return (
+      <p className="text-faint rounded-md border border-dashed px-3 py-2 text-xs">
+        {emptyText}
+      </p>
+    );
+  }
+
+  const selected = value
+    .map((id) => options.find((o) => o.id === id))
+    .filter((o): o is SearchOption => !!o);
+  const query = q.trim().toLowerCase();
+  const matches = options
+    .filter(
+      (o) =>
+        !value.includes(o.id) &&
+        (!query ||
+          `${o.label} ${o.hint ?? ""} ${o.keywords ?? ""}`
+            .toLowerCase()
+            .includes(query)),
+    )
+    .slice(0, 8);
+
+  return (
+    <div className="flex flex-col gap-2">
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((o) => (
+            <span
+              key={o.id}
+              className="border-primary text-accent-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold"
+              style={{ background: "#EEF0FB" }}
+            >
+              {o.label}
+              {o.hint && <span className="text-faint font-normal">· {o.hint}</span>}
+              <button
+                type="button"
+                onClick={() => onChange(value.filter((v) => v !== o.id))}
+                aria-label={`${o.label} 제거`}
+                className="text-muted-foreground hover:text-foreground ml-0.5 text-sm leading-none"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {adding ? (
+        <div className="relative">
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onBlur={() => setTimeout(() => { setAdding(false); setQ(""); }, 150)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") { setAdding(false); setQ(""); }
+            }}
+            placeholder={placeholder}
+            className={inputClass}
+          />
+          <div className="bg-card absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-lg border shadow-lg">
+            {matches.length === 0 ? (
+              <p className="text-faint px-3 py-2 text-xs">검색 결과 없음</p>
+            ) : (
+              matches.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { onChange([...value, o.id]); setQ(""); }}
+                  className="hover:bg-muted flex w-full items-center gap-1.5 px-3 py-2 text-left text-[13px]"
+                >
+                  <span className="text-primary">＋</span>
+                  <span className="font-medium">{o.label}</span>
+                  {o.hint && <span className="text-faint text-xs">· {o.hint}</span>}
+                  {o.keywords && (
+                    <span className="text-faint ml-auto truncate pl-2 text-[11px]">
+                      {o.keywords}
+                    </span>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="border-border-strong text-muted-foreground hover:bg-muted inline-flex w-fit items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-[12.5px] font-semibold transition-colors"
+        >
+          <span className="text-primary">＋</span> {addLabel}
+        </button>
+      )}
     </div>
   );
 }
