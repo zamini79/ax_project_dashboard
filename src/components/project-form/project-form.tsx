@@ -29,6 +29,8 @@ import {
 const inputClass =
   "border-border-strong bg-card focus-visible:ring-ring h-[38px] w-full rounded-[9px] border px-3 text-[13.5px] outline-none focus-visible:ring-2";
 const EOK = 100_000_000; // 투자비: 폼은 억 단위 보관, 입력/표시는 원 단위
+const searchInputClass =
+  "border-border-strong bg-card focus-visible:ring-ring h-[34px] w-[220px] rounded-[9px] border px-3 text-[13px] outline-none focus-visible:ring-2";
 const numOrUndef = (v: unknown) =>
   v === "" || v === null || v === undefined ? undefined : Number(v);
 
@@ -442,10 +444,8 @@ function SearchSelect({
     .slice(0, 8);
 
   return (
-    <div className="flex flex-col gap-2">
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selected.map((o) => (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {selected.map((o) => (
             <span
               key={o.id}
               className="border-primary text-accent-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold"
@@ -462,10 +462,7 @@ function SearchSelect({
                 ×
               </button>
             </span>
-          ))}
-        </div>
-      )}
-
+      ))}
       {adding ? (
         <div className="relative">
           <input
@@ -477,9 +474,9 @@ function SearchSelect({
               if (e.key === "Escape") { setAdding(false); setQ(""); }
             }}
             placeholder={placeholder}
-            className={inputClass}
+            className={searchInputClass}
           />
-          <div className="bg-card absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-lg border shadow-lg">
+          <div className="bg-card absolute left-0 z-20 mt-1 max-h-56 w-[280px] overflow-auto rounded-lg border shadow-lg">
             {matches.length === 0 ? (
               <p className="text-faint px-3 py-2 text-xs">검색 결과 없음</p>
             ) : (
