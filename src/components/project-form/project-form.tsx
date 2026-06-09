@@ -548,7 +548,7 @@ function SearchSelect({
                   key={o.id}
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => { onChange([...value, o.id]); setQ(""); }}
+                  onClick={() => { onChange([...value, o.id]); setQ(""); setAdding(false); }}
                   className="hover:bg-muted flex w-full items-center gap-1.5 px-3 py-2 text-left text-[13px]"
                 >
                   <span className="text-primary">＋</span>
