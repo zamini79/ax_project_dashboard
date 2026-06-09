@@ -6,12 +6,14 @@ import { revalidatePath } from "next/cache";
 import {
   projectFormSchema,
   eokToWon,
+  wonToEok,
   type ProjectFormValues,
 } from "@/lib/domain/project-form";
 import {
   createProject,
   updateProject,
   fetchHeadquarters,
+  fetchProjectEditData,
   type ProjectWriteInput,
 } from "@/lib/repositories/projects";
 import {
@@ -100,6 +102,54 @@ export async function createProjectModalAction(
   revalidatePath("/projects");
   revalidatePath("/budget");
   return { ok: true, id };
+}
+
+/** 모달(전체 팝업)용 과제 수정 — redirect 없이 결과만 반환. */
+export async function updateProjectModalAction(
+  id: string,
+  values: ProjectFormValues,
+): Promise<{ error: string } | { ok: true }> {
+  const parsed = projectFormSchema.safeParse(values);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "입력값을 확인하세요." };
+  }
+  try {
+    await updateProject(id, toWriteInput(parsed.data));
+    await setProjectPlanItem(id, parsed.data.budgetPlanItemId || null);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "과제 수정에 실패했습니다." };
+  }
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/budget");
+  revalidatePath(`/projects/${id}`);
+  return { ok: true };
+}
+
+/** 편집 모달용 — 현재 값(폼 형태) + 옵션 로드. 없으면 null */
+export async function loadProjectEditData(id: string) {
+  const edit = await fetchProjectEditData(id);
+  if (!edit) return null;
+  const options = await loadProjectFormOptions();
+  const values: ProjectFormValues = {
+    name: edit.name,
+    description: edit.description ?? "",
+    mprs: edit.mprs,
+    investmentType: edit.investment_type,
+    headquarterId: edit.headquarter_id,
+    lifecycle: edit.lifecycle,
+    health: edit.health,
+    startDate: edit.start_date ?? "",
+    endDate: edit.end_date ?? "",
+    budgetEok: wonToEok(edit.total_budget),
+    fte: edit.fte ?? undefined,
+    progressPct: edit.progress_pct,
+    pmIds: edit.pmIds,
+    departmentIds: edit.departmentIds,
+    aiTechIds: edit.aiTechIds,
+    budgetPlanItemId: edit.budgetPlanItemId,
+  };
+  return { values, options };
 }
 
 /** 과제 폼 옵션 일괄 로드 (모달 오픈 시 호출) */

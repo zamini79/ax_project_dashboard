@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { EditProjectModal } from "@/components/project-form/edit-project-modal";
 import type { ProjectDetail } from "@/lib/repositories/projects";
 import { LIFECYCLE_LABEL } from "@/lib/domain/lifecycle";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
@@ -40,12 +41,10 @@ export function DetailHeader({ project }: { project: ProjectDetail }) {
           <h1 className="truncate text-xl font-semibold">{project.name}</h1>
         </div>
 
-        <Link
-          href={`/projects/${project.id}/edit?from=${encodeURIComponent(`/projects/${project.id}`)}`}
-          className="bg-primary text-primary-foreground shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-90"
-        >
-          편집
-        </Link>
+        <EditProjectModal
+          projectId={project.id}
+          className="bg-primary text-primary-foreground inline-flex shrink-0 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-90"
+        />
       </div>
     </header>
   );

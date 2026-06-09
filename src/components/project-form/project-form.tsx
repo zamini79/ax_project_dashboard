@@ -23,6 +23,7 @@ import {
   createProjectAction,
   createProjectModalAction,
   updateProjectAction,
+  updateProjectModalAction,
 } from "@/app/projects/actions";
 
 const inputClass =
@@ -75,11 +76,17 @@ export function ProjectForm({
 
   async function onValid(values: ProjectFormValues) {
     setServerError(undefined);
-    // 모달 생성: redirect 없이 결과만 받고 모달 닫기 + 배경 갱신
-    if (mode === "create" && onSuccess) {
-      const result = await createProjectModalAction(values);
-      if ("error" in result) setServerError(result.error);
-      else onSuccess(result.id);
+    // 모달 모드: redirect 없이 결과만 받고 모달 닫기 + 배경 갱신
+    if (onSuccess) {
+      if (mode === "create") {
+        const result = await createProjectModalAction(values);
+        if ("error" in result) setServerError(result.error);
+        else onSuccess(result.id);
+      } else {
+        const result = await updateProjectModalAction(projectId!, values);
+        if ("error" in result) setServerError(result.error);
+        else onSuccess(projectId!);
+      }
       return;
     }
     const result =

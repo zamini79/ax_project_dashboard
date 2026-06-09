@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { X, Sparkles } from "lucide-react";
 
 import { Bar } from "@/components/charts/charts";
+import { EditProjectModal } from "@/components/project-form/edit-project-modal";
 import { UpdateCompose } from "@/components/project-detail/update-compose";
 import type { ProjectDetail } from "@/lib/repositories/projects";
 import type { ProjectEffect } from "@/lib/repositories/effects";
@@ -40,13 +40,6 @@ export function ProjectDetailDrawer({
   todayISO: string;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  // 편집 후 이 드로어(현재 필터 포함)로 정확히 복귀시키기 위한 출처 URL
-  const qs = searchParams.toString();
-  const editHref = `/projects/${p.id}/edit?from=${encodeURIComponent(
-    qs ? `${pathname}?${qs}` : pathname,
-  )}`;
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState(false);
 
@@ -134,12 +127,10 @@ export function ProjectDetailDrawer({
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Link
-                href={editHref}
+              <EditProjectModal
+                projectId={p.id}
                 className="bg-card hover:bg-muted flex h-[30px] items-center rounded-lg border px-3 text-[12.5px] font-semibold transition-colors"
-              >
-                편집
-              </Link>
+              />
               <button
                 type="button"
                 onClick={close}
