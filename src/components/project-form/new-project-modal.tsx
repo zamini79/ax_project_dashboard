@@ -8,6 +8,7 @@ import { Plus, X } from "lucide-react";
 import { ProjectForm } from "./project-form";
 import { emptyFormValues } from "@/lib/domain/project-form";
 import { loadProjectFormOptions } from "@/app/projects/actions";
+import { UnsavedConfirm } from "./unsaved-confirm";
 
 type Options = Awaited<ReturnType<typeof loadProjectFormOptions>>;
 
@@ -21,6 +22,7 @@ export function NewProjectModal() {
   const [opts, setOpts] = useState<Options | null>(null);
   const [mounted, setMounted] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const FORM_ID = "new-project-form";
 
   useEffect(() => {
@@ -31,23 +33,18 @@ export function NewProjectModal() {
   function openModal() {
     setOpen(true);
     setDirty(false);
+    setConfirming(false);
     if (!opts) loadProjectFormOptions().then(setOpts);
   }
   function close() {
     setOpen(false);
     setDirty(false);
+    setConfirming(false);
   }
-  // 팝업 밖 클릭: 입력 내용 없으면 바로 닫고, 있으면 저장 여부 확인
+  // 팝업 밖 클릭: 입력 내용 없으면 바로 닫고, 있으면 저장/저장안함/취소 확인
   function requestClose() {
-    if (!dirty) {
-      close();
-      return;
-    }
-    if (window.confirm("입력한 내용이 있습니다. 저장하시겠습니까?")) {
-      (document.getElementById(FORM_ID) as HTMLFormElement | null)?.requestSubmit();
-    } else {
-      close();
-    }
+    if (!dirty) close();
+    else setConfirming(true);
   }
 
   useEffect(() => {
@@ -133,6 +130,20 @@ export function NewProjectModal() {
               </div>
             </div>
           </div>,
+          document.body,
+        )}
+
+      {confirming &&
+        mounted &&
+        createPortal(
+          <UnsavedConfirm
+            onSave={() => {
+              setConfirming(false);
+              (document.getElementById(FORM_ID) as HTMLFormElement | null)?.requestSubmit();
+            }}
+            onDiscard={close}
+            onCancel={() => setConfirming(false)}
+          />,
           document.body,
         )}
     </>
