@@ -53,6 +53,8 @@ export const projectFormSchema = z
     pmIds: z.array(z.string().uuid()),
     departmentIds: z.array(z.string().uuid()),
     aiTechIds: z.array(z.string().uuid()),
+    // 사업계획 매핑: "" = 사업계획 외 과제, uuid = 해당 사업계획 항목
+    budgetPlanItemId: z.string(),
   })
   .refine(
     (v) => !(v.startDate && v.endDate) || v.endDate >= v.startDate,
@@ -92,5 +94,6 @@ export function emptyFormValues(): ProjectFormValues {
     pmIds: [],
     departmentIds: [],
     aiTechIds: [],
+    budgetPlanItemId: "",
   };
 }

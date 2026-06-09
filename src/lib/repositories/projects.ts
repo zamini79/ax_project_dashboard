@@ -391,6 +391,7 @@ export interface ProjectEditData {
   pmIds: string[];
   departmentIds: string[];
   aiTechIds: string[];
+  budgetPlanItemId: string; // "" = 사업계획 외 과제
 }
 
 type DbClient = Awaited<ReturnType<typeof createClient>>;
@@ -526,6 +527,7 @@ interface RawEditRow {
   project_pms: { person_id: string }[];
   project_stakeholders: { department_id: string }[];
   project_ai_techs: { ai_tech_id: string }[];
+  budget_plan_item_projects: { item_id: string }[];
 }
 
 /** 편집 폼 프리필용 데이터 (스칼라 + 선택된 M:N id 목록) */
@@ -543,7 +545,8 @@ export async function fetchProjectEditData(
       start_date, end_date, total_budget, fte, progress_pct,
       project_pms ( person_id ),
       project_stakeholders ( department_id ),
-      project_ai_techs ( ai_tech_id )
+      project_ai_techs ( ai_tech_id ),
+      budget_plan_item_projects ( item_id )
     `,
     )
     .eq("id", id)
@@ -574,5 +577,6 @@ export async function fetchProjectEditData(
       (data.project_stakeholders ?? []).map((s) => s.department_id),
     ),
     aiTechIds: unique((data.project_ai_techs ?? []).map((t) => t.ai_tech_id)),
+    budgetPlanItemId: data.budget_plan_item_projects?.[0]?.item_id ?? "",
   };
 }

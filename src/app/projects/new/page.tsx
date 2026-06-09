@@ -6,18 +6,22 @@ import {
   fetchPeople,
   fetchAiTechs,
 } from "@/lib/repositories/masters";
+import { fetchPlanItemOptions } from "@/lib/repositories/budget-plan";
 import { emptyFormValues } from "@/lib/domain/project-form";
 import { ProjectForm } from "@/components/project-form/project-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewProjectPage() {
-  const [headquarters, departments, people, aiTechs] = await Promise.all([
-    fetchHeadquarters(),
-    fetchDepartments(),
-    fetchPeople(),
-    fetchAiTechs(),
-  ]);
+  const fiscalYear = new Date().getFullYear();
+  const [headquarters, departments, people, aiTechs, planItems] =
+    await Promise.all([
+      fetchHeadquarters(),
+      fetchDepartments(),
+      fetchPeople(),
+      fetchAiTechs(),
+      fetchPlanItemOptions(fiscalYear),
+    ]);
 
   return (
     <div className="flex min-h-full flex-col">
@@ -43,6 +47,7 @@ export default async function NewProjectPage() {
           departments={departments}
           people={people}
           aiTechs={aiTechs}
+          planItems={planItems}
         />
       </main>
     </div>

@@ -13,6 +13,7 @@ import {
   updateProject,
   type ProjectWriteInput,
 } from "@/lib/repositories/projects";
+import { setProjectPlanItem } from "@/lib/repositories/budget-plan";
 
 export type FormActionResult = { error: string } | void;
 
@@ -57,11 +58,13 @@ export async function createProjectAction(
   let id: string;
   try {
     id = await createProject(toWriteInput(parsed.data));
+    await setProjectPlanItem(id, parsed.data.budgetPlanItemId || null);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "과제 생성에 실패했습니다." };
   }
 
   revalidatePath("/");
+  revalidatePath("/budget");
   redirect(`/projects/${id}`);
 }
 
@@ -78,12 +81,14 @@ export async function updateProjectAction(
 
   try {
     await updateProject(id, toWriteInput(parsed.data));
+    await setProjectPlanItem(id, parsed.data.budgetPlanItemId || null);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "과제 수정에 실패했습니다." };
   }
 
   revalidatePath("/");
   revalidatePath("/projects");
+  revalidatePath("/budget");
   revalidatePath(`/projects/${id}`);
   redirect(safeReturnTo(returnTo, `/projects/${id}`));
 }

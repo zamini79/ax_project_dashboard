@@ -97,6 +97,43 @@ export async function fetchBudgetPlanItems(
   }));
 }
 
+/** 과제 폼용 — 연도별 사업계획 항목 옵션(id, name) */
+export async function fetchPlanItemOptions(
+  fiscalYear: number,
+): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("budget_plan_items")
+    .select("id, name")
+    .eq("fiscal_year", fiscalYear)
+    .order("sort", { ascending: true });
+  if (error) throw new Error(`사업계획 옵션 조회 실패: ${error.message}`);
+  return data ?? [];
+}
+
+/**
+ * 과제의 사업계획 매핑 설정 (과제 1개 ↔ 사업계획 항목 1개).
+ * 기존 매핑 모두 제거 후, itemId가 있으면 새로 연결. null = 사업계획 외 과제.
+ */
+export async function setProjectPlanItem(
+  projectId: string,
+  itemId: string | null,
+): Promise<void> {
+  const supabase = await createClient();
+  const { error: delErr } = await supabase
+    .from("budget_plan_item_projects")
+    .delete()
+    .eq("project_id", projectId);
+  if (delErr) throw new Error(`사업계획 매핑 갱신 실패: ${delErr.message}`);
+
+  if (itemId) {
+    const { error: insErr } = await supabase
+      .from("budget_plan_item_projects")
+      .insert({ item_id: itemId, project_id: projectId });
+    if (insErr) throw new Error(`사업계획 매핑 저장 실패: ${insErr.message}`);
+  }
+}
+
 export interface PlanItemAttrs {
   name: string;
   planAmount: number; // 원

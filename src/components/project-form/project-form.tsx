@@ -38,6 +38,7 @@ export function ProjectForm({
   people,
   departments,
   aiTechs,
+  planItems,
   returnTo,
 }: {
   mode: "create" | "edit";
@@ -47,6 +48,8 @@ export function ProjectForm({
   people: PersonOption[];
   departments: MasterOption[];
   aiTechs: MasterOption[];
+  /** 사업계획 매핑 콤보 옵션 (해당 연도 사업계획 항목) */
+  planItems: { id: string; name: string }[];
   /** 편집 진입 출처 — 저장/취소 시 이곳으로 복귀 (목록·드로어·상세) */
   returnTo?: string;
 }) {
@@ -194,6 +197,16 @@ export function ProjectForm({
           </Field>
 
           </div>
+          <Field label="사업계획" error={errors.budgetPlanItemId?.message}>
+            <select className={inputClass} {...register("budgetPlanItemId")}>
+              {planItems.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+              <option value="">사업계획 외 과제</option>
+            </select>
+          </Field>
           <Controller
             control={control}
             name="progressPct"
