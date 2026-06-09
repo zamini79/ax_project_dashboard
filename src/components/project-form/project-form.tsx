@@ -141,7 +141,7 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
-          <Field label="투자 유형" required error={errors.investmentType?.message}>
+          <Field label="과제 유형" required error={errors.investmentType?.message}>
             <select className={inputClass} {...register("investmentType")}>
               <option value="" hidden>선택하세요</option>
               {INVESTMENT_VALUES.map((t) => (

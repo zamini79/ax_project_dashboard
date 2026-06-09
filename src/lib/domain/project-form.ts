@@ -36,7 +36,7 @@ export const projectFormSchema = z
     description: z.string().trim().max(2000).optional().or(z.literal("")),
     mprs: z.enum(MPRS_VALUES, { message: "분류를 선택하세요." }),
     investmentType: z.enum(INVESTMENT_VALUES, {
-      message: "투자 유형을 선택하세요.",
+      message: "과제 유형을 선택하세요.",
     }),
     headquarterId: z.string().uuid("주관 본부를 선택하세요."),
     lifecycle: z.enum(LIFECYCLE_VALUES),
