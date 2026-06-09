@@ -21,6 +21,7 @@ import { LIFECYCLE_LABEL, HEALTH_LABEL } from "@/lib/domain/lifecycle";
 import type { MasterOption, PersonOption } from "@/lib/repositories/masters";
 import {
   createProjectAction,
+  createProjectModalAction,
   updateProjectAction,
 } from "@/app/projects/actions";
 
@@ -40,6 +41,8 @@ export function ProjectForm({
   aiTechs,
   planItems,
   returnTo,
+  onSuccess,
+  onCancel,
 }: {
   mode: "create" | "edit";
   projectId?: string;
@@ -52,6 +55,10 @@ export function ProjectForm({
   planItems: { id: string; name: string }[];
   /** 편집 진입 출처 — 저장/취소 시 이곳으로 복귀 (목록·드로어·상세) */
   returnTo?: string;
+  /** 모달(임베드) 모드: 생성 성공 시 redirect 대신 호출 → 모달 닫고 배경 갱신 */
+  onSuccess?: (id: string) => void;
+  /** 모달 모드 취소 핸들러 (없으면 router.back) */
+  onCancel?: () => void;
 }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string>();
@@ -68,6 +75,13 @@ export function ProjectForm({
 
   async function onValid(values: ProjectFormValues) {
     setServerError(undefined);
+    // 모달 생성: redirect 없이 결과만 받고 모달 닫기 + 배경 갱신
+    if (mode === "create" && onSuccess) {
+      const result = await createProjectModalAction(values);
+      if ("error" in result) setServerError(result.error);
+      else onSuccess(result.id);
+      return;
+    }
     const result =
       mode === "create"
         ? await createProjectAction(values)
@@ -293,7 +307,7 @@ export function ProjectForm({
       <div className="flex justify-end gap-2.5">
         <button
           type="button"
-          onClick={() => (returnTo ? router.push(returnTo) : router.back())}
+          onClick={() => (onCancel ? onCancel() : returnTo ? router.push(returnTo) : router.back())}
           disabled={isSubmitting}
           className="border-border-strong text-muted-foreground hover:bg-muted rounded-[10px] border px-[18px] py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-50"
         >

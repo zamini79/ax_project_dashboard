@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Building2, Plus } from "lucide-react";
+import { Building2 } from "lucide-react";
 
 import { getCurrentUser, signOut } from "@/lib/auth/actions";
 import { fetchProjectList } from "@/lib/repositories/projects";
 import { MainTabs } from "@/components/layout/main-tabs";
+import { NewProjectModal } from "@/components/project-form/new-project-modal";
 import {
   CommandMenu,
   type CommandProject,
@@ -66,12 +67,7 @@ export default async function MainLayout({
             <Building2 size={16} />
           </Link>
 
-          <Link
-            href="/projects/new"
-            className="bg-primary text-primary-foreground inline-flex items-center gap-1 rounded-[9px] px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-90"
-          >
-            <Plus size={15} />새 과제
-          </Link>
+          <NewProjectModal />
 
           <span
             title={userLabel ?? undefined}
