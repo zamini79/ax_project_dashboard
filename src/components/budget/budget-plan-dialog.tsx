@@ -84,7 +84,36 @@ function PlanDialog({
   headquarterOptions: Option[];
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [fyear, setFyear] = useState(year);
+  const [name, setName] = useState("");
+  const [planWon, setPlanWon] = useState("");
+  const [inv, setInv] = useState("");
+  const [hq, setHq] = useState("");
+  const [mprs, setMprs] = useState("");
+  const [addErr, setAddErr] = useState<string>();
+  const [adding, startAdd] = useTransition();
+
+  function resetAdd() {
+    setName(""); setPlanWon(""); setInv(""); setHq(""); setMprs(""); setFyear(year); setAddErr(undefined);
+  }
+  function closeAdd() {
+    setShowAdd(false);
+    resetAdd();
+  }
+  function submitAdd() {
+    setAddErr(undefined);
+    if (!name.trim()) { setAddErr("계획명을 입력하세요."); return; }
+    if (!inv || !hq || !mprs) { setAddErr("구분·본부·MPRS를 모두 선택하세요."); return; }
+    startAdd(async () => {
+      const r = await createPlanItemAction(buildForm(fyear, name, planWon, inv, hq, mprs));
+      if ("error" in r) { setAddErr(r.error); return; }
+      resetAdd();
+      router.refresh();
+    });
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -114,9 +143,25 @@ function PlanDialog({
       <div onClick={(e) => e.stopPropagation()} className="bg-background w-full max-w-[1180px] rounded-2xl shadow-2xl">
         <div className="bg-card sticky top-0 z-[2] flex items-center justify-between rounded-t-2xl border-b px-5 py-4">
           <h2 className="text-[16px] font-extrabold">투자비 사업계획 (전체 연도)</h2>
-          <button type="button" onClick={onClose} aria-label="닫기" className="text-muted-foreground hover:bg-muted flex h-8 w-8 items-center justify-center rounded-lg border">
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {showAdd ? (
+              <>
+                <button type="button" onClick={submitAdd} disabled={adding} className="bg-primary text-primary-foreground inline-flex h-8 items-center gap-1 rounded-lg px-3 text-[13px] font-bold disabled:opacity-50">
+                  <Plus size={15} /> {adding ? "추가 중…" : "추가"}
+                </button>
+                <button type="button" onClick={closeAdd} disabled={adding} className="border-border-strong text-muted-foreground hover:bg-muted h-8 rounded-lg border px-3 text-[13px] font-semibold disabled:opacity-50">
+                  취소
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={() => setShowAdd(true)} className="bg-primary text-primary-foreground inline-flex h-8 items-center gap-1 rounded-lg px-3 text-[13px] font-bold">
+                <Plus size={15} /> 계획 추가
+              </button>
+            )}
+            <button type="button" onClick={onClose} aria-label="닫기" className="text-muted-foreground hover:bg-muted flex h-8 w-8 items-center justify-center rounded-lg border">
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-4 p-5">
@@ -129,7 +174,16 @@ function PlanDialog({
             </Summary>
           </div>
 
-          <AddItemForm year={year} headquarterOptions={headquarterOptions} />
+          {showAdd && (
+            <div className="flex flex-col gap-2 rounded-xl border border-dashed p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <AttrSelects year={fyear} setYear={setFyear} inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명 (예: AI 비전검사 사업)" className={cn(inputCls, "min-w-[200px] flex-1")} />
+                <WonInput value={planWon} onChange={setPlanWon} placeholder="총투자비(원)" className={cn(inputCls, "w-[170px] text-right")} />
+              </div>
+              {addErr && <p className="text-xs text-red-600">{addErr}</p>}
+            </div>
+          )}
 
           <div className="overflow-x-auto rounded-xl border">
             <div className="text-muted-foreground flex h-9 min-w-[936px] items-center border-b bg-[#FAFAFB] px-3 text-[12px] font-semibold">
@@ -238,43 +292,6 @@ function buildForm(fiscalYear: number, name: string, planWon: string, inv: strin
     headquarterId: hq || null,
     mprs: (mprs || null) as Mprs | null,
   };
-}
-
-function AddItemForm({ year, headquarterOptions }: { year: number; headquarterOptions: Option[] }) {
-  const router = useRouter();
-  const [fyear, setFyear] = useState(year);
-  const [name, setName] = useState("");
-  const [planWon, setPlanWon] = useState("");
-  const [inv, setInv] = useState("");
-  const [hq, setHq] = useState("");
-  const [mprs, setMprs] = useState("");
-  const [pending, start] = useTransition();
-  const [err, setErr] = useState<string>();
-
-  function submit() {
-    setErr(undefined);
-    if (!inv || !hq || !mprs) { setErr("구분·본부·MPRS를 모두 선택하세요."); return; }
-    start(async () => {
-      const r = await createPlanItemAction(buildForm(fyear, name, planWon, inv, hq, mprs));
-      if ("error" in r) { setErr(r.error); return; }
-      setName(""); setPlanWon(""); setInv(""); setHq(""); setMprs("");
-      router.refresh();
-    });
-  }
-
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border border-dashed p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <AttrSelects year={fyear} setYear={setFyear} inv={inv} setInv={setInv} hq={hq} setHq={setHq} mprs={mprs} setMprs={setMprs} headquarterOptions={headquarterOptions} />
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="계획명 (예: AI 비전검사 사업)" className={cn(inputCls, "min-w-[200px] flex-1")} />
-        <WonInput value={planWon} onChange={setPlanWon} placeholder="총투자비(원)" className={cn(inputCls, "w-[170px] text-right")} />
-        <button type="button" onClick={submit} disabled={pending} className="bg-primary text-primary-foreground inline-flex h-[34px] items-center gap-1 rounded-lg px-3 text-[13px] font-bold disabled:opacity-50">
-          <Plus size={15} /> 추가
-        </button>
-      </div>
-      {err && <p className="text-xs text-red-600">{err}</p>}
-    </div>
-  );
 }
 
 function ItemRow({ item, projectOptions, headquarterOptions }: { item: PlanItemView; projectOptions: Option[]; headquarterOptions: Option[] }) {
