@@ -466,6 +466,7 @@ function SearchSelect({
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
   const [dropUp, setDropUp] = useState(false);
+  const [hi, setHi] = useState(-1); // 키보드 하이라이트 인덱스
   const triggerRef = useRef<HTMLDivElement>(null);
 
   // 펼칠 때 아래 공간이 부족하면 위로 (기본은 아래)
@@ -500,6 +501,12 @@ function SearchSelect({
             .includes(query)),
     )
     .slice(0, 8);
+  const pick = (o: SearchOption) => {
+    onChange([...value, o.id]);
+    setQ("");
+    setAdding(false);
+    setHi(-1);
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -526,10 +533,19 @@ function SearchSelect({
           <input
             autoFocus
             value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onBlur={() => setTimeout(() => { setAdding(false); setQ(""); }, 150)}
+            onChange={(e) => { setQ(e.target.value); setHi(-1); }}
+            onBlur={() => setTimeout(() => { setAdding(false); setQ(""); setHi(-1); }, 150)}
             onKeyDown={(e) => {
-              if (e.key === "Escape") { setAdding(false); setQ(""); }
+              if (e.key === "Escape") { setAdding(false); setQ(""); setHi(-1); return; }
+              if (e.key === "ArrowDown") { e.preventDefault(); setHi((h) => Math.min(h + 1, matches.length - 1)); return; }
+              if (e.key === "ArrowUp") { e.preventDefault(); setHi((h) => Math.max(h - 1, 0)); return; }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (matches.length === 0) return;
+                if (matches.length === 1) { pick(matches[0]); return; }
+                if (hi < 0) { setHi(0); return; }
+                pick(matches[hi]);
+              }
             }}
             placeholder={placeholder}
             className={searchInputClass}
@@ -543,13 +559,17 @@ function SearchSelect({
             {matches.length === 0 ? (
               <p className="text-faint px-3 py-2 text-xs">검색 결과 없음</p>
             ) : (
-              matches.map((o) => (
+              matches.map((o, i) => (
                 <button
                   key={o.id}
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => { onChange([...value, o.id]); setQ(""); setAdding(false); }}
-                  className="hover:bg-muted flex w-full items-center gap-1.5 px-3 py-2 text-left text-[13px]"
+                  onMouseEnter={() => setHi(i)}
+                  onClick={() => pick(o)}
+                  className={cn(
+                    "flex w-full items-center gap-1.5 px-3 py-2 text-left text-[13px]",
+                    i === hi ? "bg-muted" : "hover:bg-muted",
+                  )}
                 >
                   <span className="text-primary">＋</span>
                   <span className="font-medium">{o.label}</span>
