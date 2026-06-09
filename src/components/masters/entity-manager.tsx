@@ -15,12 +15,20 @@ export interface EntityRow {
   name: string;
   email?: string | null;
   relationId?: string | null;
+  position?: string | null;
 }
 
 interface RelationConfig {
   label: string;
   options: { id: string; name: string }[];
   noneLabel?: string; // 비어있음 선택지 라벨
+}
+
+/** 고정 옵션 선택(예: 직책). 값은 문자열 그대로 저장 */
+interface ChoiceConfig {
+  label: string;
+  options: readonly string[];
+  noneLabel?: string;
 }
 
 export interface EntityManagerProps {
@@ -32,18 +40,20 @@ export interface EntityManagerProps {
   namePlaceholder?: string;
   hasEmail?: boolean;
   relation?: RelationConfig;
-  /** 관계 id → 표시명 (목록 비편집 시 참고용은 select가 대신함) */
+  /** 고정 옵션 선택(직책 등) — MasterInput.position에 저장 */
+  choice?: ChoiceConfig;
 }
 
 const selectClass =
   "border-input bg-card h-9 rounded-md border px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function EntityManager(props: EntityManagerProps) {
-  const { items, createAction, hasEmail, relation } = props;
+  const { items, createAction, hasEmail, relation, choice } = props;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [relationId, setRelationId] = useState("");
+  const [position, setPosition] = useState("");
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -54,6 +64,7 @@ export function EntityManager(props: EntityManagerProps) {
         name,
         email: hasEmail ? email : undefined,
         relationId: relation ? relationId || null : undefined,
+        position: choice ? position || null : undefined,
       });
       if (result?.error) {
         setError(result.error);
@@ -61,6 +72,7 @@ export function EntityManager(props: EntityManagerProps) {
         setName("");
         setEmail("");
         setRelationId("");
+        setPosition("");
       }
     });
   }
@@ -101,6 +113,23 @@ export function EntityManager(props: EntityManagerProps) {
             </select>
           </label>
         )}
+        {choice && (
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="text-muted-foreground">{choice.label}</span>
+            <select
+              className={selectClass}
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+            >
+              <option value="">{choice.noneLabel ?? "— 없음 —"}</option>
+              {choice.options.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <Button size="sm" onClick={add} disabled={pending || !name.trim()}>
           <Plus size={15} />
           {pending ? "추가 중…" : "추가"}
@@ -130,17 +159,20 @@ function EditableRow({
   deleteAction,
   hasEmail,
   relation,
+  choice,
 }: { item: EntityRow } & EntityManagerProps) {
   const [name, setName] = useState(item.name);
   const [email, setEmail] = useState(item.email ?? "");
   const [relationId, setRelationId] = useState(item.relationId ?? "");
+  const [position, setPosition] = useState(item.position ?? "");
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
   const dirty =
     name !== item.name ||
     (hasEmail && email !== (item.email ?? "")) ||
-    (!!relation && relationId !== (item.relationId ?? ""));
+    (!!relation && relationId !== (item.relationId ?? "")) ||
+    (!!choice && position !== (item.position ?? ""));
 
   function save() {
     setError(undefined);
@@ -149,6 +181,7 @@ function EditableRow({
         name,
         email: hasEmail ? email : undefined,
         relationId: relation ? relationId || null : undefined,
+        position: choice ? position || null : undefined,
       });
       if (result?.error) setError(result.error);
     });
@@ -189,6 +222,20 @@ function EditableRow({
           {relation.options.map((o) => (
             <option key={o.id} value={o.id}>
               {o.name}
+            </option>
+          ))}
+        </select>
+      )}
+      {choice && (
+        <select
+          className={cn(selectClass, "h-8")}
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
+        >
+          <option value="">{choice.noneLabel ?? "— 없음 —"}</option>
+          {choice.options.map((o) => (
+            <option key={o} value={o}>
+              {o}
             </option>
           ))}
         </select>

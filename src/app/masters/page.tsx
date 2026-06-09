@@ -7,6 +7,7 @@ import {
   fetchAiTechs,
 } from "@/lib/repositories/masters";
 import { EntityManager } from "@/components/masters/entity-manager";
+import { POSITIONS } from "@/lib/domain/people";
 import { cn } from "@/lib/utils";
 import {
   createHeadquarterAction,
@@ -140,6 +141,7 @@ export default async function MastersPage({
               name: p.name,
               email: p.email,
               relationId: p.department_id,
+              position: p.position,
             }))}
             createAction={createPersonAction}
             updateAction={updatePersonAction}
@@ -147,6 +149,7 @@ export default async function MastersPage({
             nameLabel="이름"
             hasEmail
             relation={{ label: "소속 부서", options: deptOptions }}
+            choice={{ label: "직책", options: POSITIONS }}
           />
         )}
 

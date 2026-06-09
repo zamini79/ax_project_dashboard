@@ -64,6 +64,7 @@ export interface PersonAdmin {
   name: string;
   email: string | null;
   department_id: string | null;
+  position: string | null;
 }
 
 export async function fetchDepartmentsAdmin(): Promise<DepartmentAdmin[]> {
@@ -80,7 +81,7 @@ export async function fetchPeopleAdmin(): Promise<PersonAdmin[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("people")
-    .select("id, name, email, department_id")
+    .select("id, name, email, department_id, position")
     .order("name", { ascending: true });
   if (error) throw new Error(`사람 조회 실패: ${error.message}`);
   return data ?? [];
@@ -95,6 +96,7 @@ export interface MasterInput {
   name: string;
   email?: string | null;
   relationId?: string | null; // dept→headquarter, person→department
+  position?: string | null; // person 직책
 }
 
 /** PostgREST 에러를 친절한 한국어로 변환 (중복/참조 제약) */
@@ -175,6 +177,7 @@ export async function createPerson(input: MasterInput): Promise<void> {
     name: input.name,
     email: input.email?.trim() ? input.email.trim() : null,
     department_id: input.relationId ?? null,
+    position: input.position?.trim() ? input.position.trim() : null,
   });
   if (error) throw writeError(error, "사람 추가 실패");
 }
@@ -190,6 +193,7 @@ export async function updatePerson(
       name: input.name,
       email: input.email?.trim() ? input.email.trim() : null,
       department_id: input.relationId ?? null,
+      position: input.position?.trim() ? input.position.trim() : null,
     })
     .eq("id", id);
   if (error) throw writeError(error, "사람 수정 실패");
