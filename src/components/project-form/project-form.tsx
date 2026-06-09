@@ -126,7 +126,7 @@ export function ProjectForm({
           </Field>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="라이프사이클" required error={errors.lifecycle?.message}>
+          <Field label="진행현황" required error={errors.lifecycle?.message}>
             <select className={inputClass} {...register("lifecycle")}>
               {LIFECYCLE_VALUES.map((l) => (
                 <option key={l} value={l}>
@@ -135,7 +135,7 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
-          <Field label="헬스" required error={errors.health?.message}>
+          <Field label="진행상태" required error={errors.health?.message}>
             <select className={inputClass} {...register("health")}>
               {HEALTH_VALUES.map((h) => (
                 <option key={h} value={h}>
