@@ -76,7 +76,7 @@ export function ProjectForm({
       {/* 기본 정보 */}
       <Card className="p-[22px]">
         <h2 className="mb-4 text-[13px] font-bold">기본 정보</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-4">
           <Field label="과제명" required full error={errors.name?.message}>
             <input
               {...register("name")}
@@ -93,6 +93,7 @@ export function ProjectForm({
             />
           </Field>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="분류 (MPRS)" required error={errors.mprs?.message}>
             <select className={inputClass} {...register("mprs")}>
               {MPRS_VALUES.map((m) => (
@@ -121,6 +122,8 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="라이프사이클" required error={errors.lifecycle?.message}>
             <select className={inputClass} {...register("lifecycle")}>
               {LIFECYCLE_VALUES.map((l) => (
@@ -140,6 +143,8 @@ export function ProjectForm({
             </select>
           </Field>
 
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="시작일" error={errors.startDate?.message}>
             <input type="date" {...register("startDate")} className={inputClass} />
           </Field>
@@ -147,6 +152,8 @@ export function ProjectForm({
             <input type="date" {...register("endDate")} className={inputClass} />
           </Field>
 
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="투자비 (억원)" error={errors.budgetEok?.message}>
             <input
               type="number"
@@ -168,6 +175,7 @@ export function ProjectForm({
             />
           </Field>
 
+          </div>
           <Controller
             control={control}
             name="progressPct"
