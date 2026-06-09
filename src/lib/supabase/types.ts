@@ -337,16 +337,19 @@ export type Database = {
       project_budget_monthly: {
         Row: {
           amount: number
+          id: string
           project_id: string
           year_month: string
         }
         Insert: {
           amount?: number
+          id?: string
           project_id: string
           year_month: string
         }
         Update: {
           amount?: number
+          id?: string
           project_id?: string
           year_month?: string
         }

@@ -189,7 +189,7 @@ export interface ProjectDetail {
   stakeholders: { department: string; person: string | null }[];
   ai_techs: string[];
   executed_budget: number;
-  monthly: { year_month: string; amount: number }[];
+  monthly: { id: string; year_month: string; amount: number }[];
   pages: ProjectConnectedPage[];
   updates: ProjectUpdateItem[];
 }
@@ -216,7 +216,7 @@ interface RawDetailRow {
     people: { name: string } | null;
   }[];
   project_ai_techs: { ai_techs: { name: string } | null }[];
-  project_budget_monthly: { year_month: string; amount: number }[];
+  project_budget_monthly: { id: string; year_month: string; amount: number }[];
   project_confluence_pages: {
     id: string;
     title: string | null;
@@ -243,7 +243,7 @@ const DETAIL_SELECT = `
   project_pms ( people ( name, departments ( name ) ) ),
   project_stakeholders ( departments ( name ), people ( name ) ),
   project_ai_techs ( ai_techs ( name ) ),
-  project_budget_monthly ( year_month, amount ),
+  project_budget_monthly ( id, year_month, amount ),
   project_confluence_pages ( id, title, page_role, confluence_page_id, is_active ),
   project_updates (
     id, update_date, content, source, source_url, created_at,
@@ -296,7 +296,7 @@ export async function fetchProjectDetail(
     .filter((n): n is string => n != null);
 
   const monthly = (data.project_budget_monthly ?? [])
-    .map((m) => ({ year_month: m.year_month, amount: m.amount }))
+    .map((m) => ({ id: m.id, year_month: m.year_month, amount: m.amount }))
     .sort((a, b) => (a.year_month < b.year_month ? -1 : 1));
 
   const executed_budget = monthly.reduce((sum, m) => sum + (m.amount ?? 0), 0);

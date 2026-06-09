@@ -25,6 +25,10 @@ import {
   setProjectPlanItem,
   fetchPlanItemOptions,
 } from "@/lib/repositories/budget-plan";
+import {
+  addProjectExecution,
+  deleteProjectExecution,
+} from "@/lib/repositories/budget";
 
 export type FormActionResult = { error: string } | void;
 
@@ -186,4 +190,49 @@ export async function updateProjectAction(
   revalidatePath("/budget");
   revalidatePath(`/projects/${id}`);
   redirect(safeReturnTo(returnTo, `/projects/${id}`));
+}
+
+// ── 과제 집행(지급) 실적 ──
+
+export type ExecutionActionResult = { error: string } | { ok: true };
+
+function revalidateExecution(projectId: string) {
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/budget");
+  revalidatePath("/performance");
+  revalidatePath(`/projects/${projectId}`);
+}
+
+const YM_RE = /^\d{4}-\d{2}$/;
+
+/** 집행 1건 추가 (비정기 지급). yearMonth='YYYY-MM', amount=원 */
+export async function addExecutionAction(
+  projectId: string,
+  yearMonth: string,
+  amount: number,
+): Promise<ExecutionActionResult> {
+  if (!YM_RE.test(yearMonth)) return { error: "지급 시기(년/월)를 확인하세요." };
+  if (!(amount > 0)) return { error: "금액을 입력하세요." };
+  try {
+    await addProjectExecution(projectId, yearMonth, Math.round(amount));
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "집행 추가에 실패했습니다." };
+  }
+  revalidateExecution(projectId);
+  return { ok: true };
+}
+
+/** 집행 1건 삭제 (행 id) */
+export async function deleteExecutionAction(
+  id: string,
+  projectId: string,
+): Promise<ExecutionActionResult> {
+  try {
+    await deleteProjectExecution(id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "집행 삭제에 실패했습니다." };
+  }
+  revalidateExecution(projectId);
+  return { ok: true };
 }
