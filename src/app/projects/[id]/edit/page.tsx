@@ -92,6 +92,7 @@ export default async function EditProjectPage({
           people={people}
           aiTechs={aiTechs}
           planItems={planItems}
+          executions={edit.executions}
           returnTo={from}
         />
       </main>

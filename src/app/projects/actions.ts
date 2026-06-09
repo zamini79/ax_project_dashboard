@@ -151,7 +151,7 @@ export async function loadProjectEditData(id: string) {
     aiTechIds: edit.aiTechIds,
     budgetPlanItemId: edit.budgetPlanItemId,
   };
-  return { values, options };
+  return { values, options, executions: edit.executions };
 }
 
 /** 과제 폼 옵션 일괄 로드 (모달 오픈 시 호출) */
@@ -211,16 +211,20 @@ export async function addExecutionAction(
   projectId: string,
   yearMonth: string,
   amount: number,
-): Promise<ExecutionActionResult> {
+): Promise<
+  | { error: string }
+  | { ok: true; entry: { id: string; year_month: string; amount: number } }
+> {
   if (!YM_RE.test(yearMonth)) return { error: "지급 시기(년/월)를 확인하세요." };
   if (!(amount > 0)) return { error: "금액을 입력하세요." };
+  let entry: { id: string; year_month: string; amount: number };
   try {
-    await addProjectExecution(projectId, yearMonth, Math.round(amount));
+    entry = await addProjectExecution(projectId, yearMonth, Math.round(amount));
   } catch (e) {
     return { error: e instanceof Error ? e.message : "집행 추가에 실패했습니다." };
   }
   revalidateExecution(projectId);
-  return { ok: true };
+  return { ok: true, entry };
 }
 
 /** 집행 1건 삭제 (행 id) */

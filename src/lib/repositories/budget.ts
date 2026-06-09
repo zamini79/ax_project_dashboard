@@ -34,12 +34,17 @@ export async function addProjectExecution(
   projectId: string,
   yearMonth: string,
   amount: number,
-): Promise<void> {
+): Promise<{ id: string; year_month: string; amount: number }> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("project_budget_monthly")
-    .insert({ project_id: projectId, year_month: yearMonth, amount });
-  if (error) throw new Error(`집행 실적 추가 실패: ${error.message}`);
+    .insert({ project_id: projectId, year_month: yearMonth, amount })
+    .select("id, year_month, amount")
+    .single();
+  if (error || !data) {
+    throw new Error(`집행 실적 추가 실패: ${error?.message ?? "알 수 없음"}`);
+  }
+  return data;
 }
 
 /** 과제 집행(지급) 1건 삭제 (행 id 기준) */

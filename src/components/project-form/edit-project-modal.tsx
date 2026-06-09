@@ -99,6 +99,7 @@ export function EditProjectModal({
                     people={data.options.people}
                     aiTechs={data.options.aiTechs}
                     planItems={data.options.planItems}
+                    executions={data.executions}
                     onCancel={close}
                     onSuccess={() => {
                       close();

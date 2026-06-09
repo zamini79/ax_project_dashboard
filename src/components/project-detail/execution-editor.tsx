@@ -29,11 +29,12 @@ export function ExecutionEditor({
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [won, setWon] = useState(""); // 원 숫자 문자열(콤마 없음)
+  const [rows, setRows] = useState(entries);
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string>();
 
-  const total = entries.reduce((a, e) => a + e.amount, 0);
-  const sorted = [...entries].sort((a, b) =>
+  const total = rows.reduce((a, e) => a + e.amount, 0);
+  const sorted = [...rows].sort((a, b) =>
     a.year_month < b.year_month ? 1 : -1,
   );
   const cur = now.getFullYear();
@@ -54,6 +55,7 @@ export function ExecutionEditor({
         setErr(r.error);
         return;
       }
+      setRows((prev) => [...prev, r.entry]);
       setWon("");
       router.refresh();
     });
@@ -61,7 +63,12 @@ export function ExecutionEditor({
 
   function remove(id: string) {
     start(async () => {
-      await deleteExecutionAction(id, projectId);
+      const r = await deleteExecutionAction(id, projectId);
+      if ("error" in r) {
+        setErr(r.error);
+        return;
+      }
+      setRows((prev) => prev.filter((e) => e.id !== id));
       router.refresh();
     });
   }

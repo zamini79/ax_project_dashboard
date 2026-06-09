@@ -7,7 +7,6 @@ import { X, Sparkles } from "lucide-react";
 
 import { Bar } from "@/components/charts/charts";
 import { EditProjectModal } from "@/components/project-form/edit-project-modal";
-import { ExecutionEditor } from "@/components/project-detail/execution-editor";
 import { UpdateCompose } from "@/components/project-detail/update-compose";
 import type { ProjectDetail } from "@/lib/repositories/projects";
 import type { ProjectEffect } from "@/lib/repositories/effects";
@@ -208,11 +207,6 @@ export function ProjectDetailDrawer({
                 )}
               </Field>
             </div>
-          </Card>
-
-          {/* 집행 실적 (비정기 지급 기록) */}
-          <Card>
-            <ExecutionEditor projectId={p.id} entries={p.monthly} />
           </Card>
 
           {/* 운영 효과 (있을 때) */}

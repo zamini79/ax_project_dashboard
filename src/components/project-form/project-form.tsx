@@ -17,6 +17,7 @@ import {
 } from "@/lib/domain/project-form";
 import { MPRS_LABEL } from "@/lib/domain/mprs";
 import { INVESTMENT_LABEL } from "@/lib/domain/investment";
+import { ExecutionEditor } from "@/components/project-detail/execution-editor";
 import { LIFECYCLE_LABEL, HEALTH_LABEL } from "@/lib/domain/lifecycle";
 import type { MasterOption, PersonOption } from "@/lib/repositories/masters";
 import {
@@ -41,6 +42,7 @@ export function ProjectForm({
   departments,
   aiTechs,
   planItems,
+  executions = [],
   returnTo,
   onSuccess,
   onCancel,
@@ -54,6 +56,8 @@ export function ProjectForm({
   aiTechs: MasterOption[];
   /** 사업계획 매핑 콤보 옵션 (전체 연도; 폼에서 연도별 필터) */
   planItems: { id: string; name: string; fiscalYear: number }[];
+  /** 집행 실적(편집 모드) — 비정기 지급 목록 */
+  executions?: { id: string; year_month: string; amount: number }[];
   /** 편집 진입 출처 — 저장/취소 시 이곳으로 복귀 (목록·드로어·상세) */
   returnTo?: string;
   /** 모달(임베드) 모드: 생성 성공 시 redirect 대신 호출 → 모달 닫고 배경 갱신 */
@@ -342,6 +346,12 @@ export function ProjectForm({
           <b className="text-muted-foreground">마스터 관리</b>에서 추가할 수 있어요.
         </p>
       </Card>
+
+      {mode === "edit" && projectId && (
+        <Card className="p-[22px]">
+          <ExecutionEditor projectId={projectId} entries={executions} />
+        </Card>
+      )}
 
       {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
