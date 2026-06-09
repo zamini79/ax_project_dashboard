@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -419,6 +419,18 @@ function SearchSelect({
 }) {
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  // 펼칠 때 아래 공간이 부족하면 위로 (기본은 아래)
+  useEffect(() => {
+    if (!adding) return;
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const DROPDOWN = 240; // max-h-56 ≈ 224 + 여백
+    setDropUp(spaceBelow < DROPDOWN && rect.top > spaceBelow);
+  }, [adding]);
 
   if (options.length === 0) {
     return (
@@ -464,7 +476,7 @@ function SearchSelect({
             </span>
       ))}
       {adding ? (
-        <div className="relative">
+        <div className="relative" ref={triggerRef}>
           <input
             autoFocus
             value={q}
@@ -476,7 +488,12 @@ function SearchSelect({
             placeholder={placeholder}
             className={searchInputClass}
           />
-          <div className="bg-card absolute left-0 z-20 mt-1 max-h-56 w-[280px] overflow-auto rounded-lg border shadow-lg">
+          <div
+            className={cn(
+              "bg-card absolute left-0 z-20 max-h-56 w-[280px] overflow-auto rounded-lg border shadow-lg",
+              dropUp ? "bottom-full mb-1" : "top-full mt-1",
+            )}
+          >
             {matches.length === 0 ? (
               <p className="text-faint px-3 py-2 text-xs">검색 결과 없음</p>
             ) : (
