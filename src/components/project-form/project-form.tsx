@@ -26,6 +26,7 @@ import {
 
 const inputClass =
   "border-border-strong bg-card focus-visible:ring-ring h-[38px] w-full rounded-[9px] border px-3 text-[13.5px] outline-none focus-visible:ring-2";
+const EOK = 100_000_000; // 투자비: 폼은 억 단위 보관, 입력/표시는 원 단위
 const numOrUndef = (v: unknown) =>
   v === "" || v === null || v === undefined ? undefined : Number(v);
 
@@ -156,16 +157,31 @@ export function ProjectForm({
 
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="투자비 (억원)" error={errors.budgetEok?.message}>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              {...register("budgetEok", { setValueAs: numOrUndef })}
-              placeholder="예: 12.5"
-              className={inputClass}
-            />
-          </Field>
+          <Controller
+            control={control}
+            name="budgetEok"
+            render={({ field }) => {
+              const won =
+                field.value != null && !Number.isNaN(field.value)
+                  ? Math.round(field.value * EOK)
+                  : undefined;
+              return (
+                <Field label="투자비 (원)" error={errors.budgetEok?.message}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={won != null ? won.toLocaleString("ko-KR") : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "");
+                      field.onChange(raw === "" ? undefined : Number(raw) / EOK);
+                    }}
+                    placeholder="예: 1,250,000,000"
+                    className={inputClass}
+                  />
+                </Field>
+              );
+            }}
+          />
           <Field label="투입 인원 (FTE)" error={errors.fte?.message}>
             <input
               type="number"
