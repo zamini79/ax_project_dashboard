@@ -34,7 +34,7 @@ const boxH = padT + plotH + padB;
 const xticks = [0, 25, 50, 75, 100];
 const yticks = [2, 4, 6, 8, 10, 12];
 
-/** 포트폴리오 맵: X=진행률 / Y=투자비(억) / 크기=FTE / 테두리=헬스. MPRS 범례로 필터. */
+/** 포트폴리오 맵: X=진행률 / Y=투자비(억) / 테두리=헬스. MPRS 범례로 필터. */
 export function PortfolioMap({
   items,
   state,
@@ -54,7 +54,7 @@ export function PortfolioMap({
   const cx = (prog: number) => padL + (prog / 100) * plotW;
   const cy = (eok: number) =>
     padT + (1 - (Math.min(bMax, Math.max(bMin, eok)) - bMin) / (bMax - bMin)) * plotH;
-  const dia = (fte: number | null) => 30 + (fte ?? 1) * 9;
+  const BUBBLE_D = 40; // 버블 지름 고정 (투입 인력 제거로 크기 인코딩 없음)
   const isOn = (k: Mprs) => active.has(k);
 
   function toggle(k: Mprs) {
@@ -84,7 +84,7 @@ export function PortfolioMap({
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">포트폴리오 맵</h2>
           <span className="text-faint text-[11px]">
-            세로축 투자비(억) · 가로축 진행률(%) · 크기 = FTE · 테두리 = 헬스
+            세로축 투자비(억) · 가로축 진행률(%) · 테두리 = 헬스
           </span>
         </div>
 
@@ -130,7 +130,7 @@ export function PortfolioMap({
           {/* 버블 */}
           {items.map((p) => {
             const on = isOn(p.mprs);
-            const d = dia(p.fte);
+            const d = BUBBLE_D;
             const isH = hover === p.id;
             const eok = (p.total_budget ?? 0) / 100_000_000;
             return (
@@ -182,7 +182,7 @@ export function PortfolioMap({
             <div
               style={{
                 position: "absolute",
-                left: Math.min(cx(hp.progress_pct) + dia(hp.fte) / 2 + 8, boxW - 210),
+                left: Math.min(cx(hp.progress_pct) + BUBBLE_D / 2 + 8, boxW - 210),
                 top: Math.max(padT, cy((hp.total_budget ?? 0) / 100_000_000) - 30),
                 width: 200,
                 background: NAVY,
@@ -207,8 +207,7 @@ export function PortfolioMap({
                 {hp.name}
               </div>
               <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.7)" }}>
-                진행률 {hp.progress_pct}% · 투자비 {formatBudgetEok(hp.total_budget)} · FTE{" "}
-                {hp.fte ?? "-"}
+                진행률 {hp.progress_pct}% · 투자비 {formatBudgetEok(hp.total_budget)}
               </div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,.5)", marginTop: 4 }}>
                 클릭하면 상세 보기 →

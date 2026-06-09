@@ -52,7 +52,6 @@ export default async function EditProjectPage({
     startDate: edit.start_date ?? "",
     endDate: edit.end_date ?? "",
     budgetEok: wonToEok(edit.total_budget),
-    fte: edit.fte ?? undefined,
     progressPct: edit.progress_pct,
     pmIds: edit.pmIds,
     departmentIds: edit.departmentIds,

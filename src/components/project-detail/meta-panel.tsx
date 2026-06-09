@@ -57,20 +57,13 @@ export function MetaPanel({ project }: { project: ProjectDetail }) {
 
         {/* 투자비 / 집행 */}
         <Row label="투자비 / 집행">
-          <div className="flex flex-col gap-0.5">
-            <span>
-              {formatBudgetEok(project.executed_budget)} /{" "}
-              {formatBudgetEok(project.total_budget)}
-              {rate != null && (
-                <span className="text-muted-foreground ml-1">({rate}%)</span>
-              )}
-            </span>
-            {project.fte != null && (
-              <span className="text-muted-foreground text-xs">
-                FTE {project.fte}
-              </span>
+          <span>
+            {formatBudgetEok(project.executed_budget)} /{" "}
+            {formatBudgetEok(project.total_budget)}
+            {rate != null && (
+              <span className="text-muted-foreground ml-1">({rate}%)</span>
             )}
-          </div>
+          </span>
         </Row>
 
         {/* PM */}

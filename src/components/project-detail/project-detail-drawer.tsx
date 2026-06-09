@@ -173,9 +173,6 @@ export function ProjectDetailDrawer({
                   <span className="text-muted-foreground"> ({rate}%)</span>
                 )}
               </Field>
-              <Field label="투입 인력">
-                {p.fte != null ? `FTE ${p.fte}` : "-"}
-              </Field>
               <Field label="AI 기술">
                 {p.ai_techs.length ? (
                   <div className="flex flex-wrap gap-1.5">

@@ -637,7 +637,6 @@ export type Database = {
           created_at: string
           description: string | null
           end_date: string | null
-          fte: number | null
           headquarter_id: string
           health: Database["public"]["Enums"]["project_health"]
           id: string
@@ -656,7 +655,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date?: string | null
-          fte?: number | null
           headquarter_id: string
           health?: Database["public"]["Enums"]["project_health"]
           id?: string
@@ -675,7 +673,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date?: string | null
-          fte?: number | null
           headquarter_id?: string
           health?: Database["public"]["Enums"]["project_health"]
           id?: string

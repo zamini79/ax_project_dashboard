@@ -44,7 +44,6 @@ export const projectFormSchema = z
     startDate: optionalDate,
     endDate: optionalDate,
     budgetEok: optionalNumber, // 억 단위
-    fte: optionalNumber,
     progressPct: z
       .number({ message: "숫자를 입력하세요." })
       .int("정수여야 합니다.")
@@ -89,7 +88,6 @@ export function emptyFormValues(): ProjectFormValues {
     startDate: "",
     endDate: "",
     budgetEok: undefined,
-    fte: undefined,
     progressPct: 0,
     pmIds: [],
     departmentIds: [],

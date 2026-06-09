@@ -25,7 +25,6 @@ export interface ProjectListItem {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
-  fte: number | null;
   headquarter_id: string;
   headquarter_name: string;
   pms: { name: string; department: string | null }[];
@@ -51,7 +50,6 @@ interface RawProjectRow {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
-  fte: number | null;
   headquarter_id: string;
   headquarters: { name: string } | null;
   project_pms: {
@@ -64,7 +62,7 @@ interface RawProjectRow {
 
 const PROJECT_SELECT = `
   id, name, mprs, investment_type, lifecycle, health, progress_pct,
-  start_date, end_date, total_budget, fte, headquarter_id,
+  start_date, end_date, total_budget, headquarter_id,
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
   project_ai_techs ( ai_techs ( name ) ),
@@ -124,7 +122,6 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     start_date: row.start_date,
     end_date: row.end_date,
     total_budget: row.total_budget,
-    fte: row.fte,
     headquarter_id: row.headquarter_id,
     headquarter_name: row.headquarters?.name ?? "-",
     pms,
@@ -186,7 +183,6 @@ export interface ProjectDetail {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
-  fte: number | null;
   last_synced_at: string | null;
   headquarter_name: string;
   pms: { name: string; department: string | null }[];
@@ -210,7 +206,6 @@ interface RawDetailRow {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
-  fte: number | null;
   last_synced_at: string | null;
   headquarters: { name: string } | null;
   project_pms: {
@@ -243,7 +238,7 @@ interface RawDetailRow {
 
 const DETAIL_SELECT = `
   id, name, description, mprs, investment_type, lifecycle, health, progress_pct,
-  start_date, end_date, total_budget, fte, last_synced_at,
+  start_date, end_date, total_budget, last_synced_at,
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
   project_stakeholders ( departments ( name ), people ( name ) ),
@@ -339,7 +334,6 @@ export async function fetchProjectDetail(
     start_date: data.start_date,
     end_date: data.end_date,
     total_budget: data.total_budget,
-    fte: data.fte,
     last_synced_at: data.last_synced_at,
     headquarter_name: data.headquarters?.name ?? "-",
     pms,
@@ -367,7 +361,6 @@ export interface ProjectWriteInput {
   startDate: string | null;
   endDate: string | null;
   totalBudget: number | null; // 원 단위
-  fte: number | null;
   progressPct: number;
   pmIds: string[];
   departmentIds: string[];
@@ -386,7 +379,6 @@ export interface ProjectEditData {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
-  fte: number | null;
   progress_pct: number;
   pmIds: string[];
   departmentIds: string[];
@@ -408,7 +400,6 @@ function scalarColumns(input: ProjectWriteInput) {
     start_date: input.startDate,
     end_date: input.endDate,
     total_budget: input.totalBudget,
-    fte: input.fte,
     progress_pct: input.progressPct,
   };
 }
@@ -522,7 +513,6 @@ interface RawEditRow {
   start_date: string | null;
   end_date: string | null;
   total_budget: number | null;
-  fte: number | null;
   progress_pct: number;
   project_pms: { person_id: string }[];
   project_stakeholders: { department_id: string }[];
@@ -542,7 +532,7 @@ export async function fetchProjectEditData(
     .select(
       `
       id, name, description, mprs, investment_type, headquarter_id, lifecycle, health,
-      start_date, end_date, total_budget, fte, progress_pct,
+      start_date, end_date, total_budget, progress_pct,
       project_pms ( person_id ),
       project_stakeholders ( department_id ),
       project_ai_techs ( ai_tech_id ),
@@ -570,7 +560,6 @@ export async function fetchProjectEditData(
     start_date: data.start_date,
     end_date: data.end_date,
     total_budget: data.total_budget,
-    fte: data.fte,
     progress_pct: data.progress_pct,
     pmIds: unique((data.project_pms ?? []).map((p) => p.person_id)),
     departmentIds: unique(
