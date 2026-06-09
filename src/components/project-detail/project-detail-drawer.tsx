@@ -159,7 +159,7 @@ export function ProjectDetailDrawer({
           {/* 메타 */}
           <Card>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="주관 본부">{p.headquarter_name}</Field>
+              <Field label="대상 본부">{p.headquarter_name}</Field>
               <Field label="과제 유형">
                 {INVESTMENT_LABEL[p.investment_type]}
               </Field>

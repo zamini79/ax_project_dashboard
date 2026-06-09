@@ -151,7 +151,7 @@ export function ProjectForm({
               ))}
             </select>
           </Field>
-          <Field label="주관 본부" required error={errors.headquarterId?.message}>
+          <Field label="대상 본부" required error={errors.headquarterId?.message}>
             <select className={inputClass} {...register("headquarterId")}>
               <option value="" hidden>선택하세요</option>
               {headquarters.map((h) => (

@@ -41,8 +41,8 @@ export function MetaPanel({ project }: { project: ProjectDetail }) {
       </Card>
 
       <Card className="flex flex-col gap-3 p-4">
-        {/* 주관 본부 */}
-        <Row label="주관 본부">{project.headquarter_name}</Row>
+        {/* 대상 본부 */}
+        <Row label="대상 본부">{project.headquarter_name}</Row>
 
         {/* 과제 유형 */}
         <Row label="과제 유형">

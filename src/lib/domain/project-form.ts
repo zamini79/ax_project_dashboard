@@ -38,7 +38,7 @@ export const projectFormSchema = z
     investmentType: z.enum(INVESTMENT_VALUES, {
       message: "과제 유형을 선택하세요.",
     }),
-    headquarterId: z.string().uuid("주관 본부를 선택하세요."),
+    headquarterId: z.string().uuid("대상 본부를 선택하세요."),
     lifecycle: z.enum(LIFECYCLE_VALUES),
     health: z.enum(HEALTH_VALUES),
     startDate: optionalDate,
