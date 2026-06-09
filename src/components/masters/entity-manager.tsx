@@ -88,13 +88,10 @@ export function EntityManager(props: EntityManagerProps) {
           placeholder={props.namePlaceholder}
         />
         {hasEmail && (
-          <LabeledInput
-            label="이메일"
-            value={email}
-            onChange={setEmail}
-            placeholder="name@company.com"
-            type="email"
-          />
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="text-muted-foreground">이메일</span>
+            <EmailLocalInput value={email} onChange={setEmail} className="h-9 w-48" />
+          </label>
         )}
         {relation && (
           <label className="flex flex-col gap-1 text-xs">
@@ -204,13 +201,7 @@ function EditableRow({
         className="h-8 w-48"
       />
       {hasEmail && (
-        <Input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="(이메일 없음)"
-          type="email"
-          className="h-8 w-56"
-        />
+        <EmailLocalInput value={email} onChange={setEmail} className="h-8 w-56" />
       )}
       {relation && (
         <select
@@ -262,6 +253,37 @@ function EditableRow({
         </Button>
       </div>
     </Card>
+  );
+}
+
+const EMAIL_DOMAIN = "@sk.com";
+
+/** 아이디만 입력 → 저장값은 자동으로 `<아이디>@sk.com`. 입력칸 우측에 도메인 고정 표시. */
+function EmailLocalInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: string; // 전체 이메일 또는 ""
+  onChange: (full: string) => void;
+  className?: string;
+}) {
+  const local = value ? value.split("@")[0] : "";
+  return (
+    <div className="relative inline-flex items-center">
+      <Input
+        value={local}
+        onChange={(e) => {
+          const l = e.target.value.replace(/@.*$/, "").trim();
+          onChange(l ? `${l}${EMAIL_DOMAIN}` : "");
+        }}
+        placeholder="아이디"
+        className={cn("pr-[62px]", className)}
+      />
+      <span className="text-muted-foreground pointer-events-none absolute right-2.5 text-xs">
+        {EMAIL_DOMAIN}
+      </span>
+    </div>
   );
 }
 
