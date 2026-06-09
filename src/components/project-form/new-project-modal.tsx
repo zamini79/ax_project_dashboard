@@ -20,6 +20,8 @@ export function NewProjectModal() {
   const [open, setOpen] = useState(false);
   const [opts, setOpts] = useState<Options | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const FORM_ID = "new-project-form";
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -28,10 +30,24 @@ export function NewProjectModal() {
 
   function openModal() {
     setOpen(true);
+    setDirty(false);
     if (!opts) loadProjectFormOptions().then(setOpts);
   }
   function close() {
     setOpen(false);
+    setDirty(false);
+  }
+  // 팝업 밖 클릭: 입력 내용 없으면 바로 닫고, 있으면 저장 여부 확인
+  function requestClose() {
+    if (!dirty) {
+      close();
+      return;
+    }
+    if (window.confirm("입력한 내용이 있습니다. 저장하시겠습니까?")) {
+      (document.getElementById(FORM_ID) as HTMLFormElement | null)?.requestSubmit();
+    } else {
+      close();
+    }
   }
 
   useEffect(() => {
@@ -62,7 +78,7 @@ export function NewProjectModal() {
         mounted &&
         createPortal(
           <div
-            onClick={close}
+            onClick={requestClose}
             style={{
               position: "fixed",
               inset: 0,
@@ -101,6 +117,8 @@ export function NewProjectModal() {
                     people={opts.people}
                     aiTechs={opts.aiTechs}
                     planItems={opts.planItems}
+                    formId={FORM_ID}
+                    onDirtyChange={setDirty}
                     onCancel={close}
                     onSuccess={() => {
                       close();

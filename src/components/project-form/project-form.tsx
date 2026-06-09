@@ -46,6 +46,8 @@ export function ProjectForm({
   returnTo,
   onSuccess,
   onCancel,
+  formId,
+  onDirtyChange,
 }: {
   mode: "create" | "edit";
   projectId?: string;
@@ -64,6 +66,10 @@ export function ProjectForm({
   onSuccess?: (id: string) => void;
   /** 모달 모드 취소 핸들러 (없으면 router.back) */
   onCancel?: () => void;
+  /** 외부(모달)에서 폼을 submit 하기 위한 form id */
+  formId?: string;
+  /** 입력 변경(dirty) 여부 보고 — 모달의 외부 클릭 가드용 */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string>();
@@ -73,7 +79,7 @@ export function ProjectForm({
     control,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues,
@@ -89,6 +95,11 @@ export function ProjectForm({
     new Set([currentYear, ...planItems.map((p) => p.fiscalYear)]),
   ).sort((a, b) => b - a);
   const [selectedPlan, setSelectedPlan] = useState(defaultValues.budgetPlanItemId);
+
+  // 입력 변경 여부를 모달에 보고 (외부 클릭 시 저장 확인용)
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   async function onValid(values: ProjectFormValues) {
     setServerError(undefined);
@@ -113,7 +124,7 @@ export function ProjectForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-3.5">
+    <form id={formId} onSubmit={handleSubmit(onValid)} className="flex flex-col gap-3.5">
       {/* 기본 정보 */}
       <Card className="p-[22px]">
         <h2 className="mb-4 text-[13px] font-bold">기본 정보</h2>

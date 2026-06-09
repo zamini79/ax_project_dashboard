@@ -27,6 +27,8 @@ export function EditProjectModal({
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<EditData>(null);
   const [mounted, setMounted] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const formId = `edit-project-form-${projectId}`;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -35,11 +37,25 @@ export function EditProjectModal({
 
   function openModal() {
     setOpen(true);
+    setDirty(false);
     setData(null);
     loadProjectEditData(projectId).then(setData);
   }
   function close() {
     setOpen(false);
+    setDirty(false);
+  }
+  // 팝업 밖 클릭: 입력 변경 없으면 바로 닫고, 있으면 저장 여부 확인
+  function requestClose() {
+    if (!dirty) {
+      close();
+      return;
+    }
+    if (window.confirm("입력한 내용이 있습니다. 저장하시겠습니까?")) {
+      (document.getElementById(formId) as HTMLFormElement | null)?.requestSubmit();
+    } else {
+      close();
+    }
   }
 
   useEffect(() => {
@@ -59,7 +75,7 @@ export function EditProjectModal({
         mounted &&
         createPortal(
           <div
-            onClick={close}
+            onClick={requestClose}
             style={{
               position: "fixed",
               inset: 0,
@@ -100,6 +116,8 @@ export function EditProjectModal({
                     aiTechs={data.options.aiTechs}
                     planItems={data.options.planItems}
                     executions={data.executions}
+                    formId={formId}
+                    onDirtyChange={setDirty}
                     onCancel={close}
                     onSuccess={() => {
                       close();
