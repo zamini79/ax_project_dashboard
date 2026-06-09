@@ -78,8 +78,9 @@ export function emptyFormValues(): ProjectFormValues {
   return {
     name: "",
     description: "",
-    mprs: "marketing",
-    investmentType: "ai",
+    // 분류·투자유형은 빈 값으로 시작 → "선택하세요" 표시 + 미선택 시 검증 실패(선택 강제)
+    mprs: "" as ProjectFormValues["mprs"],
+    investmentType: "" as ProjectFormValues["investmentType"],
     headquarterId: "",
     lifecycle: "not_started",
     health: "green",

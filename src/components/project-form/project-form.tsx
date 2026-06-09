@@ -96,6 +96,7 @@ export function ProjectForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="분류 (MPRS)" required error={errors.mprs?.message}>
             <select className={inputClass} {...register("mprs")}>
+              <option value="" disabled hidden>선택하세요</option>
               {MPRS_VALUES.map((m) => (
                 <option key={m} value={m}>
                   {MPRS_LABEL[m]}
@@ -105,6 +106,7 @@ export function ProjectForm({
           </Field>
           <Field label="투자 유형" required error={errors.investmentType?.message}>
             <select className={inputClass} {...register("investmentType")}>
+              <option value="" disabled hidden>선택하세요</option>
               {INVESTMENT_VALUES.map((t) => (
                 <option key={t} value={t}>
                   {INVESTMENT_LABEL[t]}
@@ -114,7 +116,7 @@ export function ProjectForm({
           </Field>
           <Field label="주관 본부" required error={errors.headquarterId?.message}>
             <select className={inputClass} {...register("headquarterId")}>
-              <option value="">선택하세요</option>
+              <option value="" disabled hidden>선택하세요</option>
               {headquarters.map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name}
