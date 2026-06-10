@@ -11,7 +11,8 @@ import { fetchBudgetPlanItems } from "@/lib/repositories/budget-plan";
 import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import { BudgetPlanCard } from "@/components/budget/budget-plan-dialog";
 import { Card } from "@/components/ui/card";
-import { MiniBars, Bar } from "@/components/charts/charts";
+import { Bar } from "@/components/charts/charts";
+import { MonthlyExecBars } from "@/components/charts/monthly-exec-bars";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 import { capexByInvestmentType, INVESTMENT_LABEL } from "@/lib/domain/investment";
@@ -69,6 +70,7 @@ export default async function BudgetPage({
   const monthlyBars = monthly.map((m) => ({
     label: m.year_month.slice(2).replace("-", "."),
     value: m.amount / 100_000_000,
+    projects: m.projects.map((p) => ({ name: p.name, amount: p.amount })),
   }));
   const cumulative = monthly.reduce((a, m) => a + m.amount, 0);
   const byBudget = [...projects]
@@ -200,13 +202,12 @@ export default async function BudgetPage({
               </div>
             </div>
             <div className="flex flex-1 items-end justify-end overflow-x-auto">
-              <MiniBars
+              <MonthlyExecBars
                 data={monthlyBars}
                 height={120}
                 barW={28}
                 gap={12}
-                accentLast={ACCENT}
-                showValues
+                accent={ACCENT}
                 ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(cumulative)}`}
               />
             </div>

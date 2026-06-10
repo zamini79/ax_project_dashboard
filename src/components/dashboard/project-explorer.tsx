@@ -13,6 +13,7 @@ import {
   applyFilter,
   computeKpis,
   sortProjectList,
+  UNTAGGED,
 } from "@/lib/domain/dashboard";
 import { performanceSummary } from "@/lib/domain/analytics";
 import { KpiStrip } from "@/components/dashboard/kpi-strip";
@@ -127,16 +128,19 @@ export async function ProjectExplorer({
 
   return (
     <section className="flex flex-col gap-4">
-      {/* 헤더 */}
-      <div>
-        <h2 className="text-xl font-extrabold tracking-tight">{heading}</h2>
-        {showSummary && (
-          <p className="text-muted-foreground mt-0.5 text-[12.5px]">
-            전체 {kpis.total}건 · 진행중 {lc("in_progress")} · 검토중{" "}
-            {lc("under_review")} · 완료 {lc("completed")}
-          </p>
-        )}
-      </div>
+      {/* 헤더 — 단독 페이지(KPI 표시)에서만 상단 타이틀.
+          홈 임베드(showKpis=false)에서는 아래 과제속성 줄 왼쪽으로 이동. */}
+      {showKpis && (
+        <div>
+          <h2 className="text-xl font-extrabold tracking-tight">{heading}</h2>
+          {showSummary && (
+            <p className="text-muted-foreground mt-0.5 text-[12.5px]">
+              전체 {kpis.total}건 · 진행중 {lc("in_progress")} · 검토중{" "}
+              {lc("under_review")} · 완료 {lc("completed")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* KPI 스트립 */}
       {showKpis && (
@@ -189,38 +193,69 @@ export async function ProjectExplorer({
       )}
 
       <div className="flex items-center justify-between gap-3">
-        {/* 좌: 과제 속성(태그) 필터 — 복수 선택 */}
-        {tagOptions.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-foreground mr-1 text-[12.5px] font-bold">
-              과제속성
-            </span>
-            {tagOptions.map((t) => {
-              const active = filter.tags.includes(t.name);
-              const next = active
-                ? filter.tags.filter((x) => x !== t.name)
-                : [...filter.tags, t.name];
-              return (
-                <Link
-                  key={t.id}
-                  href={dashboardHref(state, { tags: next })}
-                  aria-pressed={active}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold transition-all",
-                    active
-                      ? "border-navy bg-navy text-white shadow-sm"
-                      : "border-border-strong text-muted-foreground hover:border-navy/40 hover:text-foreground bg-card hover:bg-muted",
-                  )}
-                >
-                  {active && <span className="text-[10px] leading-none">✓</span>}
-                  {t.name}
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div />
-        )}
+        {/* 좌: (홈) 타이틀 + 과제 속성(태그) 필터 — 복수 선택 */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {!showKpis && (
+            <h2 className="text-[15px] font-extrabold tracking-tight">
+              {heading}
+            </h2>
+          )}
+          {tagOptions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-foreground mr-1 text-[12.5px] font-bold">
+                과제속성
+              </span>
+              {tagOptions.map((t) => {
+                const active = filter.tags.includes(t.name);
+                const next = active
+                  ? filter.tags.filter((x) => x !== t.name)
+                  : [...filter.tags, t.name];
+                return (
+                  <Link
+                    key={t.id}
+                    href={dashboardHref(state, { tags: next })}
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold transition-all",
+                      active
+                        ? "border-navy bg-navy text-white shadow-sm"
+                        : "border-border-strong text-muted-foreground hover:border-navy/40 hover:text-foreground bg-card hover:bg-muted",
+                    )}
+                  >
+                    {active && (
+                      <span className="text-[10px] leading-none">✓</span>
+                    )}
+                    {t.name}
+                  </Link>
+                );
+              })}
+              {/* 기타 — 태그가 없는 과제 */}
+              {(() => {
+                const active = filter.tags.includes(UNTAGGED);
+                const next = active
+                  ? filter.tags.filter((x) => x !== UNTAGGED)
+                  : [...filter.tags, UNTAGGED];
+                return (
+                  <Link
+                    href={dashboardHref(state, { tags: next })}
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold transition-all",
+                      active
+                        ? "border-navy bg-navy text-white shadow-sm"
+                        : "border-border-strong text-muted-foreground hover:border-navy/40 hover:text-foreground bg-card hover:bg-muted",
+                    )}
+                  >
+                    {active && (
+                      <span className="text-[10px] leading-none">✓</span>
+                    )}
+                    기타
+                  </Link>
+                );
+              })()}
+            </div>
+          )}
+        </div>
 
         {/* 우: 드래그 안내 · 현재 · 표/맵 */}
         <div className="flex shrink-0 items-center gap-2">

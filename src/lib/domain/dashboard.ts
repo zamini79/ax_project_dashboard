@@ -30,6 +30,12 @@ export const EMPTY_FILTER: DashboardFilter = {
   tags: [],
 };
 
+/**
+ * 속성(태그) 필터의 "기타" 센티넬 — 태그가 하나도 없는 과제를 선택한다.
+ * 실제 태그명과 충돌하지 않도록 예약된 값. filter.tags 배열에 함께 담겨 URL로도 영속.
+ */
+export const UNTAGGED = "__none__";
+
 const HEALTH_SET = new Set<string>(["green", "yellow", "red"]);
 
 /** URL searchParams → 필터 (순수 파싱, 잘못된 값은 무시) */
@@ -178,12 +184,15 @@ export function applyFilter(
         return false;
       }
     }
-    // 속성(태그) 필터: 선택된 태그 중 하나라도 가지면 통과 (OR)
-    if (
-      filter.tags.length > 0 &&
-      !filter.tags.some((t) => it.tags.includes(t))
-    )
-      return false;
+    // 속성(태그) 필터: 선택된 태그 중 하나라도 가지면 통과 (OR).
+    // "기타"(UNTAGGED) 선택 시 태그 없는 과제도 함께 통과.
+    if (filter.tags.length > 0) {
+      const wantUntagged = filter.tags.includes(UNTAGGED);
+      const realTags = filter.tags.filter((t) => t !== UNTAGGED);
+      const matchReal = realTags.some((t) => it.tags.includes(t));
+      const matchUntagged = wantUntagged && it.tags.length === 0;
+      if (!matchReal && !matchUntagged) return false;
+    }
     return true;
   });
 

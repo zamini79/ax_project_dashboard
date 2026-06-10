@@ -17,7 +17,8 @@ import {
   HEALTH_HELP,
   LIFECYCLE_LABEL,
 } from "@/lib/domain/lifecycle";
-import { Donut, MiniBars, Bar, HealthDot } from "@/components/charts/charts";
+import { Donut, Bar, HealthDot } from "@/components/charts/charts";
+import { MonthlyExecBars } from "@/components/charts/monthly-exec-bars";
 import {
   ProjectExplorer,
   type ExplorerSearchParams,
@@ -62,6 +63,7 @@ export default async function DashboardPage({
   const monthlyBars = monthly.map((m) => ({
     label: m.year_month.slice(2).replace("-", "."),
     value: m.amount / 100_000_000,
+    projects: m.projects.map((p) => ({ name: p.name, amount: p.amount })),
   }));
   const atRisk = perf.atRisk.slice(0, 3);
 
@@ -271,13 +273,12 @@ export default async function DashboardPage({
                 alignItems: "center",
               }}
             >
-              <MiniBars
+              <MonthlyExecBars
                 data={monthlyBars}
                 height={80}
                 barW={28}
                 gap={12}
-                accentLast={ACCENT}
-                showValues
+                accent={ACCENT}
                 ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(kpis.budgetTotal.executed)}`}
               />
             </div>
