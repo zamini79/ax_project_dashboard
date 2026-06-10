@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 
@@ -81,6 +81,7 @@ export function ProjectForm({
     control,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -90,13 +91,52 @@ export function ProjectForm({
   // 사업계획 연도 필터 (기본: 선택된 계획의 연도, 없으면 올해)
   const currentYear = new Date().getFullYear();
   const [planYear, setPlanYear] = useState<number>(
-    planItems.find((p) => p.id === defaultValues.budgetPlanItemId)?.fiscalYear ??
-      currentYear,
+    planItems.find((p) => p.id === defaultValues.budgetPlanItemId)
+      ?.fiscalYear ?? currentYear,
   );
   const planYears = Array.from(
     new Set([currentYear, ...planItems.map((p) => p.fiscalYear)]),
   ).sort((a, b) => b - a);
-  const [selectedPlan, setSelectedPlan] = useState(defaultValues.budgetPlanItemId);
+  const [selectedPlan, setSelectedPlan] = useState(
+    defaultValues.budgetPlanItemId,
+  );
+
+  const lifecycle = useWatch({ control, name: "lifecycle" });
+  // "운영" 단계일 때만 성과 현황 추가 체크박스 노출
+  const isOperating = lifecycle === "operating";
+  // 완료·운영이면 진행상태/진행률을 자동 완료 처리(아래 useEffect) + 입력 잠금
+  const isDone = lifecycle === "completed" || lifecycle === "operating";
+
+  // 완료/운영 전환 시: 진행상태=완료, 진행률=100 으로 자동 설정하고
+  // 직전 값(진행상태·진행률)을 보관했다가 다른 단계로 바꾸면 복원.
+  const doneStash = useRef<{
+    health: ProjectFormValues["health"];
+    progressPct: number;
+  } | null>(null);
+  const wasDone = useRef(
+    defaultValues.lifecycle === "completed" ||
+      defaultValues.lifecycle === "operating",
+  );
+
+  useEffect(() => {
+    if (isDone && !wasDone.current) {
+      doneStash.current = {
+        health: getValues("health"),
+        progressPct: getValues("progressPct"),
+      };
+      setValue("health", "completed", { shouldDirty: true });
+      setValue("progressPct", 100, { shouldDirty: true });
+    } else if (!isDone && wasDone.current) {
+      if (doneStash.current) {
+        setValue("health", doneStash.current.health, { shouldDirty: true });
+        setValue("progressPct", doneStash.current.progressPct, {
+          shouldDirty: true,
+        });
+        doneStash.current = null;
+      }
+    }
+    wasDone.current = isDone;
+  }, [isDone, getValues, setValue]);
 
   // 입력 변경 여부를 모달에 보고 (외부 클릭 시 저장 확인용)
   useEffect(() => {
@@ -126,7 +166,11 @@ export function ProjectForm({
   }
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} className="flex flex-col gap-3.5">
+    <form
+      id={formId}
+      onSubmit={handleSubmit(onValid)}
+      className="flex flex-col gap-3.5"
+    >
       {/* 기본 정보 */}
       <Card className="p-[22px]">
         <h2 className="mb-4 text-[13px] font-bold">기본 정보</h2>
@@ -146,7 +190,10 @@ export function ProjectForm({
                   {...register("description")}
                   rows={6}
                   placeholder="과제 개요를 입력하세요"
-                  className={cn(inputClass, "h-auto resize-y py-2.5 leading-relaxed")}
+                  className={cn(
+                    inputClass,
+                    "h-auto resize-y py-2.5 leading-relaxed",
+                  )}
                 />
               </Field>
             </div>
@@ -157,7 +204,12 @@ export function ProjectForm({
                   name="pmIds"
                   render={({ field }) => (
                     <SearchSelect
-                      options={people.map((p) => ({ id: p.id, label: p.name, hint: p.department, keywords: p.email ?? "" }))}
+                      options={people.map((p) => ({
+                        id: p.id,
+                        label: p.name,
+                        hint: p.department,
+                        keywords: p.email ?? "",
+                      }))}
                       value={field.value}
                       onChange={field.onChange}
                       placeholder="이름 또는 이메일로 검색"
@@ -173,7 +225,10 @@ export function ProjectForm({
                   name="departmentIds"
                   render={({ field }) => (
                     <SearchSelect
-                      options={departments.map((d) => ({ id: d.id, label: d.name }))}
+                      options={departments.map((d) => ({
+                        id: d.id,
+                        label: d.name,
+                      }))}
                       value={field.value}
                       onChange={field.onChange}
                       placeholder="부서명으로 검색"
@@ -189,7 +244,10 @@ export function ProjectForm({
                   name="aiTechIds"
                   render={({ field }) => (
                     <ChipMultiSelect
-                      options={aiTechs.map((t) => ({ id: t.id, label: t.name }))}
+                      options={aiTechs.map((t) => ({
+                        id: t.id,
+                        label: t.name,
+                      }))}
                       value={field.value}
                       onChange={field.onChange}
                       emptyText="등록된 AI기술이 없습니다."
@@ -213,137 +271,188 @@ export function ProjectForm({
               </Field>
               <p className="text-faint flex items-center gap-1.5 text-xs">
                 <span className="text-primary">＋</span> 목록에 없으면{" "}
-                <b className="text-muted-foreground">마스터 관리</b>에서 추가할 수 있어요.
+                <b className="text-muted-foreground">마스터 관리</b>에서 추가할
+                수 있어요.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Field label="분류 (MPRS)" required error={errors.mprs?.message}>
-            <select className={inputClass} {...register("mprs")}>
-              <option value="" hidden>선택하세요</option>
-              {MPRS_VALUES.map((m) => (
-                <option key={m} value={m}>
-                  {MPRS_LABEL[m]}
+            <Field label="분류 (MPRS)" required error={errors.mprs?.message}>
+              <select className={inputClass} {...register("mprs")}>
+                <option value="" hidden>
+                  선택하세요
                 </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="과제 유형" required error={errors.investmentType?.message}>
-            <select className={inputClass} {...register("investmentType")}>
-              <option value="" hidden>선택하세요</option>
-              {INVESTMENT_VALUES.map((t) => (
-                <option key={t} value={t}>
-                  {INVESTMENT_LABEL[t]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="대상 본부" required error={errors.headquarterId?.message}>
-            <select className={inputClass} {...register("headquarterId")}>
-              <option value="" hidden>선택하세요</option>
-              {headquarters.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-          <Field label="진행 현황" required error={errors.lifecycle?.message}>
-            <select className={inputClass} {...register("lifecycle")}>
-              {LIFECYCLE_VALUES.map((l) => (
-                <option key={l} value={l}>
-                  {LIFECYCLE_LABEL[l]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="진행 상태" required error={errors.health?.message}>
-            <select className={inputClass} {...register("health")}>
-              {HEALTH_VALUES.map((h) => (
-                <option key={h} value={h}>
-                  {HEALTH_LABEL[h]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="시작일" error={errors.startDate?.message}>
-            <input type="date" {...register("startDate")} className={inputClass} />
-          </Field>
-          <Field label="종료일" error={errors.endDate?.message}>
-            <input type="date" {...register("endDate")} className={inputClass} />
-          </Field>
-
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Controller
-            control={control}
-            name="budgetEok"
-            render={({ field }) => {
-              const won =
-                field.value != null && !Number.isNaN(field.value)
-                  ? Math.round(field.value * EOK)
-                  : undefined;
-              return (
-                <Field label="투자비 (원)" error={errors.budgetEok?.message}>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={won != null ? won.toLocaleString("ko-KR") : ""}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^\d]/g, "");
-                      field.onChange(raw === "" ? undefined : Number(raw) / EOK);
-                    }}
-                    placeholder="예: 1,250,000,000"
-                    className={inputClass}
-                  />
-                </Field>
-              );
-            }}
-          />
-          <Field label="사업계획" error={errors.budgetPlanItemId?.message}>
-            <div className="flex gap-2">
-              <select
-                className={cn(inputClass, "w-[96px] shrink-0 disabled:opacity-50")}
-                value={planYear}
-                disabled={!selectedPlan}
-                onChange={(e) => {
-                  const y = Number(e.target.value);
-                  setPlanYear(y);
-                  // 연도 변경 시 해당 연도에 선택값이 없으면 그 연도 첫 계획으로(없으면 사업계획 외)
-                  const yearPlans = planItems.filter((p) => p.fiscalYear === y);
-                  if (!yearPlans.some((p) => p.id === selectedPlan)) {
-                    const next = yearPlans[0]?.id ?? "";
-                    setValue("budgetPlanItemId", next);
-                    setSelectedPlan(next);
-                  }
-                }}
-              >
-                {planYears.map((y) => (
-                  <option key={y} value={y}>
-                    {y}년
+                {MPRS_VALUES.map((m) => (
+                  <option key={m} value={m}>
+                    {MPRS_LABEL[m]}
                   </option>
                 ))}
               </select>
-              <select
-                className={cn(inputClass, "min-w-0 flex-1")}
-                {...register("budgetPlanItemId", {
-                  onChange: (e) => setSelectedPlan(e.target.value),
-                })}
-              >
-                {planItems
-                  .filter((p) => p.fiscalYear === planYear)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
+            </Field>
+            <Field
+              label="과제 유형"
+              required
+              error={errors.investmentType?.message}
+            >
+              <select className={inputClass} {...register("investmentType")}>
+                <option value="" hidden>
+                  선택하세요
+                </option>
+                {INVESTMENT_VALUES.map((t) => (
+                  <option key={t} value={t}>
+                    {INVESTMENT_LABEL[t]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label="대상 본부"
+              required
+              error={errors.headquarterId?.message}
+            >
+              <select className={inputClass} {...register("headquarterId")}>
+                <option value="" hidden>
+                  선택하세요
+                </option>
+                {headquarters.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <Field label="진행 현황" required error={errors.lifecycle?.message}>
+              <div className="flex items-center gap-2">
+                <select
+                  className={cn(inputClass, isOperating && "w-[52%] shrink-0")}
+                  {...register("lifecycle")}
+                >
+                  {LIFECYCLE_VALUES.map((l) => (
+                    <option key={l} value={l}>
+                      {LIFECYCLE_LABEL[l]}
                     </option>
                   ))}
-                <option value="">사업계획 외 과제</option>
+                </select>
+                {isOperating && (
+                  <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-[12.5px] font-medium">
+                    <input
+                      type="checkbox"
+                      className="accent-primary h-4 w-4"
+                      {...register("addToPerformance")}
+                    />
+                    성과 현황 추가
+                  </label>
+                )}
+              </div>
+            </Field>
+            <Field label="진행 상태" required error={errors.health?.message}>
+              <select
+                className={cn(inputClass, "disabled:opacity-60")}
+                disabled={isDone}
+                title={
+                  isDone ? "완료·운영 단계는 진행 상태가 완료로 고정됩니다." : undefined
+                }
+                {...register("health")}
+              >
+                {HEALTH_VALUES.map((h) => (
+                  <option key={h} value={h}>
+                    {HEALTH_LABEL[h]}
+                  </option>
+                ))}
               </select>
-            </div>
-          </Field>
+            </Field>
+            <Field label="시작일" error={errors.startDate?.message}>
+              <input
+                type="date"
+                {...register("startDate")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="종료일" error={errors.endDate?.message}>
+              <input
+                type="date"
+                {...register("endDate")}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Controller
+              control={control}
+              name="budgetEok"
+              render={({ field }) => {
+                const won =
+                  field.value != null && !Number.isNaN(field.value)
+                    ? Math.round(field.value * EOK)
+                    : undefined;
+                return (
+                  <Field label="투자비 (원)" error={errors.budgetEok?.message}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={won != null ? won.toLocaleString("ko-KR") : ""}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "");
+                        field.onChange(
+                          raw === "" ? undefined : Number(raw) / EOK,
+                        );
+                      }}
+                      placeholder="예: 1,250,000,000"
+                      className={inputClass}
+                    />
+                  </Field>
+                );
+              }}
+            />
+            <Field label="사업계획" error={errors.budgetPlanItemId?.message}>
+              <div className="flex gap-2">
+                <select
+                  className={cn(
+                    inputClass,
+                    "w-[96px] shrink-0 disabled:opacity-50",
+                  )}
+                  value={planYear}
+                  disabled={!selectedPlan}
+                  onChange={(e) => {
+                    const y = Number(e.target.value);
+                    setPlanYear(y);
+                    // 연도 변경 시 해당 연도에 선택값이 없으면 그 연도 첫 계획으로(없으면 사업계획 외)
+                    const yearPlans = planItems.filter(
+                      (p) => p.fiscalYear === y,
+                    );
+                    if (!yearPlans.some((p) => p.id === selectedPlan)) {
+                      const next = yearPlans[0]?.id ?? "";
+                      setValue("budgetPlanItemId", next);
+                      setSelectedPlan(next);
+                    }
+                  }}
+                >
+                  {planYears.map((y) => (
+                    <option key={y} value={y}>
+                      {y}년
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className={cn(inputClass, "min-w-0 flex-1")}
+                  {...register("budgetPlanItemId", {
+                    onChange: (e) => setSelectedPlan(e.target.value),
+                  })}
+                >
+                  {planItems
+                    .filter((p) => p.fiscalYear === planYear)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  <option value="">사업계획 외 과제</option>
+                </select>
+              </div>
+            </Field>
           </div>
         </div>
       </Card>
@@ -355,7 +464,7 @@ export function ProjectForm({
           name="progressPct"
           render={({ field }) => (
             <Field
-              label={`진행률 (${field.value ?? 0}%)`}
+              label={`진행률 (${field.value ?? 0}%)${isDone ? " · 완료/운영 고정" : ""}`}
               full
               error={errors.progressPct?.message}
             >
@@ -366,7 +475,8 @@ export function ProjectForm({
                 step="5"
                 value={field.value ?? 0}
                 onChange={(e) => field.onChange(Number(e.target.value))}
-                className="accent-primary w-full"
+                disabled={isDone}
+                className="accent-primary w-full disabled:opacity-50"
               />
             </Field>
           )}
@@ -383,7 +493,13 @@ export function ProjectForm({
       <div className="flex justify-end gap-2.5">
         <button
           type="button"
-          onClick={() => (onCancel ? onCancel() : returnTo ? router.push(returnTo) : router.back())}
+          onClick={() =>
+            onCancel
+              ? onCancel()
+              : returnTo
+                ? router.push(returnTo)
+                : router.back()
+          }
           disabled={isSubmitting}
           className="border-border-strong text-muted-foreground hover:bg-muted rounded-[10px] border px-[18px] py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-50"
         >
@@ -426,7 +542,9 @@ function ChipMultiSelect({
     );
   }
   function toggle(id: string) {
-    onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+    onChange(
+      value.includes(id) ? value.filter((v) => v !== id) : [...value, id],
+    );
   }
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -448,7 +566,9 @@ function ChipMultiSelect({
           >
             {on && <span className="text-[10px]">✓</span>}
             {o.label}
-            {o.hint && <span className="text-faint font-normal">· {o.hint}</span>}
+            {o.hint && (
+              <span className="text-faint font-normal">· {o.hint}</span>
+            )}
           </button>
         );
       })}
@@ -527,39 +647,67 @@ function SearchSelect({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {selected.map((o) => (
-            <span
-              key={o.id}
-              className="border-primary text-accent-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold"
-              style={{ background: "#EEF0FB" }}
-            >
-              {o.label}
-              {o.hint && <span className="text-faint font-normal">· {o.hint}</span>}
-              <button
-                type="button"
-                onClick={() => onChange(value.filter((v) => v !== o.id))}
-                aria-label={`${o.label} 제거`}
-                className="text-muted-foreground hover:text-foreground ml-0.5 text-sm leading-none"
-              >
-                ×
-              </button>
-            </span>
+        <span
+          key={o.id}
+          className="border-primary text-accent-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold"
+          style={{ background: "#EEF0FB" }}
+        >
+          {o.label}
+          {o.hint && <span className="text-faint font-normal">· {o.hint}</span>}
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((v) => v !== o.id))}
+            aria-label={`${o.label} 제거`}
+            className="text-muted-foreground hover:text-foreground ml-0.5 text-sm leading-none"
+          >
+            ×
+          </button>
+        </span>
       ))}
       {adding ? (
         <div className="relative" ref={triggerRef}>
           <input
             autoFocus
             value={q}
-            onChange={(e) => { setQ(e.target.value); setHi(-1); }}
-            onBlur={() => setTimeout(() => { setAdding(false); setQ(""); setHi(-1); }, 150)}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setHi(-1);
+            }}
+            onBlur={() =>
+              setTimeout(() => {
+                setAdding(false);
+                setQ("");
+                setHi(-1);
+              }, 150)
+            }
             onKeyDown={(e) => {
-              if (e.key === "Escape") { setAdding(false); setQ(""); setHi(-1); return; }
-              if (e.key === "ArrowDown") { e.preventDefault(); setHi((h) => Math.min(h + 1, matches.length - 1)); return; }
-              if (e.key === "ArrowUp") { e.preventDefault(); setHi((h) => Math.max(h - 1, 0)); return; }
+              if (e.key === "Escape") {
+                setAdding(false);
+                setQ("");
+                setHi(-1);
+                return;
+              }
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setHi((h) => Math.min(h + 1, matches.length - 1));
+                return;
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setHi((h) => Math.max(h - 1, 0));
+                return;
+              }
               if (e.key === "Enter") {
                 e.preventDefault();
                 if (matches.length === 0) return;
-                if (matches.length === 1) { pick(matches[0]); return; }
-                if (hi < 0) { setHi(0); return; }
+                if (matches.length === 1) {
+                  pick(matches[0]);
+                  return;
+                }
+                if (hi < 0) {
+                  setHi(0);
+                  return;
+                }
                 pick(matches[hi]);
               }
             }}
@@ -589,7 +737,9 @@ function SearchSelect({
                 >
                   <span className="text-primary">＋</span>
                   <span className="font-medium">{o.label}</span>
-                  {o.hint && <span className="text-faint text-xs">· {o.hint}</span>}
+                  {o.hint && (
+                    <span className="text-faint text-xs">· {o.hint}</span>
+                  )}
                   {o.keywords && (
                     <span className="text-faint ml-auto truncate pl-2 text-[11px]">
                       {o.keywords}
@@ -628,7 +778,12 @@ function Field({
 }) {
   return (
     <div className={cn("flex flex-col gap-[7px]", full && "sm:col-span-2")}>
-      <label className={cn("text-xs font-semibold", error ? "text-red-600" : "text-muted-foreground")}>
+      <label
+        className={cn(
+          "text-xs font-semibold",
+          error ? "text-red-600" : "text-muted-foreground",
+        )}
+      >
         {label}
         {required && <span className="ml-0.5 text-red-500">*</span>}
       </label>

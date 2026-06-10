@@ -1,5 +1,9 @@
 import type { PlanItemRow } from "@/lib/repositories/budget-plan";
-import type { InvestmentType } from "@/lib/domain/investment";
+import {
+  INVESTMENT_ORDER,
+  INVESTMENT_LABEL,
+  type InvestmentType,
+} from "@/lib/domain/investment";
 import type { Mprs } from "@/lib/domain/mprs";
 
 /**
@@ -65,6 +69,107 @@ function execBucketKey(yearMonth: string, year: number): string | null {
   if (yr === String(year - 1)) return `${year - 1}`;
   if (yr === String(year + 1)) return `${year + 1}`;
   return null;
+}
+
+/** 사업계획 기준 그룹 집계(투자유형별/본부별) 1행 */
+export interface PlanGroupRow {
+  key: string;
+  label: string;
+  plan_won: number; // 계획 (Σ plan_amount)
+  exec_won: number; // 집행 (매핑 과제의 해당 연도 집행 합)
+}
+
+export interface PlanYearBreakdown {
+  planTotal: number; // 연도 계획 총액
+  planExec: number; // 연도 계획 집행 (매핑 과제 중복 제거)
+  byInvestment: PlanGroupRow[]; // CAPEX 항목별 (INVESTMENT_ORDER 고정 5종 + 미지정)
+  byHeadquarter: PlanGroupRow[]; // 본부별 (계획액 내림차순)
+}
+
+/**
+ * 선택 연도 사업계획을 기준으로 한 투자유형별·본부별 집계 (순수, 연도 집행 기준).
+ * 계획 = 항목 plan_amount, 집행 = 매핑 과제의 *해당 연도* 월별 집행 합.
+ * rows 는 해당 연도(fiscal_year === year) 항목만 넘길 것.
+ */
+export function planYearBreakdown(
+  rows: PlanItemRow[],
+  year: number,
+): PlanYearBreakdown {
+  const pfx = `${year}-`;
+  const execInYear = (monthly: { year_month: string; amount: number }[]) =>
+    sum(monthly.filter((m) => m.year_month.startsWith(pfx)).map((m) => m.amount));
+
+  // 계획 집행: 매핑 과제 중복 제거 후 해당 연도 집행 합
+  const projExec = new Map<string, number>();
+  for (const it of rows) {
+    for (const p of it.projects) {
+      if (!projExec.has(p.id)) projExec.set(p.id, execInYear(p.monthly));
+    }
+  }
+  const planExec = sum([...projExec.values()]);
+
+  const invPlan = new Map<InvestmentType, number>();
+  const invExec = new Map<InvestmentType, number>();
+  let noInvPlan = 0;
+  let noInvExec = 0;
+  const hqMap = new Map<string, { name: string; plan: number; exec: number }>();
+
+  for (const it of rows) {
+    const itemExec = sum(it.projects.map((p) => execInYear(p.monthly)));
+    if (it.investment_type) {
+      invPlan.set(
+        it.investment_type,
+        (invPlan.get(it.investment_type) ?? 0) + it.plan_amount,
+      );
+      invExec.set(
+        it.investment_type,
+        (invExec.get(it.investment_type) ?? 0) + itemExec,
+      );
+    } else {
+      noInvPlan += it.plan_amount;
+      noInvExec += itemExec;
+    }
+    const hqKey = it.headquarter_id ?? "__none__";
+    const h = hqMap.get(hqKey) ?? {
+      name: it.headquarter_name ?? "미지정",
+      plan: 0,
+      exec: 0,
+    };
+    h.plan += it.plan_amount;
+    h.exec += itemExec;
+    hqMap.set(hqKey, h);
+  }
+
+  const byInvestment: PlanGroupRow[] = INVESTMENT_ORDER.map((t) => ({
+    key: t,
+    label: INVESTMENT_LABEL[t],
+    plan_won: invPlan.get(t) ?? 0,
+    exec_won: invExec.get(t) ?? 0,
+  }));
+  if (noInvPlan > 0 || noInvExec > 0) {
+    byInvestment.push({
+      key: "none",
+      label: "미지정",
+      plan_won: noInvPlan,
+      exec_won: noInvExec,
+    });
+  }
+
+  const byHeadquarter: PlanGroupRow[] = [...hqMap.entries()]
+    .map(([key, v]) => ({
+      key,
+      label: v.name,
+      plan_won: v.plan,
+      exec_won: v.exec,
+    }))
+    .sort((a, b) => b.plan_won - a.plan_won);
+
+  return {
+    planTotal: sum(rows.map((it) => it.plan_amount)),
+    planExec,
+    byInvestment,
+    byHeadquarter,
+  };
 }
 
 export function buildBudgetPlanView(

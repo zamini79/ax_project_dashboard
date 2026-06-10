@@ -51,6 +51,7 @@ export default async function EditProjectPage({
     headquarterId: edit.headquarter_id,
     lifecycle: edit.lifecycle,
     health: edit.health,
+    addToPerformance: edit.hasEffect,
     startDate: edit.start_date ?? "",
     endDate: edit.end_date ?? "",
     budgetEok: wonToEok(edit.total_budget),

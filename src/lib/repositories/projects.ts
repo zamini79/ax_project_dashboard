@@ -403,6 +403,7 @@ export interface ProjectEditData {
   tagIds: string[];
   budgetPlanItemId: string; // "" = 사업계획 외 과제
   executions: { id: string; year_month: string; amount: number }[];
+  hasEffect: boolean; // 성과 현황(운영 효과) 등록 여부 → "성과 현황 추가" 체크 프리필
 }
 
 type DbClient = Awaited<ReturnType<typeof createClient>>;
@@ -550,6 +551,7 @@ interface RawEditRow {
   project_tags: { tag_id: string }[];
   budget_plan_item_projects: { item_id: string }[];
   project_budget_monthly: { id: string; year_month: string; amount: number }[];
+  project_effects: { id: string }[];
 }
 
 /** 편집 폼 프리필용 데이터 (스칼라 + 선택된 M:N id 목록) */
@@ -570,7 +572,8 @@ export async function fetchProjectEditData(
       project_ai_techs ( ai_tech_id ),
       project_tags ( tag_id ),
       budget_plan_item_projects ( item_id ),
-      project_budget_monthly ( id, year_month, amount )
+      project_budget_monthly ( id, year_month, amount ),
+      project_effects ( id )
     `,
     )
     .eq("id", id)
@@ -607,5 +610,6 @@ export async function fetchProjectEditData(
       year_month: m.year_month,
       amount: m.amount,
     })),
+    hasEffect: (data.project_effects ?? []).length > 0,
   };
 }

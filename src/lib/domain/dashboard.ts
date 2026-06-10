@@ -36,7 +36,7 @@ export const EMPTY_FILTER: DashboardFilter = {
  */
 export const UNTAGGED = "__none__";
 
-const HEALTH_SET = new Set<string>(["green", "yellow", "red"]);
+const HEALTH_SET = new Set<string>(["green", "yellow", "red", "completed"]);
 
 /** URL searchParams → 필터 (순수 파싱, 잘못된 값은 무시) */
 export function parseFilter(params: {
@@ -46,7 +46,13 @@ export function parseFilter(params: {
   tags?: string;
 }): DashboardFilter {
   const lifecycle = (
-    ["not_started", "under_review", "in_progress", "completed"] as const
+    [
+      "not_started",
+      "under_review",
+      "in_progress",
+      "completed",
+      "operating",
+    ] as const
   ).includes(params.lifecycle as Lifecycle)
     ? (params.lifecycle as Lifecycle)
     : null;
@@ -114,7 +120,12 @@ export type SortKey =
   | "schedule";
 export type SortDir = "asc" | "desc";
 
-const HEALTH_RANK: Record<Health, number> = { red: 0, yellow: 1, green: 2 };
+const HEALTH_RANK: Record<Health, number> = {
+  red: 0,
+  yellow: 1,
+  green: 2,
+  completed: 3,
+};
 
 /**
  * 컬럼 기준 정렬 (순수). 동률은 과제명으로 안정 정렬.

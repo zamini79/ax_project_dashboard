@@ -61,7 +61,7 @@ export async function ProjectExplorer({
   heading?: string;
   /** KPI 드릴다운 스트립(과제 단계·헬스·평균 진행률·투자비 집행) 표시 여부 */
   showKpis?: boolean;
-  /** 헤더의 요약 카운트(전체/진행중/검토중/완료) 표시 여부 */
+  /** 헤더의 요약 카운트(전체/진행중/검토중/완료/운영) 표시 여부 */
   showSummary?: boolean;
 }) {
   const [projects, headquarters, tagOptions] = await Promise.all([
@@ -136,7 +136,8 @@ export async function ProjectExplorer({
           {showSummary && (
             <p className="text-muted-foreground mt-0.5 text-[12.5px]">
               전체 {kpis.total}건 · 진행중 {lc("in_progress")} · 검토중{" "}
-              {lc("under_review")} · 완료 {lc("completed")}
+              {lc("under_review")} · 완료 {lc("completed")} · 운영{" "}
+              {lc("operating")}
             </p>
           )}
         </div>

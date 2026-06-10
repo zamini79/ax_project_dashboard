@@ -33,6 +33,7 @@
   --health-green: #16a34a;
   --health-yellow: #e0a106;
   --health-red: #dc2626;
+  --health-gray: #9aa0aa; /* 완료 */
 
   --radius: 1rem; /* 카드 16px */
 }
@@ -58,6 +59,7 @@
   --color-health-green: var(--health-green);
   --color-health-yellow: var(--health-yellow);
   --color-health-red: var(--health-red);
+  --color-health-gray: var(--health-gray);
 
   --radius-sm: calc(var(--radius) - 8px);
   --radius-md: calc(var(--radius) - 4px);

@@ -14,8 +14,8 @@ import { formatBudgetEok } from "@/lib/domain/format";
 import { dashboardHref, toggle, type DashboardState } from "./url";
 
 const ACCENT = "var(--primary)";
-// 단계 도넛/범례 색: 진행전/검토중/진행중/완료
-const LIFE_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A"];
+// 단계 도넛/범례 색: 진행전/검토중/진행중/완료/운영
+const LIFE_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A", "#0F1830"];
 
 /** 과제 현황 KPI 스트립 (4카드). 단계 범례·헬스는 드릴다운(D-019) 링크. */
 export function KpiStrip({

@@ -768,12 +768,13 @@ export type Database = {
         | "other"
       investment_type: "ai" | "dt" | "it" | "security" | "infra"
       mprs_category: "marketing" | "production" | "research" | "support"
-      project_health: "green" | "yellow" | "red"
+      project_health: "green" | "yellow" | "red" | "completed"
       project_lifecycle:
         | "not_started"
         | "under_review"
         | "in_progress"
         | "completed"
+        | "operating"
       rule_target_field: "title" | "parent_title" | "space_key"
       update_source: "manual" | "atlassian_sync"
       user_role: "user"
@@ -917,12 +918,13 @@ export const Constants = {
       ],
       investment_type: ["ai", "dt", "it", "security", "infra"],
       mprs_category: ["marketing", "production", "research", "support"],
-      project_health: ["green", "yellow", "red"],
+      project_health: ["green", "yellow", "red", "completed"],
       project_lifecycle: [
         "not_started",
         "under_review",
         "in_progress",
         "completed",
+        "operating",
       ],
       rule_target_field: ["title", "parent_title", "space_key"],
       update_source: ["manual", "atlassian_sync"],

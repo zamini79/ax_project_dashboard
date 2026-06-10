@@ -90,6 +90,42 @@ export async function fetchProjectEffects(): Promise<ProjectEffect[]> {
   return (data ?? []).map(mapEffect);
 }
 
+/** 과제에 운영 효과(성과 현황) 행이 있는지 여부 */
+export async function projectHasEffect(projectId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("project_effects")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
+  if (error) throw new Error(`성과 등록 여부 조회 실패: ${error.message}`);
+  return (count ?? 0) > 0;
+}
+
+/**
+ * 성과 현황 등록 여부 동기화.
+ * - member=true: 효과 행이 없으면 기본 행 생성(절감액 등은 0, 추후 입력).
+ * - member=false: 해당 과제의 효과 행을 모두 제거(성과 현황에서 빠짐).
+ */
+export async function setProjectEffectMembership(
+  projectId: string,
+  member: boolean,
+): Promise<void> {
+  const supabase = await createClient();
+  if (member) {
+    if (await projectHasEffect(projectId)) return;
+    const { error } = await supabase
+      .from("project_effects")
+      .insert({ project_id: projectId });
+    if (error) throw new Error(`성과 현황 등록 실패: ${error.message}`);
+  } else {
+    const { error } = await supabase
+      .from("project_effects")
+      .delete()
+      .eq("project_id", projectId);
+    if (error) throw new Error(`성과 현황 해제 실패: ${error.message}`);
+  }
+}
+
 /** 단일 과제의 운영 효과 (상세 드로어용). 없으면 null */
 export async function fetchEffectForProject(
   projectId: string,

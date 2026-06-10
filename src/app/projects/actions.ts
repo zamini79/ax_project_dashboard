@@ -30,8 +30,23 @@ import {
   addProjectExecution,
   deleteProjectExecution,
 } from "@/lib/repositories/budget";
+import { setProjectEffectMembership } from "@/lib/repositories/effects";
 
 export type FormActionResult = { error: string } | void;
+
+/**
+ * 성과 현황(운영 효과) 등록 동기화.
+ * 운영 단계 + "성과 현황 추가" 체크일 때만 등록, 그 외에는 해제(행 제거).
+ */
+async function syncEffectMembership(
+  projectId: string,
+  v: ProjectFormValues,
+): Promise<void> {
+  await setProjectEffectMembership(
+    projectId,
+    v.lifecycle === "operating" && v.addToPerformance,
+  );
+}
 
 /**
  * 편집 진입 시 ?from= 으로 넘어온 복귀 경로를 검증한다.
@@ -75,12 +90,16 @@ export async function createProjectAction(
   try {
     id = await createProject(toWriteInput(parsed.data));
     await setProjectPlanItem(id, parsed.data.budgetPlanItemId || null);
+    await syncEffectMembership(id, parsed.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "과제 생성에 실패했습니다." };
+    return {
+      error: e instanceof Error ? e.message : "과제 생성에 실패했습니다.",
+    };
   }
 
   revalidatePath("/");
   revalidatePath("/budget");
+  revalidatePath("/performance");
   // navful 화면(목록+드로어)으로 — 단독 상세 페이지는 상단 내비가 없어 갇히는 문제 회피
   redirect(`/projects?detail=${id}`);
 }
@@ -100,12 +119,16 @@ export async function createProjectModalAction(
   try {
     id = await createProject(toWriteInput(parsed.data));
     await setProjectPlanItem(id, parsed.data.budgetPlanItemId || null);
+    await syncEffectMembership(id, parsed.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "과제 생성에 실패했습니다." };
+    return {
+      error: e instanceof Error ? e.message : "과제 생성에 실패했습니다.",
+    };
   }
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/budget");
+  revalidatePath("/performance");
   return { ok: true, id };
 }
 
@@ -121,12 +144,16 @@ export async function updateProjectModalAction(
   try {
     await updateProject(id, toWriteInput(parsed.data));
     await setProjectPlanItem(id, parsed.data.budgetPlanItemId || null);
+    await syncEffectMembership(id, parsed.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "과제 수정에 실패했습니다." };
+    return {
+      error: e instanceof Error ? e.message : "과제 수정에 실패했습니다.",
+    };
   }
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/budget");
+  revalidatePath("/performance");
   revalidatePath(`/projects/${id}`);
   return { ok: true };
 }
@@ -144,6 +171,7 @@ export async function loadProjectEditData(id: string) {
     headquarterId: edit.headquarter_id,
     lifecycle: edit.lifecycle,
     health: edit.health,
+    addToPerformance: edit.hasEffect,
     startDate: edit.start_date ?? "",
     endDate: edit.end_date ?? "",
     budgetEok: wonToEok(edit.total_budget),
@@ -185,13 +213,17 @@ export async function updateProjectAction(
   try {
     await updateProject(id, toWriteInput(parsed.data));
     await setProjectPlanItem(id, parsed.data.budgetPlanItemId || null);
+    await syncEffectMembership(id, parsed.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "과제 수정에 실패했습니다." };
+    return {
+      error: e instanceof Error ? e.message : "과제 수정에 실패했습니다.",
+    };
   }
 
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/budget");
+  revalidatePath("/performance");
   revalidatePath(`/projects/${id}`);
   redirect(safeReturnTo(returnTo, `/projects/${id}`));
 }
@@ -219,13 +251,16 @@ export async function addExecutionAction(
   | { error: string }
   | { ok: true; entry: { id: string; year_month: string; amount: number } }
 > {
-  if (!YM_RE.test(yearMonth)) return { error: "지급 시기(년/월)를 확인하세요." };
+  if (!YM_RE.test(yearMonth))
+    return { error: "지급 시기(년/월)를 확인하세요." };
   if (!(amount > 0)) return { error: "금액을 입력하세요." };
   let entry: { id: string; year_month: string; amount: number };
   try {
     entry = await addProjectExecution(projectId, yearMonth, Math.round(amount));
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "집행 추가에 실패했습니다." };
+    return {
+      error: e instanceof Error ? e.message : "집행 추가에 실패했습니다.",
+    };
   }
   revalidateExecution(projectId);
   return { ok: true, entry };
@@ -239,7 +274,9 @@ export async function deleteExecutionAction(
   try {
     await deleteProjectExecution(id);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "집행 삭제에 실패했습니다." };
+    return {
+      error: e instanceof Error ? e.message : "집행 삭제에 실패했습니다.",
+    };
   }
   revalidateExecution(projectId);
   return { ok: true };

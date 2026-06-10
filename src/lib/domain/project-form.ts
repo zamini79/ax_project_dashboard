@@ -15,7 +15,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const MPRS_VALUES = MPRS_ORDER;
 export const INVESTMENT_VALUES = INVESTMENT_ORDER;
 export const LIFECYCLE_VALUES = LIFECYCLE_KPI_ORDER;
-export const HEALTH_VALUES = ["green", "yellow", "red"] as const;
+export const HEALTH_VALUES = ["green", "yellow", "red", "completed"] as const;
 
 /**
  * 선택 숫자 입력. RHF register의 setValueAs에서 "" → undefined, 문자열 → number 변환을
@@ -27,7 +27,10 @@ const optionalNumber = z
   .optional();
 
 const optionalDate = z
-  .union([z.literal(""), z.string().regex(DATE_RE, "날짜 형식이 올바르지 않습니다.")])
+  .union([
+    z.literal(""),
+    z.string().regex(DATE_RE, "날짜 형식이 올바르지 않습니다."),
+  ])
   .optional();
 
 export const projectFormSchema = z
@@ -41,6 +44,8 @@ export const projectFormSchema = z
     headquarterId: z.string().uuid("대상 본부를 선택하세요."),
     lifecycle: z.enum(LIFECYCLE_VALUES),
     health: z.enum(HEALTH_VALUES),
+    // 운영 단계에서 "성과 현황 추가" 체크 여부 (lifecycle !== operating 이면 무시)
+    addToPerformance: z.boolean(),
     startDate: optionalDate,
     endDate: optionalDate,
     budgetEok: optionalNumber, // 억 단위
@@ -56,10 +61,10 @@ export const projectFormSchema = z
     // 사업계획 매핑: "" = 사업계획 외 과제, uuid = 해당 사업계획 항목
     budgetPlanItemId: z.string(),
   })
-  .refine(
-    (v) => !(v.startDate && v.endDate) || v.endDate >= v.startDate,
-    { path: ["endDate"], message: "종료일은 시작일 이후여야 합니다." },
-  );
+  .refine((v) => !(v.startDate && v.endDate) || v.endDate >= v.startDate, {
+    path: ["endDate"],
+    message: "종료일은 시작일 이후여야 합니다.",
+  });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
@@ -86,6 +91,7 @@ export function emptyFormValues(): ProjectFormValues {
     headquarterId: "",
     lifecycle: "not_started",
     health: "green",
+    addToPerformance: false,
     startDate: "",
     endDate: "",
     budgetEok: undefined,

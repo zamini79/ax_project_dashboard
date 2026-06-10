@@ -10,6 +10,7 @@ import {
   LIFECYCLE_LABEL,
   HEALTH_COLOR_VAR,
   HEALTH_LABEL,
+  isOverdue,
 } from "@/lib/domain/lifecycle";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 import { dashboardHref, type DashboardState } from "./url";
@@ -219,14 +220,25 @@ export function ProjectTable({
                 <Cell col="w-36 shrink-0" center muted truncate>
                   {item.headquarter_name}
                 </Cell>
-                <Cell col="flex-1 min-w-0" truncate>
-                  <Link
-                    href={dashboardHref(state, { detail: item.id })}
-                    scroll={false}
-                    className="font-medium hover:underline"
-                  >
-                    {item.name}
-                  </Link>
+                <Cell col="flex-1 min-w-0">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <Link
+                      href={dashboardHref(state, { detail: item.id })}
+                      scroll={false}
+                      className="truncate font-medium hover:underline"
+                    >
+                      {item.name}
+                    </Link>
+                    {isOverdue(item, todayISO) && (
+                      <span
+                        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold leading-none text-white"
+                        style={{ background: "var(--health-red)" }}
+                        title={`종료 예정일(${item.end_date})이 지났으나 미완료`}
+                      >
+                        지연
+                      </span>
+                    )}
+                  </div>
                 </Cell>
                 <Cell col="w-28 shrink-0" muted truncate>
                   <span title={item.ai_techs.join(", ")}>

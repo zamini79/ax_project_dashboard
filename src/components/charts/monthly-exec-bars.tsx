@@ -50,7 +50,8 @@ export function MonthlyExecBars({
       onMouseLeave={() => setHover(null)}
     >
       {data.map((d, i) => {
-        const isAccent = accent != null && i === data.length - 1;
+        const isLast = i === data.length - 1; // 당월(가장 최근) 강조
+        const barColor = accent ?? "#534AB7";
         const hasProjects = d.projects.length > 0;
         const onEnter = (el: HTMLElement) => {
           const r = el.getBoundingClientRect();
@@ -74,14 +75,14 @@ export function MonthlyExecBars({
               style={{
                 fontSize: 9,
                 fontWeight: 600,
-                color: isAccent ? accent : "#6E737D",
+                color: isLast ? barColor : "#6E737D",
                 fontVariantNumeric: "tabular-nums",
                 lineHeight: 1,
                 whiteSpace: "nowrap",
               }}
             >
               {d.value === 0
-                ? "-"
+                ? "0"
                 : d.value >= 10
                   ? Math.round(d.value).toFixed(0)
                   : d.value.toFixed(1)}
@@ -91,8 +92,8 @@ export function MonthlyExecBars({
                 width: barW,
                 height: Math.max(3, (d.value / max) * height),
                 borderRadius: "3px 3px 0 0",
-                background: isAccent ? accent : "#D3D8E0",
-                opacity: d.value === 0 ? 0.25 : 1,
+                background: barColor,
+                opacity: d.value === 0 ? 0.22 : isLast ? 1 : 0.62,
                 outline:
                   hover?.i === i ? "2px solid rgba(15,24,48,.3)" : "none",
                 outlineOffset: 1,

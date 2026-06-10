@@ -8,7 +8,11 @@ import {
 import { fetchMonthlyExecution } from "@/lib/repositories/budget";
 import { fetchProjectEffects } from "@/lib/repositories/effects";
 import { computeKpis } from "@/lib/domain/dashboard";
-import { performanceSummary, effectsSummary } from "@/lib/domain/analytics";
+import {
+  performanceSummary,
+  effectsSummary,
+  monthlyExecutionForYear,
+} from "@/lib/domain/analytics";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 import {
@@ -16,6 +20,7 @@ import {
   HEALTH_LABEL,
   HEALTH_HELP,
   LIFECYCLE_LABEL,
+  type Health,
 } from "@/lib/domain/lifecycle";
 import { Donut, Bar, HealthDot } from "@/components/charts/charts";
 import { MonthlyExecBars } from "@/components/charts/monthly-exec-bars";
@@ -32,7 +37,7 @@ const LINE = "var(--border)";
 const SUB = "var(--muted-foreground)";
 const FAINT = "var(--faint)";
 // 단계 도넛 색: 진행전/검토중/진행중/완료
-const DONUT_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A"];
+const DONUT_COLORS = ["#C7CBD3", "#E0A106", "#534AB7", "#16A34A", "#0F1830"];
 
 export default async function DashboardPage({
   searchParams,
@@ -60,11 +65,14 @@ export default async function DashboardPage({
       ? Math.round((kpis.budgetTotal.executed / kpis.budgetTotal.budget) * 100)
       : 0;
   const budgetTotal = kpis.budgetByMprs.reduce((a, b) => a + b.budget, 0);
-  const monthlyBars = monthly.map((m) => ({
-    label: m.year_month.slice(2).replace("-", "."),
-    value: m.amount / 100_000_000,
-    projects: m.projects.map((p) => ({ name: p.name, amount: p.amount })),
-  }));
+  // 당해년도 1~12월 전부 표시 (실적 없는 달은 0)
+  const monthlyBars = monthlyExecutionForYear(monthly, now.getFullYear()).map(
+    (m) => ({
+      label: m.year_month.slice(2).replace("-", "."),
+      value: m.amount / 100_000_000,
+      projects: m.projects.map((p) => ({ name: p.name, amount: p.amount })),
+    }),
+  );
   const atRisk = perf.atRisk.slice(0, 3);
 
   return (
@@ -324,7 +332,7 @@ export default async function DashboardPage({
 }
 
 /** HEALTH_COLOR_VAR는 "var(--health-..)" → 차트 컴포넌트 color prop에 그대로 사용 가능 */
-function cssHealth(h: "green" | "yellow" | "red"): string {
+function cssHealth(h: Health): string {
   return HEALTH_COLOR_VAR[h];
 }
 

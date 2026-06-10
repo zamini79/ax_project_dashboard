@@ -15,8 +15,13 @@ import { Bar } from "@/components/charts/charts";
 import { MonthlyExecBars } from "@/components/charts/monthly-exec-bars";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
-import { capexByInvestmentType, INVESTMENT_LABEL } from "@/lib/domain/investment";
-import { buildBudgetPlanView } from "@/lib/domain/budget-plan";
+import { INVESTMENT_LABEL } from "@/lib/domain/investment";
+import {
+  buildBudgetPlanView,
+  planYearBreakdown,
+} from "@/lib/domain/budget-plan";
+import { monthlyExecutionForYear } from "@/lib/domain/analytics";
+import { BudgetYearSelect } from "@/components/budget/budget-year-select";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +31,12 @@ const YELLOW = "var(--health-yellow)";
 
 type BudgetSortKey = "mprs" | "type" | "name" | "hq" | "plan" | "exec" | "rate";
 
-type SearchParams = Promise<{ detail?: string; sort?: string; dir?: string }>;
+type SearchParams = Promise<{
+  detail?: string;
+  sort?: string;
+  dir?: string;
+  year?: string;
+}>;
 
 export default async function BudgetPage({
   searchParams,
@@ -37,7 +47,7 @@ export default async function BudgetPage({
   const sortKey = (sp.sort as BudgetSortKey | undefined) ?? "plan";
   const sortDir = sp.dir === "asc" ? "asc" : "desc";
   const now = new Date();
-  const fiscalYear = now.getFullYear();
+  const currentYear = now.getFullYear();
   const [projects, monthly, planRows, headquarters] = await Promise.all([
     fetchProjectList(),
     fetchMonthlyExecution(),
@@ -45,34 +55,51 @@ export default async function BudgetPage({
     fetchHeadquarters(),
   ]);
 
+  // 연도 선택 (?year=) — 사업계획이 존재하는 연도 + 올해
+  const planYears = Array.from(new Set(planRows.map((r) => r.fiscal_year)));
+  const years = Array.from(new Set([currentYear, ...planYears])).sort(
+    (a, b) => b - a,
+  );
+  const yParam = Number(sp.year);
+  const fiscalYear =
+    Number.isInteger(yParam) && years.includes(yParam) ? yParam : currentYear;
+
   // 상세 드로어 (?detail=<id>) — 투자비 현황 위에 그대로 띄움
   const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
   const detailEffect = detail ? await fetchEffectForProject(detail.id) : null;
   const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  // CAPEX 항목별 = 과제 투자 유형별 자동 집계 (D-030)
-  const capex = capexByInvestmentType(projects);
-  const maxPlan = Math.max(1, ...capex.map((c) => c.plan_won));
+  // 사업계획 (D-031): 계획=수기, 집행=매핑 과제 자동 합산. 선택 연도 기준.
+  const planRowsYear = planRows.filter((r) => r.fiscal_year === fiscalYear);
+  const plan = buildBudgetPlanView(fiscalYear, planRowsYear); // KPI 카드(선택 연도)
+  const planAll = buildBudgetPlanView(fiscalYear, planRows); // 팝업(전체 연도)
 
-  // 사업계획 (D-031): 계획=수기, 집행=매핑 과제 자동 합산
-  // KPI 카드는 현재 연도만, 팝업(planAll)은 전체 연도(연도 컬럼)
-  const plan = buildBudgetPlanView(
-    fiscalYear,
-    planRows.filter((r) => r.fiscal_year === fiscalYear),
+  // CAPEX 항목별 / 본부별 — 선택 연도 사업계획 기준 (계획=plan_amount, 집행=매핑 과제 당해 집행)
+  const breakdown = planYearBreakdown(planRowsYear, fiscalYear);
+  const capex = breakdown.byInvestment;
+  const maxPlan = Math.max(1, ...capex.map((c) => c.plan_won));
+  // 본부 표시 순서 = 본부 마스터 등록 순(MBD→Bio→개발→L HOUSE→…→전사). 미지정은 마지막.
+  const hqOrder = new Map(headquarters.map((h, i) => [h.id, i]));
+  const hqBudget = [...breakdown.byHeadquarter].sort(
+    (a, b) => (hqOrder.get(a.key) ?? 999) - (hqOrder.get(b.key) ?? 999),
   );
-  const planAll = buildBudgetPlanView(fiscalYear, planRows);
-  const execTotal = capex.reduce((a, c) => a + c.exec_won, 0); // 전체 집행
-  const planExec = plan.planExec; // 계획 집행 (매핑 과제)
+  const maxHqPlan = Math.max(1, ...hqBudget.map((h) => h.plan_won));
+
+  // 선택 연도 1~12월 집행 실적(없는 달 0) + 누계/계획·계획외 분해
+  const yearMonthly = monthlyExecutionForYear(monthly, fiscalYear);
+  const execTotal = yearMonthly.reduce((a, m) => a + m.amount, 0); // 당해 전체 집행
+  const planTotal = breakdown.planTotal;
+  const planExec = breakdown.planExec; // 계획 집행 (매핑 과제, 당해)
   const outOfPlan = Math.max(0, execTotal - planExec); // 계획 이외 집행
-  const unspent = plan.planTotal - planExec; // 계획대비 미집행
-  const planRate = plan.planTotal > 0 ? Math.round((planExec / plan.planTotal) * 100) : 0;
+  const unspent = planTotal - planExec; // 계획대비 미집행
+  const planRate = planTotal > 0 ? Math.round((planExec / planTotal) * 100) : 0;
   const projectOptions = projects.map((p) => ({ id: p.id, name: p.name }));
-  const monthlyBars = monthly.map((m) => ({
+  const monthlyBars = yearMonthly.map((m) => ({
     label: m.year_month.slice(2).replace("-", "."),
     value: m.amount / 100_000_000,
     projects: m.projects.map((p) => ({ name: p.name, amount: p.amount })),
   }));
-  const cumulative = monthly.reduce((a, m) => a + m.amount, 0);
+  const cumulative = execTotal; // 월별 카드 "누적" = 당해 집행 누계
   const byBudget = [...projects]
     .map((p) => ({
       ...p,
@@ -115,9 +142,12 @@ export default async function BudgetPage({
   return (
     <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-4 px-6 py-5">
       <div>
-        <h1 className="text-xl font-extrabold tracking-tight">투자비 현황</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-extrabold tracking-tight">투자비 현황</h1>
+          <BudgetYearSelect year={fiscalYear} years={years} />
+        </div>
         <p className="text-muted-foreground mt-0.5 text-[12px]">
-          전체 CAPEX 규모와 항목별·과제별 계획 대비 집행 현황
+          {fiscalYear}년 사업계획 기준 · 항목별·본부별·과제별 계획 대비 집행 현황
         </p>
       </div>
 
@@ -128,7 +158,11 @@ export default async function BudgetPage({
 
         {/* 집행 누계 = 전체 집행 + 계획/계획외 분해 */}
         <StatCard
-          label={`${now.getFullYear() % 100}년 ${now.getMonth() + 1}월 현재 집행 누계`}
+          label={
+            fiscalYear === currentYear
+              ? `${fiscalYear % 100}년 ${now.getMonth() + 1}월 현재 집행 누계`
+              : `${fiscalYear % 100}년 집행 누계`
+          }
           value={formatBudgetEok(execTotal)}
           valueColor={ACCENT}
         >
@@ -152,8 +186,8 @@ export default async function BudgetPage({
         </StatCard>
       </div>
 
-      {/* 항목별 + 월별 */}
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.2fr_1fr]">
+      {/* 항목별 + 본부별 + 월별 */}
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1fr_1.2fr_1.3fr]">
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[15px] font-bold">CAPEX 항목별 계획 대비 집행</h2>
@@ -163,7 +197,7 @@ export default async function BudgetPage({
             {capex.map((c) => {
               const cRate = c.plan_won > 0 ? Math.round((c.exec_won / c.plan_won) * 100) : 0;
               return (
-                <div key={c.type} className="flex items-center gap-3">
+                <div key={c.key} className="flex items-center gap-3">
                   <span className="w-14 shrink-0 text-[14px] font-semibold">
                     {c.label}
                   </span>
@@ -177,13 +211,76 @@ export default async function BudgetPage({
                       style={{ width: `${(c.exec_won / maxPlan) * 100}%`, background: ACCENT }}
                     />
                   </div>
-                  <span className="text-muted-foreground w-[150px] shrink-0 text-right text-[12px] tabular-nums">
-                    {formatBudgetEok(c.exec_won)} / {formatBudgetEok(c.plan_won)}{" "}
-                    <b className="text-foreground">({cRate}%)</b>
+                  <span className="text-muted-foreground flex shrink-0 items-center justify-end gap-1 text-[12px] tabular-nums">
+                    <span className="w-[56px] text-right">
+                      {formatBudgetEok(c.exec_won)}
+                    </span>
+                    <span className="text-faint">/</span>
+                    <span className="w-[56px] text-right">
+                      {formatBudgetEok(c.plan_won)}
+                    </span>
+                    <b className="text-foreground w-[46px] text-right">
+                      ({cRate}%)
+                    </b>
                   </span>
                 </div>
               );
             })}
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-[15px] font-bold">본부별 투자비 집행현황</h2>
+            <span className="text-faint text-[12px]">막대 = 계획 · 채움 = 집행</span>
+          </div>
+          <div className="flex flex-col gap-3.5">
+            {hqBudget.map((h) => {
+              const hRate =
+                h.plan_won > 0
+                  ? Math.round((h.exec_won / h.plan_won) * 100)
+                  : 0;
+              return (
+                <div key={h.key} className="flex items-center gap-3">
+                  <span className="w-[104px] shrink-0 whitespace-nowrap text-[13px] font-semibold">
+                    {h.label}
+                  </span>
+                  <div className="relative h-3 flex-1">
+                    <div
+                      className="absolute left-0 top-0 h-3 rounded-full"
+                      style={{
+                        width: `${(h.plan_won / maxHqPlan) * 100}%`,
+                        background: "#EEF0F3",
+                      }}
+                    />
+                    <div
+                      className="absolute left-0 top-0 h-3 rounded-full"
+                      style={{
+                        width: `${(h.exec_won / maxHqPlan) * 100}%`,
+                        background: ACCENT,
+                      }}
+                    />
+                  </div>
+                  <span className="text-muted-foreground flex shrink-0 items-center justify-end gap-1 text-[12px] tabular-nums">
+                    <span className="w-[56px] text-right">
+                      {formatBudgetEok(h.exec_won)}
+                    </span>
+                    <span className="text-faint">/</span>
+                    <span className="w-[56px] text-right">
+                      {formatBudgetEok(h.plan_won)}
+                    </span>
+                    <b className="text-foreground w-[46px] text-right">
+                      ({hRate}%)
+                    </b>
+                  </span>
+                </div>
+              );
+            })}
+            {hqBudget.length === 0 && (
+              <p className="text-muted-foreground text-[13px]">
+                표시할 본부가 없습니다.
+              </p>
+            )}
           </div>
         </Card>
 
