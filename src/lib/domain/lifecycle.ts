@@ -58,8 +58,8 @@ export const HEALTH_KPI_ORDER: readonly Health[] = [
 ] as const;
 
 /**
- * 디폴트 정렬 비교 함수 (D-020): 라이프사이클 우선순위 → 시작일 오래된 순(ASC, null 마지막).
- * DB ORDER BY와 동일 결과를 보장하는 순수 함수 (클라이언트 재정렬 시에도 사용).
+ * 디폴트 정렬 비교 함수 (D-020): 라이프사이클 우선순위 → 시작일 최신 순(DESC, null 마지막).
+ * 순수 함수 (클라이언트 재정렬 시에도 사용).
  */
 export function compareByDefault(
   a: { lifecycle: Lifecycle; start_date: string | null },
@@ -69,9 +69,9 @@ export function compareByDefault(
     LIFECYCLE_SORT_RANK[a.lifecycle] - LIFECYCLE_SORT_RANK[b.lifecycle];
   if (rankDiff !== 0) return rankDiff;
 
-  // 시작일 오래된 순. null은 마지막.
+  // 같은 단계 내 시작일 최신 순(내림차순). null은 마지막.
   if (a.start_date === b.start_date) return 0;
   if (a.start_date === null) return 1;
   if (b.start_date === null) return -1;
-  return a.start_date < b.start_date ? -1 : 1;
+  return a.start_date > b.start_date ? -1 : 1;
 }
