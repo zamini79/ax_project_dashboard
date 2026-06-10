@@ -222,6 +222,7 @@ export function ProjectTable({
                 <Cell col="flex-1 min-w-0" truncate>
                   <Link
                     href={dashboardHref(state, { detail: item.id })}
+                    scroll={false}
                     className="font-medium hover:underline"
                   >
                     {item.name}

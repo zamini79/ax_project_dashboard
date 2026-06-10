@@ -95,6 +95,7 @@ export function MiniBars({
   color = "#D3D8E0",
   accentLast,
   ariaLabel,
+  showValues = false,
 }: {
   data: { label: string; value: number }[];
   height?: number;
@@ -103,6 +104,7 @@ export function MiniBars({
   color?: string;
   accentLast?: string;
   ariaLabel?: string;
+  showValues?: boolean;
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
@@ -122,6 +124,20 @@ export function MiniBars({
             gap: 4,
           }}
         >
+          {showValues && (
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 600,
+                color: accentLast && i === data.length - 1 ? accentLast : "#6E737D",
+                fontVariantNumeric: "tabular-nums",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {d.value === 0 ? "-" : d.value >= 10 ? Math.round(d.value).toFixed(0) : d.value.toFixed(1)}
+            </span>
+          )}
           <div
             style={{
               width: barW,

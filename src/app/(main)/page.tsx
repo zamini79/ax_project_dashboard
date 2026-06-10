@@ -74,7 +74,7 @@ export default async function DashboardPage({
           gridTemplateColumns: "repeat(4, 1fr)",
           gridTemplateRows: "210px 188px 196px",
           gridTemplateAreas:
-            '"hero hero donut week" "risk risk mprs mprs" "trend trend perf perf"',
+            '"hero hero donut week" "trend trend mprs mprs" "risk risk perf perf"',
         }}
       >
         {/* HERO */}
@@ -144,7 +144,7 @@ export default async function DashboardPage({
         {/* 단계 도넛 */}
         <Tile area="donut" style={{ display: "flex", flexDirection: "column" }}>
           <Cap>과제 단계</Cap>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, flex: 1 }}>
             <Donut
               size={102}
               thickness={14}
@@ -157,6 +157,15 @@ export default async function DashboardPage({
               <div style={{ fontSize: 23, fontWeight: 800 }}>{kpis.total}</div>
               <div style={{ fontSize: 9.5, color: SUB }}>전체</div>
             </Donut>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {kpis.lifecycle.map((l, i) => (
+                <div key={l.key} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i] }} />
+                  <span style={{ color: SUB }}>{LIFECYCLE_LABEL[l.key]}</span>
+                  <b style={{ marginLeft: "auto", paddingLeft: 14, fontVariantNumeric: "tabular-nums" }}>{l.count}</b>
+                </div>
+              ))}
+            </div>
           </div>
         </Tile>
 
@@ -245,7 +254,7 @@ export default async function DashboardPage({
         {/* 월별 추이 — 누적 집행(좌) · 막대(우) */}
         <Tile area="trend" style={{ display: "flex", flexDirection: "column" }}>
           <Cap>월별 집행 추이 · 단위 억</Cap>
-          <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 24 }}>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 24 }}>
             <div style={{ flexShrink: 0 }}>
               <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1 }}>
                 {formatBudgetEok(kpis.budgetTotal.executed)}
@@ -259,15 +268,16 @@ export default async function DashboardPage({
                 flex: 1,
                 display: "flex",
                 justifyContent: "flex-end",
-                alignItems: "flex-end",
+                alignItems: "center",
               }}
             >
               <MiniBars
                 data={monthlyBars}
-                height={112}
+                height={80}
                 barW={28}
                 gap={12}
                 accentLast={ACCENT}
+                showValues
                 ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(kpis.budgetTotal.executed)}`}
               />
             </div>

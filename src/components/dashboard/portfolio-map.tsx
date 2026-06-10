@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
@@ -25,11 +25,9 @@ const padL = 50,
   padR = 24,
   padT = 16,
   padB = 36,
-  plotW = 1400,
   plotH = 400;
 const bMin = 1.5,
   bMax = 12;
-const boxW = padL + plotW + padR;
 const boxH = padT + plotH + padB;
 const xticks = [0, 25, 50, 75, 100];
 const yticks = [2, 4, 6, 8, 10, 12];
@@ -44,6 +42,21 @@ export function PortfolioMap({
 }) {
   const router = useRouter();
   const [hover, setHover] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerW, setContainerW] = useState(800);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      setContainerW(entry.contentRect.width);
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const plotW = Math.max(300, containerW - padL - padR);
+  const boxW = containerW;
 
   // 활성 MPRS는 URL 상태(state.mprs)에서 도출 — 빈 배열 = 전체 (D-019 공유·영속)
   const active: Set<Mprs> =
@@ -80,7 +93,7 @@ export function PortfolioMap({
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
-      <Card className="min-w-0 flex-1 overflow-x-auto p-5">
+      <Card className="min-w-0 flex-1 overflow-hidden p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">포트폴리오 맵</h2>
           <span className="text-faint text-[11px]">
@@ -88,8 +101,9 @@ export function PortfolioMap({
           </span>
         </div>
 
+        <div ref={containerRef} style={{ width: "100%" }}>
         <div
-          className="relative mx-auto"
+          className="relative"
           style={{ width: boxW, height: boxH }}
           onMouseLeave={() => setHover(null)}
         >
@@ -141,11 +155,17 @@ export function PortfolioMap({
                 aria-label={`${p.name} · 진행률 ${p.progress_pct}% · 투자비 ${formatBudgetEok(p.total_budget)} · 헬스 ${HEALTH_LABEL[p.health]}`}
                 onMouseEnter={() => setHover(p.id)}
                 onFocus={() => setHover(p.id)}
-                onClick={() => router.push(dashboardHref(state, { detail: p.id }))}
+                onClick={() =>
+                  router.push(dashboardHref(state, { detail: p.id }), {
+                    scroll: false,
+                  })
+                }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    router.push(dashboardHref(state, { detail: p.id }));
+                    router.push(dashboardHref(state, { detail: p.id }), {
+                      scroll: false,
+                    });
                   }
                 }}
                 className="outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F1830]"
@@ -214,6 +234,7 @@ export function PortfolioMap({
               </div>
             </div>
           )}
+        </div>
         </div>
       </Card>
 

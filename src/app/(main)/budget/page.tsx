@@ -206,6 +206,7 @@ export default async function BudgetPage({
                 barW={28}
                 gap={12}
                 accentLast={ACCENT}
+                showValues
                 ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(cumulative)}`}
               />
             </div>
