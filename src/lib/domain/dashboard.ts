@@ -19,12 +19,15 @@ export interface DashboardFilter {
   lifecycle: Lifecycle | null;
   progress: Health | "this_week" | null;
   headquarterId: string | null;
+  /** 과제 속성(태그) 필터 — 선택된 태그명 목록. 빈 배열 = 전체. OR 매칭. */
+  tags: string[];
 }
 
 export const EMPTY_FILTER: DashboardFilter = {
   lifecycle: null,
   progress: null,
   headquarterId: null,
+  tags: [],
 };
 
 const HEALTH_SET = new Set<string>(["green", "yellow", "red"]);
@@ -34,6 +37,7 @@ export function parseFilter(params: {
   lifecycle?: string;
   progress?: string;
   hq?: string;
+  tags?: string;
 }): DashboardFilter {
   const lifecycle = (
     ["not_started", "under_review", "in_progress", "completed"] as const
@@ -50,11 +54,25 @@ export function parseFilter(params: {
     lifecycle,
     progress,
     headquarterId: params.hq?.trim() || null,
+    tags: parseTagFilter(params.tags),
   };
 }
 
+/** 콤마 구분 태그명 목록 파싱 — 빈 값 제거, 중복 제거. */
+export function parseTagFilter(value: string | undefined): string[] {
+  if (!value) return [];
+  const set = new Set<string>();
+  for (const raw of value.split(",")) {
+    const t = raw.trim();
+    if (t) set.add(t);
+  }
+  return [...set];
+}
+
 export function hasAnyFilter(f: DashboardFilter): boolean {
-  return Boolean(f.lifecycle || f.progress || f.headquarterId);
+  return Boolean(
+    f.lifecycle || f.progress || f.headquarterId || f.tags.length > 0,
+  );
 }
 
 /**
@@ -160,6 +178,12 @@ export function applyFilter(
         return false;
       }
     }
+    // 속성(태그) 필터: 선택된 태그 중 하나라도 가지면 통과 (OR)
+    if (
+      filter.tags.length > 0 &&
+      !filter.tags.some((t) => it.tags.includes(t))
+    )
+      return false;
     return true;
   });
 

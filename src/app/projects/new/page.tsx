@@ -5,6 +5,7 @@ import {
   fetchDepartments,
   fetchPeople,
   fetchAiTechs,
+  fetchTags,
 } from "@/lib/repositories/masters";
 import { fetchPlanItemOptions } from "@/lib/repositories/budget-plan";
 import { emptyFormValues } from "@/lib/domain/project-form";
@@ -13,12 +14,13 @@ import { ProjectForm } from "@/components/project-form/project-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewProjectPage() {
-  const [headquarters, departments, people, aiTechs, planItems] =
+  const [headquarters, departments, people, aiTechs, tags, planItems] =
     await Promise.all([
       fetchHeadquarters(),
       fetchDepartments(),
       fetchPeople(),
       fetchAiTechs(),
+      fetchTags(),
       fetchPlanItemOptions(),
     ]);
 
@@ -46,6 +48,7 @@ export default async function NewProjectPage() {
           departments={departments}
           people={people}
           aiTechs={aiTechs}
+          tags={tags}
           planItems={planItems}
         />
       </main>

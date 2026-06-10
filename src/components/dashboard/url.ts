@@ -76,6 +76,7 @@ type Override = Partial<{
   sort: SortKey | null;
   dir: SortDir;
   mprs: Mprs[];
+  tags: string[];
   detail: string | null;
 }>;
 
@@ -102,6 +103,8 @@ export function dashboardHref(
   const sort = "sort" in override ? override.sort : (state.sort ?? null);
   const dir = override.dir ?? state.dir ?? "asc";
   const mprs = "mprs" in override ? override.mprs : (state.mprs ?? []);
+  const tags =
+    "tags" in override ? override.tags : (state.filter.tags ?? []);
   const detail = "detail" in override ? override.detail : (state.detail ?? null);
   const base = state.base ?? "/";
 
@@ -122,6 +125,10 @@ export function dashboardHref(
   // MPRS 필터는 부분 선택일 때만 (전체/빈 = 생략)
   if (mprs && mprs.length > 0 && mprs.length < MPRS_ORDER.length) {
     params.set("mprs", mprs.join(","));
+  }
+  // 과제 속성(태그) 필터 — 선택된 게 있을 때만
+  if (tags && tags.length > 0) {
+    params.set("tags", tags.join(","));
   }
   if (detail) params.set("detail", detail);
 

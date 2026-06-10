@@ -115,6 +115,7 @@ export function EditProjectModal({
                     departments={data.options.departments}
                     people={data.options.people}
                     aiTechs={data.options.aiTechs}
+                    tags={data.options.tags}
                     planItems={data.options.planItems}
                     executions={data.executions}
                     formId={formId}

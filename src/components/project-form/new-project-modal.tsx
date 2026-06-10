@@ -117,6 +117,7 @@ export function NewProjectModal() {
                     departments={opts.departments}
                     people={opts.people}
                     aiTechs={opts.aiTechs}
+                    tags={opts.tags}
                     planItems={opts.planItems}
                     formId={FORM_ID}
                     onDirtyChange={setDirty}

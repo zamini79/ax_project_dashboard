@@ -5,6 +5,7 @@ import {
   fetchHeadquarters,
   fetchProjectDetail,
 } from "@/lib/repositories/projects";
+import { fetchTags } from "@/lib/repositories/masters";
 import { fetchEffectForProject } from "@/lib/repositories/effects";
 import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import {
@@ -38,6 +39,7 @@ export interface ExplorerSearchParams {
   sort?: string;
   dir?: string;
   mprs?: string;
+  tags?: string;
   detail?: string;
 }
 
@@ -61,9 +63,10 @@ export async function ProjectExplorer({
   /** 헤더의 요약 카운트(전체/진행중/검토중/완료) 표시 여부 */
   showSummary?: boolean;
 }) {
-  const [projects, headquarters] = await Promise.all([
+  const [projects, headquarters, tagOptions] = await Promise.all([
     fetchProjectList(),
     fetchHeadquarters(),
+    fetchTags(),
   ]);
 
   const filter = parseFilter(sp);
@@ -125,36 +128,14 @@ export async function ProjectExplorer({
   return (
     <section className="flex flex-col gap-4">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-extrabold tracking-tight">{heading}</h2>
-          {showSummary && (
-            <p className="text-muted-foreground mt-0.5 text-[12.5px]">
-              전체 {kpis.total}건 · 진행중 {lc("in_progress")} · 검토중{" "}
-              {lc("under_review")} · 완료 {lc("completed")}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {view === "table" && (
-            <span className="text-muted-foreground hidden text-[11px] lg:inline">
-              타임라인을 드래그하거나 ←/→ 키로 기간 이동
-            </span>
-          )}
-          {view === "table" && <ScheduleHomeButton />}
-          <div className="bg-card inline-flex gap-1 rounded-xl border p-1 text-[12.5px] font-semibold">
-            <ViewTab
-              href={dashboardHref(state, { view: "table" })}
-              label="표"
-              active={view === "table"}
-            />
-            <ViewTab
-              href={dashboardHref(state, { view: "map" })}
-              label="맵"
-              active={view === "map"}
-            />
-          </div>
-        </div>
+      <div>
+        <h2 className="text-xl font-extrabold tracking-tight">{heading}</h2>
+        {showSummary && (
+          <p className="text-muted-foreground mt-0.5 text-[12.5px]">
+            전체 {kpis.total}건 · 진행중 {lc("in_progress")} · 검토중{" "}
+            {lc("under_review")} · 완료 {lc("completed")}
+          </p>
+        )}
       </div>
 
       {/* KPI 스트립 */}
@@ -207,6 +188,62 @@ export async function ProjectExplorer({
         </div>
       )}
 
+      <div className="flex items-center justify-between gap-3">
+        {/* 좌: 과제 속성(태그) 필터 — 복수 선택 */}
+        {tagOptions.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-foreground mr-1 text-[12.5px] font-bold">
+              과제속성
+            </span>
+            {tagOptions.map((t) => {
+              const active = filter.tags.includes(t.name);
+              const next = active
+                ? filter.tags.filter((x) => x !== t.name)
+                : [...filter.tags, t.name];
+              return (
+                <Link
+                  key={t.id}
+                  href={dashboardHref(state, { tags: next })}
+                  aria-pressed={active}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold transition-all",
+                    active
+                      ? "border-navy bg-navy text-white shadow-sm"
+                      : "border-border-strong text-muted-foreground hover:border-navy/40 hover:text-foreground bg-card hover:bg-muted",
+                  )}
+                >
+                  {active && <span className="text-[10px] leading-none">✓</span>}
+                  {t.name}
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div />
+        )}
+
+        {/* 우: 드래그 안내 · 현재 · 표/맵 */}
+        <div className="flex shrink-0 items-center gap-2">
+          {view === "table" && (
+            <span className="text-muted-foreground hidden text-[11px] lg:inline">
+              타임라인을 드래그하거나 ←/→ 키로 기간 이동
+            </span>
+          )}
+          {view === "table" && <ScheduleHomeButton />}
+          <div className="bg-card inline-flex gap-1 rounded-xl border p-1 text-[12.5px] font-semibold">
+            <ViewTab
+              href={dashboardHref(state, { view: "table" })}
+              label="표"
+              active={view === "table"}
+            />
+            <ViewTab
+              href={dashboardHref(state, { view: "map" })}
+              label="맵"
+              active={view === "map"}
+            />
+          </div>
+        </div>
+      </div>
       {view === "table" ? (
         <ProjectTable items={sortedItems} state={state} todayISO={todayISO} />
       ) : (

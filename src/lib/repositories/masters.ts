@@ -53,6 +53,18 @@ export async function fetchAiTechs(): Promise<MasterOption[]> {
   return data ?? [];
 }
 
+/** 속성(태그) 마스터 목록 — sort_order 우선, 그 안에서 이름순 */
+export async function fetchTags(): Promise<MasterOption[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tags")
+    .select("id, name")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (error) throw new Error(`속성 목록 조회 실패: ${error.message}`);
+  return data ?? [];
+}
+
 // ── 관리 화면용 조회 (관계 id 포함, 프리필용) ──
 
 export interface DepartmentAdmin {
@@ -229,5 +241,30 @@ export async function updateAiTech(
 export async function deleteAiTech(id: string): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase.from("ai_techs").delete().eq("id", id);
+  if (error) throw deleteError(error);
+}
+
+// ── 속성(태그) ──
+export async function createTag(input: MasterInput): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tags").insert({ name: input.name });
+  if (error) throw writeError(error, "속성 추가 실패");
+}
+
+export async function updateTag(
+  id: string,
+  input: MasterInput,
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tags")
+    .update({ name: input.name })
+    .eq("id", id);
+  if (error) throw writeError(error, "속성 수정 실패");
+}
+
+export async function deleteTag(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tags").delete().eq("id", id);
   if (error) throw deleteError(error);
 }

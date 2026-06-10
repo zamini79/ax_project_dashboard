@@ -9,6 +9,7 @@ import {
   fetchDepartments,
   fetchPeople,
   fetchAiTechs,
+  fetchTags,
 } from "@/lib/repositories/masters";
 import { fetchPlanItemOptions } from "@/lib/repositories/budget-plan";
 import { wonToEok, type ProjectFormValues } from "@/lib/domain/project-form";
@@ -29,13 +30,14 @@ export default async function EditProjectPage({
   const { id } = await params;
   const { from } = await searchParams;
 
-  const [edit, headquarters, departments, people, aiTechs, planItems] =
+  const [edit, headquarters, departments, people, aiTechs, tags, planItems] =
     await Promise.all([
       fetchProjectEditData(id),
       fetchHeadquarters(),
       fetchDepartments(),
       fetchPeople(),
       fetchAiTechs(),
+      fetchTags(),
       fetchPlanItemOptions(),
     ]);
 
@@ -56,6 +58,7 @@ export default async function EditProjectPage({
     pmIds: edit.pmIds,
     departmentIds: edit.departmentIds,
     aiTechIds: edit.aiTechIds,
+    tagIds: edit.tagIds,
     budgetPlanItemId: edit.budgetPlanItemId,
   };
 
@@ -91,6 +94,7 @@ export default async function EditProjectPage({
           departments={departments}
           people={people}
           aiTechs={aiTechs}
+          tags={tags}
           planItems={planItems}
           executions={edit.executions}
           returnTo={from}

@@ -41,6 +41,7 @@ export function ProjectForm({
   people,
   departments,
   aiTechs,
+  tags,
   planItems,
   executions = [],
   returnTo,
@@ -56,6 +57,7 @@ export function ProjectForm({
   people: PersonOption[];
   departments: MasterOption[];
   aiTechs: MasterOption[];
+  tags: MasterOption[];
   /** 사업계획 매핑 콤보 옵션 (전체 연도; 폼에서 연도별 필터) */
   planItems: { id: string; name: string; fiscalYear: number }[];
   /** 집행 실적(편집 모드) — 비정기 지급 목록 */
@@ -191,6 +193,20 @@ export function ProjectForm({
                       value={field.value}
                       onChange={field.onChange}
                       emptyText="등록된 AI기술이 없습니다."
+                    />
+                  )}
+                />
+              </Field>
+              <Field label="속성" error={errors.tagIds?.message}>
+                <Controller
+                  control={control}
+                  name="tagIds"
+                  render={({ field }) => (
+                    <ChipMultiSelect
+                      options={tags.map((t) => ({ id: t.id, label: t.name }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      emptyText="등록된 속성이 없습니다."
                     />
                   )}
                 />

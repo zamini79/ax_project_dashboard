@@ -29,6 +29,7 @@ export interface ProjectListItem {
   headquarter_name: string;
   pms: { name: string; department: string | null }[];
   ai_techs: string[];
+  tags: string[];
   executed_budget: number;
   last_update_date: string | null;
 }
@@ -58,6 +59,7 @@ interface RawProjectRow {
   project_updates: { update_date: string }[];
   project_budget_monthly: { amount: number }[];
   project_ai_techs: { ai_techs: { name: string } | null }[];
+  project_tags: { tags: { name: string } | null }[];
 }
 
 const PROJECT_SELECT = `
@@ -66,6 +68,7 @@ const PROJECT_SELECT = `
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
   project_ai_techs ( ai_techs ( name ) ),
+  project_tags ( tags ( name ) ),
   project_updates ( update_date ),
   project_budget_monthly ( amount )
 ` as const;
@@ -111,6 +114,10 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     .map((t) => t.ai_techs?.name)
     .filter((n): n is string => n != null);
 
+  const tags = (row.project_tags ?? [])
+    .map((t) => t.tags?.name)
+    .filter((n): n is string => n != null);
+
   return {
     id: row.id,
     name: row.name,
@@ -126,6 +133,7 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     headquarter_name: row.headquarters?.name ?? "-",
     pms,
     ai_techs,
+    tags,
     executed_budget,
     last_update_date,
   };
@@ -188,6 +196,7 @@ export interface ProjectDetail {
   pms: { name: string; department: string | null }[];
   stakeholders: { department: string; person: string | null }[];
   ai_techs: string[];
+  tags: string[];
   executed_budget: number;
   monthly: { id: string; year_month: string; amount: number }[];
   pages: ProjectConnectedPage[];
@@ -216,6 +225,7 @@ interface RawDetailRow {
     people: { name: string } | null;
   }[];
   project_ai_techs: { ai_techs: { name: string } | null }[];
+  project_tags: { tags: { name: string } | null }[];
   project_budget_monthly: { id: string; year_month: string; amount: number }[];
   project_confluence_pages: {
     id: string;
@@ -243,6 +253,7 @@ const DETAIL_SELECT = `
   project_pms ( people ( name, departments ( name ) ) ),
   project_stakeholders ( departments ( name ), people ( name ) ),
   project_ai_techs ( ai_techs ( name ) ),
+  project_tags ( tags ( name ) ),
   project_budget_monthly ( id, year_month, amount ),
   project_confluence_pages ( id, title, page_role, confluence_page_id, is_active ),
   project_updates (
@@ -295,6 +306,10 @@ export async function fetchProjectDetail(
     .map((t) => t.ai_techs?.name)
     .filter((n): n is string => n != null);
 
+  const tags = (data.project_tags ?? [])
+    .map((t) => t.tags?.name)
+    .filter((n): n is string => n != null);
+
   const monthly = (data.project_budget_monthly ?? [])
     .map((m) => ({ id: m.id, year_month: m.year_month, amount: m.amount }))
     .sort((a, b) => (a.year_month < b.year_month ? -1 : 1));
@@ -339,6 +354,7 @@ export async function fetchProjectDetail(
     pms,
     stakeholders,
     ai_techs,
+    tags,
     executed_budget,
     monthly,
     pages,
@@ -365,6 +381,7 @@ export interface ProjectWriteInput {
   pmIds: string[];
   departmentIds: string[];
   aiTechIds: string[];
+  tagIds: string[];
 }
 
 export interface ProjectEditData {
@@ -383,6 +400,7 @@ export interface ProjectEditData {
   pmIds: string[];
   departmentIds: string[];
   aiTechIds: string[];
+  tagIds: string[];
   budgetPlanItemId: string; // "" = 사업계획 외 과제
   executions: { id: string; year_month: string; amount: number }[];
 }
@@ -414,6 +432,7 @@ async function replaceRelations(
   await Promise.all([
     supabase.from("project_pms").delete().eq("project_id", projectId),
     supabase.from("project_ai_techs").delete().eq("project_id", projectId),
+    supabase.from("project_tags").delete().eq("project_id", projectId),
     supabase
       .from("project_stakeholders")
       .delete()
@@ -441,6 +460,16 @@ async function replaceRelations(
             ai_tech_id,
           })),
         ),
+    );
+  }
+  if (input.tagIds.length) {
+    ops.push(
+      supabase.from("project_tags").insert(
+        input.tagIds.map((tag_id) => ({
+          project_id: projectId,
+          tag_id,
+        })),
+      ),
     );
   }
   if (input.departmentIds.length) {
@@ -518,6 +547,7 @@ interface RawEditRow {
   project_pms: { person_id: string }[];
   project_stakeholders: { department_id: string }[];
   project_ai_techs: { ai_tech_id: string }[];
+  project_tags: { tag_id: string }[];
   budget_plan_item_projects: { item_id: string }[];
   project_budget_monthly: { id: string; year_month: string; amount: number }[];
 }
@@ -538,6 +568,7 @@ export async function fetchProjectEditData(
       project_pms ( person_id ),
       project_stakeholders ( department_id ),
       project_ai_techs ( ai_tech_id ),
+      project_tags ( tag_id ),
       budget_plan_item_projects ( item_id ),
       project_budget_monthly ( id, year_month, amount )
     `,
@@ -569,6 +600,7 @@ export async function fetchProjectEditData(
       (data.project_stakeholders ?? []).map((s) => s.department_id),
     ),
     aiTechIds: unique((data.project_ai_techs ?? []).map((t) => t.ai_tech_id)),
+    tagIds: unique((data.project_tags ?? []).map((t) => t.tag_id)),
     budgetPlanItemId: data.budget_plan_item_projects?.[0]?.item_id ?? "",
     executions: (data.project_budget_monthly ?? []).map((m) => ({
       id: m.id,

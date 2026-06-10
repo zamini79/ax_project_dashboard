@@ -5,6 +5,7 @@ import {
   fetchDepartmentsAdmin,
   fetchPeopleAdmin,
   fetchAiTechs,
+  fetchTags,
 } from "@/lib/repositories/masters";
 import { EntityManager } from "@/components/masters/entity-manager";
 import { POSITIONS } from "@/lib/domain/people";
@@ -22,6 +23,9 @@ import {
   createAiTechAction,
   updateAiTechAction,
   deleteAiTechAction,
+  createTagAction,
+  updateTagAction,
+  deleteTagAction,
 } from "@/app/masters/actions";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +35,7 @@ const TABS = [
   { key: "dept", label: "부서" },
   { key: "people", label: "사람" },
   { key: "tech", label: "AI기술" },
+  { key: "tag", label: "속성" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -49,11 +54,12 @@ export default async function MastersPage({
   const { tab } = await searchParams;
   const active = parseTab(tab);
 
-  const [headquarters, departments, people, aiTechs] = await Promise.all([
+  const [headquarters, departments, people, aiTechs, tags] = await Promise.all([
     fetchHeadquarters(),
     fetchDepartmentsAdmin(),
     fetchPeopleAdmin(),
     fetchAiTechs(),
+    fetchTags(),
   ]);
 
   const deptOptions = departments.map((d) => ({ id: d.id, name: d.name }));
@@ -62,6 +68,7 @@ export default async function MastersPage({
     dept: departments.length,
     people: people.length,
     tech: aiTechs.length,
+    tag: tags.length,
   };
 
   return (
@@ -79,7 +86,7 @@ export default async function MastersPage({
       <main className="mx-auto w-full max-w-[1120px] flex-1 px-6 py-5">
         <h1 className="text-xl font-extrabold tracking-tight">마스터 관리</h1>
         <p className="text-muted-foreground mb-4 mt-0.5 text-[12.5px]">
-          본부 · 부서 · 사람 · AI기술 기준정보를 추가·수정·삭제합니다.
+          본부 · 부서 · 사람 · AI기술 · 속성 기준정보를 추가·수정·삭제합니다.
         </p>
 
         {/* 탭 필 */}
@@ -161,6 +168,17 @@ export default async function MastersPage({
             deleteAction={deleteAiTechAction}
             nameLabel="AI기술명"
             namePlaceholder="예: 멀티모달"
+          />
+        )}
+
+        {active === "tag" && (
+          <EntityManager
+            items={tags.map((t) => ({ id: t.id, name: t.name }))}
+            createAction={createTagAction}
+            updateAction={updateTagAction}
+            deleteAction={deleteTagAction}
+            nameLabel="속성명"
+            namePlaceholder="예: Top-down"
           />
         )}
       </main>

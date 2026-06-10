@@ -68,7 +68,7 @@ export function ProjectDetailDrawer({
 
   function close() {
     setShown(false);
-    window.setTimeout(() => router.push(closeHref), 260);
+    window.setTimeout(() => router.push(closeHref, { scroll: false }), 260);
   }
 
   if (!mounted) return null;
@@ -177,6 +177,22 @@ export function ProjectDetailDrawer({
                 {p.ai_techs.length ? (
                   <div className="flex flex-wrap gap-1.5">
                     {p.ai_techs.map((t) => (
+                      <span
+                        key={t}
+                        className="text-accent-foreground bg-accent rounded-md px-2 py-0.5 text-[11px] font-semibold"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-faint">-</span>
+                )}
+              </Field>
+              <Field label="속성">
+                {p.tags.length ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.tags.map((t) => (
                       <span
                         key={t}
                         className="text-accent-foreground bg-accent rounded-md px-2 py-0.5 text-[11px] font-semibold"

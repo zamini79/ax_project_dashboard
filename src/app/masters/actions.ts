@@ -16,6 +16,9 @@ import {
   createAiTech,
   updateAiTech,
   deleteAiTech,
+  createTag,
+  updateTag,
+  deleteTag,
 } from "@/lib/repositories/masters";
 
 export type MasterActionResult = { error?: string };
@@ -94,4 +97,19 @@ export async function updateAiTechAction(id: string, input: MasterInput) {
 }
 export async function deleteAiTechAction(id: string) {
   return run(() => deleteAiTech(id));
+}
+
+// ── 속성(태그) ──
+export async function createTagAction(input: MasterInput) {
+  const err = validateName(input);
+  if (err) return { error: err };
+  return run(() => createTag({ ...input, name: input.name.trim() }));
+}
+export async function updateTagAction(id: string, input: MasterInput) {
+  const err = validateName(input);
+  if (err) return { error: err };
+  return run(() => updateTag(id, { ...input, name: input.name.trim() }));
+}
+export async function deleteTagAction(id: string) {
+  return run(() => deleteTag(id));
 }

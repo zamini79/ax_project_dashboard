@@ -20,6 +20,7 @@ import {
   fetchDepartments,
   fetchPeople,
   fetchAiTechs,
+  fetchTags,
 } from "@/lib/repositories/masters";
 import {
   setProjectPlanItem,
@@ -57,6 +58,7 @@ function toWriteInput(v: ProjectFormValues): ProjectWriteInput {
     pmIds: v.pmIds,
     departmentIds: v.departmentIds,
     aiTechIds: v.aiTechIds,
+    tagIds: v.tagIds,
   };
 }
 
@@ -149,6 +151,7 @@ export async function loadProjectEditData(id: string) {
     pmIds: edit.pmIds,
     departmentIds: edit.departmentIds,
     aiTechIds: edit.aiTechIds,
+    tagIds: edit.tagIds,
     budgetPlanItemId: edit.budgetPlanItemId,
   };
   return { values, options, executions: edit.executions };
@@ -156,15 +159,16 @@ export async function loadProjectEditData(id: string) {
 
 /** 과제 폼 옵션 일괄 로드 (모달 오픈 시 호출) */
 export async function loadProjectFormOptions() {
-  const [headquarters, departments, people, aiTechs, planItems] =
+  const [headquarters, departments, people, aiTechs, tags, planItems] =
     await Promise.all([
       fetchHeadquarters(),
       fetchDepartments(),
       fetchPeople(),
       fetchAiTechs(),
+      fetchTags(),
       fetchPlanItemOptions(),
     ]);
-  return { headquarters, departments, people, aiTechs, planItems };
+  return { headquarters, departments, people, aiTechs, tags, planItems };
 }
 
 /** 과제 수정 → 성공 시 편집 진입 출처(returnTo)로 복귀, 없으면 상세로 이동 */
