@@ -52,6 +52,15 @@ const ITEM =
 export function CommandMenu({ projects }: { projects: CommandProject[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  // OS별 단축키 표시 (맥=⌘K, 그 외=Ctrl K). SSR 기본값은 ⌘K, 마운트 후 보정.
+  const [shortcut, setShortcut] = useState("⌘K");
+
+  useEffect(() => {
+    const ua = `${navigator.platform} ${navigator.userAgent}`;
+    const isMac = /mac|iphone|ipad|ipod/i.test(ua);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShortcut(isMac ? "⌘K" : "Ctrl K");
+  }, []);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -79,7 +88,7 @@ export function CommandMenu({ projects }: { projects: CommandProject[] }) {
         <Search size={14} />
         과제 검색
         <kbd className="bg-muted text-faint rounded px-1 text-[10px] font-medium">
-          ⌘K
+          {shortcut}
         </kbd>
       </button>
 

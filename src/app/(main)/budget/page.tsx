@@ -29,6 +29,15 @@ const ACCENT = "var(--primary)";
 const GREEN = "var(--health-green)";
 const YELLOW = "var(--health-yellow)";
 
+// 본부별 차트에 항상 표시할 본부(고정 순서). 데이터 없으면 계획·집행 0으로 노출.
+const HQ_DISPLAY_ORDER = [
+  "MBD본부",
+  "Bio연구본부",
+  "개발본부",
+  "L HOUSE 공장",
+  "전사",
+];
+
 type BudgetSortKey = "mprs" | "type" | "name" | "hq" | "plan" | "exec" | "rate";
 
 type SearchParams = Promise<{
@@ -78,10 +87,16 @@ export default async function BudgetPage({
   const breakdown = planYearBreakdown(planRowsYear, fiscalYear);
   const capex = breakdown.byInvestment;
   const maxPlan = Math.max(1, ...capex.map((c) => c.plan_won));
-  // 본부 표시 순서 = 본부 마스터 등록 순(MBD→Bio→개발→L HOUSE→…→전사). 미지정은 마지막.
-  const hqOrder = new Map(headquarters.map((h, i) => [h.id, i]));
-  const hqBudget = [...breakdown.byHeadquarter].sort(
-    (a, b) => (hqOrder.get(a.key) ?? 999) - (hqOrder.get(b.key) ?? 999),
+  // 본부별: 고정 5개 본부를 정해진 순서로 표시(데이터 없으면 계획·집행 0).
+  const hqByName = new Map(breakdown.byHeadquarter.map((h) => [h.label, h]));
+  const hqBudget = HQ_DISPLAY_ORDER.map(
+    (name) =>
+      hqByName.get(name) ?? {
+        key: name,
+        label: name,
+        plan_won: 0,
+        exec_won: 0,
+      },
   );
   const maxHqPlan = Math.max(1, ...hqBudget.map((h) => h.plan_won));
 
@@ -100,7 +115,15 @@ export default async function BudgetPage({
     projects: m.projects.map((p) => ({ name: p.name, amount: p.amount })),
   }));
   const cumulative = execTotal; // 월별 카드 "누적" = 당해 집행 누계
+  // 해당 연도에 실제 집행이 발생한 과제 id (월별 집행 실적 기준)
+  const execProjectIds = new Set<string>();
+  for (const m of yearMonthly) {
+    for (const p of m.projects) {
+      if (p.amount > 0) execProjectIds.add(p.id);
+    }
+  }
   const byBudget = [...projects]
+    .filter((p) => execProjectIds.has(p.id))
     .map((p) => ({
       ...p,
       _rate:
@@ -147,34 +170,63 @@ export default async function BudgetPage({
           <BudgetYearSelect year={fiscalYear} years={years} />
         </div>
         <p className="text-muted-foreground mt-0.5 text-[12px]">
-          {fiscalYear}년 사업계획 기준 · 항목별·본부별·과제별 계획 대비 집행 현황
+          {fiscalYear}년 사업계획 기준 · 항목별·본부별·과제별 계획 대비 집행
+          현황
         </p>
       </div>
 
-      {/* KPI */}
-      <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
+      {/* KPI + 월별 추이 (같은 줄) */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-[1fr_1.7fr_1fr]">
         {/* 사업계획 (클릭 → 팝업) */}
-        <BudgetPlanCard year={fiscalYear} cardView={plan} view={planAll} projectOptions={projectOptions} headquarterOptions={headquarters} />
+        <BudgetPlanCard
+          year={fiscalYear}
+          cardView={plan}
+          view={planAll}
+          projectOptions={projectOptions}
+          headquarterOptions={headquarters}
+        />
 
-        {/* 집행 누계 = 전체 집행 + 계획/계획외 분해 */}
-        <StatCard
-          label={
-            fiscalYear === currentYear
-              ? `${fiscalYear % 100}년 ${now.getMonth() + 1}월 현재 집행 누계`
-              : `${fiscalYear % 100}년 집행 누계`
-          }
-          value={formatBudgetEok(execTotal)}
-          valueColor={ACCENT}
-        >
-          <div className="text-muted-foreground mt-1 flex flex-col gap-0.5 text-[12px]">
-            <span>
-              계획 집행 <b className="text-foreground tabular-nums">{formatBudgetEok(planExec)}</b>
-            </span>
-            <span>
-              계획 이외 집행 <b className="text-foreground tabular-nums">{formatBudgetEok(outOfPlan)}</b>
-            </span>
+        {/* 월별 집행 추이 */}
+        <Card className="flex flex-col p-4">
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="text-[15px] font-bold">월별 집행 추이</h2>
+            <span className="text-faint text-[12px]">단위: 억</span>
           </div>
-        </StatCard>
+          <div className="mt-2 flex flex-1 items-end gap-4">
+            <div className="shrink-0">
+              <div className="text-[22px] font-extrabold leading-none tabular-nums">
+                {formatBudgetEok(cumulative)}
+              </div>
+              <div className="text-muted-foreground mt-1.5 text-[12px] font-semibold">
+                누적
+              </div>
+              <div className="text-muted-foreground mt-2.5 flex flex-col gap-0.5 text-[12px]">
+                <span>
+                  계획 집행{" "}
+                  <b className="text-foreground tabular-nums">
+                    {formatBudgetEok(planExec)}
+                  </b>
+                </span>
+                <span>
+                  계획 이외 집행{" "}
+                  <b className="text-foreground tabular-nums">
+                    {formatBudgetEok(outOfPlan)}
+                  </b>
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-1 items-end justify-end overflow-x-auto">
+              <MonthlyExecBars
+                data={monthlyBars}
+                height={84}
+                barW={18}
+                gap={7}
+                accent={ACCENT}
+                ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(cumulative)}`}
+              />
+            </div>
+          </div>
+        </Card>
 
         {/* 계획대비 미집행 잔액 */}
         <StatCard
@@ -186,16 +238,41 @@ export default async function BudgetPage({
         </StatCard>
       </div>
 
-      {/* 항목별 + 본부별 + 월별 */}
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1fr_1.2fr_1.3fr]">
+      {/* 항목별 + 본부별 (같은 줄) */}
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         <Card className="p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[15px] font-bold">CAPEX 항목별 계획 대비 집행</h2>
-            <span className="text-faint text-[12px]">막대 = 계획 · 채움 = 집행</span>
+          <h2 className="mb-3 text-[15px] font-bold">
+            CAPEX 항목별 계획 대비 집행
+          </h2>
+          {/* 컬럼 헤더: 집행/계획 색상표시를 데이터 열 위에 줄맞춤 */}
+          <div className="text-faint mb-2 flex items-center gap-3 text-[11px] font-semibold">
+            <span className="w-14 shrink-0" />
+            <div className="flex-1" />
+            <span className="flex shrink-0 items-center justify-end gap-1">
+              <span className="flex w-[56px] items-center justify-end gap-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  style={{ background: ACCENT }}
+                />
+                집행
+              </span>
+              <span className="opacity-0">/</span>
+              <span className="flex w-[56px] items-center justify-end gap-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  style={{ background: "#EEF0F3" }}
+                />
+                계획
+              </span>
+              <span className="w-[46px]" />
+            </span>
           </div>
           <div className="flex flex-col gap-3.5">
             {capex.map((c) => {
-              const cRate = c.plan_won > 0 ? Math.round((c.exec_won / c.plan_won) * 100) : 0;
+              const cRate =
+                c.plan_won > 0
+                  ? Math.round((c.exec_won / c.plan_won) * 100)
+                  : 0;
               return (
                 <div key={c.key} className="flex items-center gap-3">
                   <span className="w-14 shrink-0 text-center text-[14px] font-semibold">
@@ -204,11 +281,17 @@ export default async function BudgetPage({
                   <div className="relative h-3 flex-1">
                     <div
                       className="absolute left-0 top-0 h-3 rounded-full"
-                      style={{ width: `${(c.plan_won / maxPlan) * 100}%`, background: "#EEF0F3" }}
+                      style={{
+                        width: `${(c.plan_won / maxPlan) * 100}%`,
+                        background: "#EEF0F3",
+                      }}
                     />
                     <div
                       className="absolute left-0 top-0 h-3 rounded-full"
-                      style={{ width: `${(c.exec_won / maxPlan) * 100}%`, background: ACCENT }}
+                      style={{
+                        width: `${(c.exec_won / maxPlan) * 100}%`,
+                        background: ACCENT,
+                      }}
                     />
                   </div>
                   <span className="text-muted-foreground flex shrink-0 items-center justify-end gap-1 text-[12px] tabular-nums">
@@ -230,9 +313,29 @@ export default async function BudgetPage({
         </Card>
 
         <Card className="p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[15px] font-bold">본부별 투자비 집행현황</h2>
-            <span className="text-faint text-[12px]">막대 = 계획 · 채움 = 집행</span>
+          <h2 className="mb-3 text-[15px] font-bold">본부별 투자비 집행현황</h2>
+          {/* 컬럼 헤더: 집행/계획 색상표시를 데이터 열 위에 줄맞춤 */}
+          <div className="text-faint mb-2 flex items-center gap-3 text-[11px] font-semibold">
+            <span className="w-[104px] shrink-0" />
+            <div className="flex-1" />
+            <span className="flex shrink-0 items-center justify-end gap-1">
+              <span className="flex w-[56px] items-center justify-end gap-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  style={{ background: ACCENT }}
+                />
+                집행
+              </span>
+              <span className="opacity-0">/</span>
+              <span className="flex w-[56px] items-center justify-end gap-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  style={{ background: "#EEF0F3" }}
+                />
+                계획
+              </span>
+              <span className="w-[46px]" />
+            </span>
           </div>
           <div className="flex flex-col gap-3.5">
             {hqBudget.map((h) => {
@@ -283,33 +386,6 @@ export default async function BudgetPage({
             )}
           </div>
         </Card>
-
-        <Card className="flex flex-col p-4">
-          <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-[15px] font-bold">월별 집행 추이</h2>
-            <span className="text-faint text-[12px]">단위: 억</span>
-          </div>
-          <div className="mt-2 flex flex-1 items-end gap-5">
-            <div className="shrink-0">
-              <div className="text-[28px] font-extrabold leading-none tabular-nums">
-                {formatBudgetEok(cumulative)}
-              </div>
-              <div className="text-muted-foreground mt-1.5 text-[12px] font-semibold">
-                누적
-              </div>
-            </div>
-            <div className="flex flex-1 items-end justify-end overflow-x-auto">
-              <MonthlyExecBars
-                data={monthlyBars}
-                height={120}
-                barW={28}
-                gap={12}
-                accent={ACCENT}
-                ariaLabel={`월별 집행 추이 · 누적 ${formatBudgetEok(cumulative)}`}
-              />
-            </div>
-          </div>
-        </Card>
       </div>
 
       {/* 과제별 투자비 집행 현황 */}
@@ -322,13 +398,62 @@ export default async function BudgetPage({
         </div>
         <div className="text-muted-foreground flex h-9 items-center border-b bg-[#FAFAFB] px-4 text-[13px] font-semibold">
           <div className="w-[87px] shrink-0 text-center">순번</div>
-          <SortTh col="mprs" label="MPRS" cls="w-[135px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
-          <SortTh col="type" label="투자유형" cls="w-[111px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
-          <SortTh col="name" label="과제명" cls="min-w-0 flex-1 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
-          <SortTh col="hq" label="본부" cls="w-[177px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
-          <SortTh col="plan" label="계획" cls="w-[119px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
-          <SortTh col="exec" label="집행" cls="w-[119px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
-          <SortTh col="rate" label="집행률" cls="w-[207px] shrink-0 text-center" cur={sortKey} dir={sortDir} detail={sp.detail} />
+          <SortTh
+            col="mprs"
+            label="MPRS"
+            cls="w-[135px] shrink-0 text-center"
+            cur={sortKey}
+            dir={sortDir}
+            detail={sp.detail}
+          />
+          <SortTh
+            col="type"
+            label="투자유형"
+            cls="w-[111px] shrink-0 text-center"
+            cur={sortKey}
+            dir={sortDir}
+            detail={sp.detail}
+          />
+          <SortTh
+            col="name"
+            label="과제명"
+            cls="min-w-0 flex-1 text-center"
+            cur={sortKey}
+            dir={sortDir}
+            detail={sp.detail}
+          />
+          <SortTh
+            col="hq"
+            label="본부"
+            cls="w-[177px] shrink-0 text-center"
+            cur={sortKey}
+            dir={sortDir}
+            detail={sp.detail}
+          />
+          <SortTh
+            col="plan"
+            label="계획"
+            cls="w-[119px] shrink-0 text-center"
+            cur={sortKey}
+            dir={sortDir}
+            detail={sp.detail}
+          />
+          <SortTh
+            col="exec"
+            label="집행"
+            cls="w-[119px] shrink-0 text-center"
+            cur={sortKey}
+            dir={sortDir}
+            detail={sp.detail}
+          />
+          <SortTh
+            col="rate"
+            label="집행률"
+            cls="w-[207px] shrink-0 text-center"
+            cur={sortKey}
+            dir={sortDir}
+            detail={sp.detail}
+          />
         </div>
         {byBudget.map((p, i) => {
           const r =
@@ -359,7 +484,9 @@ export default async function BudgetPage({
                   {INVESTMENT_LABEL[p.investment_type]}
                 </span>
               </div>
-              <div className="min-w-0 flex-1 truncate pl-3 pr-2 font-semibold">{p.name}</div>
+              <div className="min-w-0 flex-1 truncate pl-3 pr-2 font-semibold">
+                {p.name}
+              </div>
               <div className="text-muted-foreground w-[177px] shrink-0 truncate text-center text-[12px]">
                 {p.headquarter_name}
               </div>

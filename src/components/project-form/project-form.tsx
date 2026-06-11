@@ -410,23 +410,19 @@ export function ProjectForm({
             <Field label="사업계획" error={errors.budgetPlanItemId?.message}>
               <div className="flex gap-2">
                 <select
-                  className={cn(
-                    inputClass,
-                    "w-[96px] shrink-0 disabled:opacity-50",
-                  )}
+                  className={cn(inputClass, "w-[96px] shrink-0")}
                   value={planYear}
-                  disabled={!selectedPlan}
                   onChange={(e) => {
                     const y = Number(e.target.value);
                     setPlanYear(y);
-                    // 연도 변경 시 해당 연도에 선택값이 없으면 그 연도 첫 계획으로(없으면 사업계획 외)
-                    const yearPlans = planItems.filter(
-                      (p) => p.fiscalYear === y,
+                    // 연도 변경 시 현재 선택값이 그 연도에 없으면 '사업계획 외'로 초기화
+                    // (사용자가 해당 연도 사업계획을 직접 선택)
+                    const inYear = planItems.some(
+                      (p) => p.fiscalYear === y && p.id === selectedPlan,
                     );
-                    if (!yearPlans.some((p) => p.id === selectedPlan)) {
-                      const next = yearPlans[0]?.id ?? "";
-                      setValue("budgetPlanItemId", next);
-                      setSelectedPlan(next);
+                    if (!inYear) {
+                      setValue("budgetPlanItemId", "");
+                      setSelectedPlan("");
                     }
                   }}
                 >

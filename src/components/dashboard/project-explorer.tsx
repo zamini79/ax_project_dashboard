@@ -82,7 +82,10 @@ export async function ProjectExplorer({
   const kpis = computeKpis(projects, headquarters, now);
   const perf = performanceSummary(projects);
   const visible = applyFilter(projects, filter, now);
-  const sortedItems = sort ? sortProjectList(visible, sort, dir) : visible;
+  // 본부 정렬 순서 = 마스터 등록 순(MBD→Bio→개발→L HOUSE→Quality→경영지원→…)
+  const hqRank = new Map(headquarters.map((h, i) => [h.id, i]));
+  // 기본 정렬(MPRS→본부→과제명) + 선택 컬럼 정렬(동률은 기본 정렬 따름)
+  const sortedItems = sortProjectList(visible, sort, dir, hqRank);
 
   const state = {
     filter,

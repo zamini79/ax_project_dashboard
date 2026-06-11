@@ -2,7 +2,6 @@ import type { ProjectListItem, Headquarter } from "@/lib/repositories/projects";
 import {
   type Lifecycle,
   type Health,
-  compareByDefault,
   LIFECYCLE_SORT_RANK,
   LIFECYCLE_KPI_ORDER,
   HEALTH_KPI_ORDER,
@@ -127,40 +126,70 @@ const HEALTH_RANK: Record<Health, number> = {
   completed: 3,
 };
 
+/** 과제 목록 기본 MPRS 순서: 마케팅 → 연구 → 생산 → 지원 */
+const MPRS_SORT_ORDER: readonly Mprs[] = [
+  "marketing",
+  "research",
+  "production",
+  "support",
+];
+
 /**
- * 컬럼 기준 정렬 (순수). 동률은 과제명으로 안정 정렬.
+ * 과제 목록 기본 정렬 비교 (순수): MPRS → 본부(마스터 등록 순) → 과제명(가나다/ABC).
+ * 본부 순서는 hqRank(본부 id → 등록 순서 index)로 결정하며, 목록에 없는 본부는 마지막.
+ * 다른 컬럼으로 정렬할 때도 동률은 이 순서로 통일한다.
+ */
+export function compareListDefault(
+  a: ProjectListItem,
+  b: ProjectListItem,
+  hqRank: Map<string, number>,
+): number {
+  const m = MPRS_SORT_ORDER.indexOf(a.mprs) - MPRS_SORT_ORDER.indexOf(b.mprs);
+  if (m !== 0) return m;
+  const ar = hqRank.get(a.headquarter_id) ?? Number.MAX_SAFE_INTEGER;
+  const br = hqRank.get(b.headquarter_id) ?? Number.MAX_SAFE_INTEGER;
+  if (ar !== br) return ar - br;
+  return a.name.localeCompare(b.name, "ko");
+}
+
+/**
+ * 컬럼 기준 정렬 (순수). key=null 이면 기본 정렬(MPRS→본부→과제명)만 적용.
+ * 선택 컬럼 동률은 항상 기본 정렬 순서(오름차순 고정)로 안정 정렬한다.
  * 일정(schedule)의 시작일 null은 방향과 무관하게 항상 마지막.
  */
 export function sortProjectList(
   items: ProjectListItem[],
-  key: SortKey,
+  key: SortKey | null,
   dir: SortDir,
+  hqRank: Map<string, number>,
 ): ProjectListItem[] {
   const sign = dir === "desc" ? -1 : 1;
-  const nameCmp = (a: ProjectListItem, b: ProjectListItem) =>
-    a.name.localeCompare(b.name, "ko");
 
   return [...items].sort((a, b) => {
     if (key === "schedule") {
       const as = a.start_date;
       const bs = b.start_date;
-      if (as === null && bs === null) return nameCmp(a, b);
-      if (as === null) return 1; // null은 항상 마지막
-      if (bs === null) return -1;
-      const c = as < bs ? -1 : as > bs ? 1 : 0;
-      return (c || nameCmp(a, b)) * sign;
+      if (as !== null && bs !== null && as !== bs) {
+        return (as < bs ? -1 : 1) * sign;
+      }
+      if (as === null && bs !== null) return 1; // null은 항상 마지막
+      if (bs === null && as !== null) return -1;
+      return compareListDefault(a, b, hqRank);
     }
 
     let c = 0;
     switch (key) {
       case "mprs":
-        c = MPRS_ORDER.indexOf(a.mprs) - MPRS_ORDER.indexOf(b.mprs);
+        c = MPRS_SORT_ORDER.indexOf(a.mprs) - MPRS_SORT_ORDER.indexOf(b.mprs);
         break;
-      case "hq":
-        c = a.headquarter_name.localeCompare(b.headquarter_name, "ko");
+      case "hq": {
+        const ar = hqRank.get(a.headquarter_id) ?? Number.MAX_SAFE_INTEGER;
+        const br = hqRank.get(b.headquarter_id) ?? Number.MAX_SAFE_INTEGER;
+        c = ar - br;
         break;
+      }
       case "name":
-        c = nameCmp(a, b);
+        c = a.name.localeCompare(b.name, "ko");
         break;
       case "aitech":
         c = a.ai_techs.join(", ").localeCompare(b.ai_techs.join(", "), "ko");
@@ -172,11 +201,12 @@ export function sortProjectList(
         c = HEALTH_RANK[a.health] - HEALTH_RANK[b.health];
         break;
     }
-    return (c || nameCmp(a, b)) * sign;
+    if (c !== 0) return c * sign;
+    return compareListDefault(a, b, hqRank); // 동률 → 기본 정렬(오름차순 고정)
   });
 }
 
-/** AND 교차 필터 적용 후 디폴트 정렬 (D-020) */
+/** AND 교차 필터만 적용 (정렬은 sortProjectList에서 기본 정렬·컬럼 정렬 처리) */
 export function applyFilter(
   items: ProjectListItem[],
   filter: DashboardFilter,
@@ -207,7 +237,7 @@ export function applyFilter(
     return true;
   });
 
-  return filtered.sort(compareByDefault);
+  return filtered;
 }
 
 // ============================================

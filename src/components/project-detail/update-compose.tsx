@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useState, useRef } from "react";
+import { createPortal, useFormStatus } from "react-dom";
 
+import { UnsavedConfirm } from "@/components/project-form/unsaved-confirm";
 import {
   Dialog,
   DialogTrigger,
@@ -29,12 +30,28 @@ export function UpdateCompose({
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [confirm, setConfirm] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // 작성/수정된 내용이 있는지 (날짜 변경 or 내용 입력)
+  function isDirty(): boolean {
+    const f = formRef.current;
+    if (!f) return false;
+    const content =
+      (f.elements.namedItem("content") as HTMLTextAreaElement | null)?.value ??
+      "";
+    const date =
+      (f.elements.namedItem("updateDate") as HTMLInputElement | null)?.value ??
+      "";
+    return content.trim() !== "" || date !== defaultDate;
+  }
 
   // form action: 서버 액션 호출 → 성공 시 닫기 (effect 아닌 이벤트 컨텍스트)
   async function onSubmit(formData: FormData) {
     const result = await createUpdateAction({ ok: false }, formData);
     if (result.ok) {
       setError(undefined);
+      setConfirm(false);
       setOpen(false);
     } else {
       setError(result.error);
@@ -46,7 +63,10 @@ export function UpdateCompose({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) setError(undefined);
+        if (!next) {
+          setError(undefined);
+          setConfirm(false);
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -54,7 +74,30 @@ export function UpdateCompose({
           + 업데이트 작성
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent
+        onEscapeKeyDown={(e) => {
+          // 확인창이 떠 있으면 그쪽이 처리. 입력 내용 있으면 저장 여부 확인.
+          if (confirm) {
+            e.preventDefault();
+            return;
+          }
+          if (isDirty()) {
+            e.preventDefault();
+            setConfirm(true);
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          // 팝업 밖에서 '눌러서 시작한' 클릭만 처리. (안에서 드래그→밖에서 떼기는 무시)
+          if (confirm) {
+            e.preventDefault();
+            return;
+          }
+          if (isDirty()) {
+            e.preventDefault();
+            setConfirm(true);
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>업데이트 작성</DialogTitle>
           <DialogDescription>
@@ -62,7 +105,7 @@ export function UpdateCompose({
           </DialogDescription>
         </DialogHeader>
 
-        <form action={onSubmit} className="flex flex-col gap-4">
+        <form ref={formRef} action={onSubmit} className="flex flex-col gap-4">
           <input type="hidden" name="projectId" value={projectId} />
 
           <div className="flex flex-col gap-1.5">
@@ -100,6 +143,23 @@ export function UpdateCompose({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {confirm &&
+        createPortal(
+          <UnsavedConfirm
+            onSave={() => {
+              setConfirm(false);
+              formRef.current?.requestSubmit();
+            }}
+            onDiscard={() => {
+              setConfirm(false);
+              setError(undefined);
+              setOpen(false);
+            }}
+            onCancel={() => setConfirm(false)}
+          />,
+          document.body,
+        )}
     </Dialog>
   );
 }
