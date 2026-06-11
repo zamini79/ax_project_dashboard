@@ -198,7 +198,7 @@ export default async function BudgetPage({
               const cRate = c.plan_won > 0 ? Math.round((c.exec_won / c.plan_won) * 100) : 0;
               return (
                 <div key={c.key} className="flex items-center gap-3">
-                  <span className="w-14 shrink-0 text-[14px] font-semibold">
+                  <span className="w-14 shrink-0 text-center text-[14px] font-semibold">
                     {c.label}
                   </span>
                   <div className="relative h-3 flex-1">
@@ -242,7 +242,7 @@ export default async function BudgetPage({
                   : 0;
               return (
                 <div key={h.key} className="flex items-center gap-3">
-                  <span className="w-[104px] shrink-0 whitespace-nowrap text-[13px] font-semibold">
+                  <span className="w-[104px] shrink-0 whitespace-nowrap text-center text-[13px] font-semibold">
                     {h.label}
                   </span>
                   <div className="relative h-3 flex-1">
