@@ -390,19 +390,37 @@ export function ProjectForm({
                     : undefined;
                 return (
                   <Field label="투자비 (원)" error={errors.budgetEok?.message}>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={won != null ? won.toLocaleString("ko-KR") : ""}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        field.onChange(
-                          raw === "" ? undefined : Number(raw) / EOK,
-                        );
-                      }}
-                      placeholder="예: 1,250,000,000"
-                      className={inputClass}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={won != null ? won.toLocaleString("ko-KR") : ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^\d]/g, "");
+                          // 비우면 null (undefined면 RHF가 기본값으로 되돌림)
+                          field.onChange(raw === "" ? null : Number(raw) / EOK);
+                        }}
+                        placeholder="예: 1,250,000,000"
+                        className={cn(inputClass, won != null && "pr-9")}
+                      />
+                      {won != null && (
+                        <button
+                          type="button"
+                          // onMouseDown+preventDefault: 입력 blur로 클릭이 씹히는 것 방지
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setValue("budgetEok", null, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
+                          aria-label="투자비 지우기"
+                          className="text-muted-foreground hover:bg-muted hover:text-foreground absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-[12px] leading-none transition-colors"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </Field>
                 );
               }}

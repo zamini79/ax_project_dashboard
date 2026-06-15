@@ -48,7 +48,8 @@ export const projectFormSchema = z
     addToPerformance: z.boolean(),
     startDate: optionalDate,
     endDate: optionalDate,
-    budgetEok: optionalNumber, // 억 단위
+    // 억 단위. 비우면 null(undefined로 두면 RHF가 defaultValue로 되돌림 → 안 지워짐)
+    budgetEok: optionalNumber.nullable(),
     progressPct: z
       .number({ message: "숫자를 입력하세요." })
       .int("정수여야 합니다.")
