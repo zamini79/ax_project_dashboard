@@ -56,8 +56,14 @@ export function CommandMenu({ projects }: { projects: CommandProject[] }) {
   const [shortcut, setShortcut] = useState("⌘K");
 
   useEffect(() => {
-    const ua = `${navigator.platform} ${navigator.userAgent}`;
-    const isMac = /mac|iphone|ipad|ipod/i.test(ua);
+    // userAgentData.platform("Windows"·"macOS")를 우선 사용, 없으면 platform/UA로 폴백.
+    // 윈도우(Windows)면 무조건 Ctrl, 진짜 맥(Windows 미포함 + mac/iOS)만 ⌘.
+    const navAny = navigator as Navigator & {
+      userAgentData?: { platform?: string };
+    };
+    const src = `${navAny.userAgentData?.platform ?? ""} ${navigator.platform ?? ""} ${navigator.userAgent ?? ""}`;
+    const isWindows = /win/i.test(src);
+    const isMac = !isWindows && /mac|iphone|ipad|ipod/i.test(src);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShortcut(isMac ? "⌘K" : "Ctrl K");
   }, []);
