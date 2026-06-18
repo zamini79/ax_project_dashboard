@@ -205,6 +205,25 @@ export function ProjectDetailDrawer({
                   <span className="text-faint">-</span>
                 )}
               </Field>
+              <Field label="PM">
+                {p.pms.length ? (
+                  <div className="flex flex-col gap-0.5">
+                    {p.pms.map((pm) => (
+                      <span key={pm.name}>
+                        {pm.name}
+                        {pm.department && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {pm.department}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">미정</span>
+                )}
+              </Field>
               <Field label="유관부서 / 담당자">
                 {p.stakeholders.length ? (
                   <div className="flex flex-col gap-0.5">

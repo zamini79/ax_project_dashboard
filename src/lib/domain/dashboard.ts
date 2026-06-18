@@ -113,6 +113,7 @@ export type SortKey =
   | "mprs"
   | "hq"
   | "name"
+  | "pm"
   | "aitech"
   | "lifecycle"
   | "health"
@@ -190,6 +191,12 @@ export function sortProjectList(
       }
       case "name":
         c = a.name.localeCompare(b.name, "ko");
+        break;
+      case "pm":
+        c = a.pms
+          .map((p) => p.name)
+          .join(", ")
+          .localeCompare(b.pms.map((p) => p.name).join(", "), "ko");
         break;
       case "aitech":
         c = a.ai_techs.join(", ").localeCompare(b.ai_techs.join(", "), "ko");
