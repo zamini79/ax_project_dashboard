@@ -31,6 +31,12 @@ import {
   deleteProjectExecution,
 } from "@/lib/repositories/budget";
 import { setProjectEffectMembership } from "@/lib/repositories/effects";
+import {
+  uploadProjectAttachment,
+  deleteProjectAttachment,
+  fetchProjectAttachments,
+  type ProjectAttachment,
+} from "@/lib/repositories/attachments";
 
 export type FormActionResult = { error: string } | void;
 
@@ -163,6 +169,7 @@ export async function loadProjectEditData(id: string) {
   const edit = await fetchProjectEditData(id);
   if (!edit) return null;
   const options = await loadProjectFormOptions();
+  const attachments = await fetchProjectAttachments(id);
   const values: ProjectFormValues = {
     name: edit.name,
     description: edit.description ?? "",
@@ -182,7 +189,7 @@ export async function loadProjectEditData(id: string) {
     tagIds: edit.tagIds,
     budgetPlanItemId: edit.budgetPlanItemId,
   };
-  return { values, options, executions: edit.executions };
+  return { values, options, executions: edit.executions, attachments };
 }
 
 /** 과제 폼 옵션 일괄 로드 (모달 오픈 시 호출) */
@@ -279,5 +286,49 @@ export async function deleteExecutionAction(
     };
   }
   revalidateExecution(projectId);
+  return { ok: true };
+}
+
+// ── 과제 첨부파일 ──
+
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024; // 25MB
+
+/** 첨부 업로드 (FormData의 file) → 메타 반환 */
+export async function uploadAttachmentAction(
+  projectId: string,
+  formData: FormData,
+): Promise<{ ok: true; attachment: ProjectAttachment } | { error: string }> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "파일을 선택하세요." };
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    return { error: "파일은 25MB 이하만 업로드할 수 있습니다." };
+  }
+  let attachment: ProjectAttachment;
+  try {
+    attachment = await uploadProjectAttachment(projectId, file);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "업로드에 실패했습니다." };
+  }
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${projectId}`);
+  return { ok: true, attachment };
+}
+
+/** 첨부 삭제 */
+export async function deleteAttachmentAction(
+  id: string,
+  projectId: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    await deleteProjectAttachment(id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "삭제에 실패했습니다." };
+  }
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${projectId}`);
   return { ok: true };
 }

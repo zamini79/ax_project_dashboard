@@ -118,6 +118,7 @@ export function EditProjectModal({
                     tags={data.options.tags}
                     planItems={data.options.planItems}
                     executions={data.executions}
+                    attachments={data.attachments}
                     formId={formId}
                     onDirtyChange={setDirty}
                     onCancel={close}

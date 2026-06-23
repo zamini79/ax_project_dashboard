@@ -18,8 +18,10 @@ import {
 import { MPRS_LABEL } from "@/lib/domain/mprs";
 import { INVESTMENT_LABEL } from "@/lib/domain/investment";
 import { ExecutionEditor } from "@/components/project-detail/execution-editor";
+import { AttachmentsField } from "@/components/project-form/attachments-field";
 import { LIFECYCLE_LABEL, HEALTH_LABEL } from "@/lib/domain/lifecycle";
 import type { MasterOption, PersonOption } from "@/lib/repositories/masters";
+import type { ProjectAttachment } from "@/lib/repositories/attachments";
 import {
   createProjectAction,
   createProjectModalAction,
@@ -44,6 +46,7 @@ export function ProjectForm({
   tags,
   planItems,
   executions = [],
+  attachments = [],
   returnTo,
   onSuccess,
   onCancel,
@@ -62,6 +65,8 @@ export function ProjectForm({
   planItems: { id: string; name: string; fiscalYear: number }[];
   /** 집행 실적(편집 모드) — 비정기 지급 목록 */
   executions?: { id: string; year_month: string; amount: number }[];
+  /** 첨부파일(편집 모드) — 저장된 과제만 */
+  attachments?: ProjectAttachment[];
   /** 편집 진입 출처 — 저장/취소 시 이곳으로 복귀 (목록·드로어·상세) */
   returnTo?: string;
   /** 모달(임베드) 모드: 생성 성공 시 redirect 대신 호출 → 모달 닫고 배경 갱신 */
@@ -196,6 +201,9 @@ export function ProjectForm({
                   )}
                 />
               </Field>
+              {mode === "edit" && projectId && (
+                <AttachmentsField projectId={projectId} initial={attachments} />
+              )}
             </div>
             <div className="flex flex-col gap-[18px]">
               <Field label="PM (공동 가능)" error={errors.pmIds?.message}>
