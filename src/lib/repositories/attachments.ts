@@ -60,6 +60,44 @@ function sanitize(name: string): string {
   );
 }
 
+// 확장자 → MIME. 브라우저가 type을 비우거나 generic으로 줄 때 보정용.
+// (예: .html을 text/plain으로 올리면 브라우저가 코드를 그대로 표시함 → text/html로 강제)
+const EXT_MIME: Record<string, string> = {
+  html: "text/html",
+  htm: "text/html",
+  css: "text/css",
+  js: "text/javascript",
+  mjs: "text/javascript",
+  json: "application/json",
+  txt: "text/plain",
+  csv: "text/csv",
+  md: "text/markdown",
+  xml: "application/xml",
+  svg: "image/svg+xml",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ppt: "application/vnd.ms-powerpoint",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  zip: "application/zip",
+};
+
+/**
+ * 저장·서빙용 Content-Type 결정. 확장자가 알려진 형식이면 그걸 우선해
+ * (브라우저가 .html을 text/plain 등으로 줘도) 올바른 타입으로 서빙되게 한다.
+ */
+function contentTypeFor(file: File): string {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_MIME[ext] ?? (file.type || "application/octet-stream");
+}
+
 /** 과제 첨부 목록 (최신순) */
 export async function fetchProjectAttachments(
   projectId: string,
@@ -83,11 +121,12 @@ export async function uploadProjectAttachment(
   if (!UUID_RE.test(projectId)) throw new Error("잘못된 과제 ID입니다.");
   const supabase = await createClient();
   const path = `${projectId}/${crypto.randomUUID()}-${sanitize(file.name)}`;
+  const contentType = contentTypeFor(file);
 
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
     .upload(path, file, {
-      contentType: file.type || undefined,
+      contentType,
       upsert: false,
     });
   if (upErr) throw new Error(`업로드 실패: ${upErr.message}`);
@@ -98,7 +137,7 @@ export async function uploadProjectAttachment(
       project_id: projectId,
       file_name: file.name.slice(0, 200),
       storage_path: path,
-      mime_type: file.type || null,
+      mime_type: contentType,
       size_bytes: file.size,
     })
     .select(SELECT)
