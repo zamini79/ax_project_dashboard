@@ -34,15 +34,12 @@ interface RawRow {
 const SELECT =
   "id, project_id, file_name, storage_path, mime_type, size_bytes, created_at";
 
-type DbClient = Awaited<ReturnType<typeof createClient>>;
-
-function toAttachment(supabase: DbClient, r: RawRow): ProjectAttachment {
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(r.storage_path);
+function toAttachment(r: RawRow): ProjectAttachment {
   return {
     id: r.id,
     projectId: r.project_id,
     fileName: r.file_name,
-    url: data.publicUrl,
+    url: routePath(r.storage_path), // 앱 프록시 경로(올바른 Content-Type 서빙)
     mimeType: r.mime_type,
     sizeBytes: r.size_bytes,
     createdAt: r.created_at,
@@ -90,12 +87,24 @@ const EXT_MIME: Record<string, string> = {
 };
 
 /**
- * 저장·서빙용 Content-Type 결정. 확장자가 알려진 형식이면 그걸 우선해
+ * 파일명/경로 → Content-Type. 확장자가 알려진 형식이면 그걸 우선해
  * (브라우저가 .html을 text/plain 등으로 줘도) 올바른 타입으로 서빙되게 한다.
+ * 업로드(브라우저 type 폴백)와 서빙 프록시(/attachments)에서 공용.
  */
-function contentTypeFor(file: File): string {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  return EXT_MIME[ext] ?? (file.type || "application/octet-stream");
+export function contentTypeForName(name: string, fallback?: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_MIME[ext] ?? (fallback || "application/octet-stream");
+}
+
+/** 첨부 서빙 라우트 경로 (공개 스토리지를 올바른 Content-Type으로 재서빙) */
+function routePath(storagePath: string): string {
+  return (
+    "/attachments/" +
+    storagePath
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/")
+  );
 }
 
 /** 과제 첨부 목록 (최신순) */
@@ -110,7 +119,7 @@ export async function fetchProjectAttachments(
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(`첨부파일 조회 실패: ${error.message}`);
-  return (data ?? []).map((r) => toAttachment(supabase, r as RawRow));
+  return (data ?? []).map((r) => toAttachment(r as RawRow));
 }
 
 /** 파일 업로드 → 스토리지 저장 + 메타 행 기록. 실패 시 업로드 객체 롤백. */
@@ -121,7 +130,7 @@ export async function uploadProjectAttachment(
   if (!UUID_RE.test(projectId)) throw new Error("잘못된 과제 ID입니다.");
   const supabase = await createClient();
   const path = `${projectId}/${crypto.randomUUID()}-${sanitize(file.name)}`;
-  const contentType = contentTypeFor(file);
+  const contentType = contentTypeForName(file.name, file.type);
 
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
@@ -147,7 +156,7 @@ export async function uploadProjectAttachment(
     await supabase.storage.from(BUCKET).remove([path]); // 롤백
     throw new Error(`첨부 저장 실패: ${error?.message ?? "알 수 없는 오류"}`);
   }
-  return toAttachment(supabase, data as RawRow);
+  return toAttachment(data as RawRow);
 }
 
 /** 첨부 삭제 (스토리지 객체 + 메타 행) */

@@ -36,11 +36,13 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // 미인증 + 보호 라우트 → 로그인으로
-  const isAuthRoute =
+  // /attachments: 공개 첨부 프록시(링크만 있으면 누구나) → 인증 제외
+  const isPublicRoute =
     request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/auth');
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/attachments');
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isPublicRoute) {
     // ⚠️ 임시: 미인증 접속 시 로그인 화면 대신 자동 로그인 라우트로.
     //    인증 복구(자동 로그인 제거) 시 pathname을 '/login'으로 되돌릴 것.
     const url = request.nextUrl.clone();

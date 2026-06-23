@@ -55,7 +55,9 @@ export function AttachmentsField({
 
   async function copyLink(a: ProjectAttachment) {
     try {
-      await navigator.clipboard.writeText(a.url);
+      // a.url은 앱 프록시 상대경로(/attachments/...) → 절대 URL로 복사
+      const absolute = new URL(a.url, window.location.origin).href;
+      await navigator.clipboard.writeText(absolute);
       setCopiedId(a.id);
       window.setTimeout(() => setCopiedId((c) => (c === a.id ? null : c)), 1500);
     } catch {
