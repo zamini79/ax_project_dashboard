@@ -38,6 +38,7 @@ export const HEALTH_LABEL: Record<Health, string> = {
   yellow: "주의",
   red: "위험",
   completed: "완료",
+  none: "-",
 };
 
 /** 헬스 의미 (툴팁·도움말용) */
@@ -46,23 +47,50 @@ export const HEALTH_HELP: Record<Health, string> = {
   yellow: "지연·리스크 주의 필요",
   red: "즉시 조치 필요",
   completed: "완료된 과제",
+  none: "아직 진행 전",
 };
 
-/** 헬스 → CSS 변수 색 (좌측 컬러바, D-023) */
+/** 헬스 → CSS 변수 색 (좌측 컬러바, D-023). none은 색 없음(transparent). */
 export const HEALTH_COLOR_VAR: Record<Health, string> = {
   green: "var(--health-green)",
   yellow: "var(--health-yellow)",
   red: "var(--health-red)",
   completed: "var(--health-gray)",
+  none: "transparent",
 };
 
-/** 진행 현황 KPI 표시 순서 (위험 → 주의 → 정상 → 완료) */
+/** 진행 현황 KPI 표시 순서 (위험 → 주의 → 정상 → 완료 → 미진행) */
 export const HEALTH_KPI_ORDER: readonly Health[] = [
   "red",
   "yellow",
   "green",
   "completed",
+  "none",
 ] as const;
+
+/**
+ * 표시용 진행 상태(신호등) 파생 (순수). DB 저장값은 변경하지 않음.
+ * 1) 일정(시작·종료일) 미입력 → "-"(none): 신호로 판단할 근거가 없음.
+ * 2) 진행 전·검토 중인데 시작일이 이미 지났으면 → "주의(yellow)".
+ *    단, 이미 "위험(red)"이면 더 심각하므로 그대로 둔다.
+ */
+export function effectiveHealth(
+  item: {
+    lifecycle: Lifecycle;
+    health: Health;
+    start_date: string | null;
+    end_date: string | null;
+  },
+  todayISO: string,
+): Health {
+  if (item.start_date == null && item.end_date == null) return "none";
+
+  const notStartedYet =
+    item.lifecycle === "not_started" || item.lifecycle === "under_review";
+  const startPassed = item.start_date != null && item.start_date < todayISO;
+  if (notStartedYet && startPassed && item.health !== "red") return "yellow";
+  return item.health;
+}
 
 /**
  * 지연 여부 (순수): 종료일이 오늘보다 이전인데 아직 완료되지 않은 과제.

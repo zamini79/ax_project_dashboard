@@ -15,7 +15,13 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const MPRS_VALUES = MPRS_ORDER;
 export const INVESTMENT_VALUES = INVESTMENT_ORDER;
 export const LIFECYCLE_VALUES = LIFECYCLE_KPI_ORDER;
-export const HEALTH_VALUES = ["green", "yellow", "red", "completed"] as const;
+export const HEALTH_VALUES = [
+  "green",
+  "yellow",
+  "red",
+  "completed",
+  "none",
+] as const;
 
 /**
  * 선택 숫자 입력. RHF register의 setValueAs에서 "" → undefined, 문자열 → number 변환을
@@ -91,7 +97,7 @@ export function emptyFormValues(): ProjectFormValues {
     investmentType: "" as ProjectFormValues["investmentType"],
     headquarterId: "",
     lifecycle: "not_started",
-    health: "green",
+    health: "none", // 신규 과제는 미진행('-')으로 시작
     addToPerformance: false,
     startDate: "",
     endDate: "",

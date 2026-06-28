@@ -39,6 +39,7 @@ const HEALTH_RANK: Record<Health, number> = {
   yellow: 1,
   green: 2,
   completed: 3,
+  none: 4,
 };
 
 export function performanceSummary(
@@ -52,6 +53,7 @@ export function performanceSummary(
     yellow: 0,
     red: 0,
     completed: 0,
+    none: 0,
   };
   let progressSum = 0;
   for (const i of items) {

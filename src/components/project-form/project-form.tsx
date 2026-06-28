@@ -19,6 +19,7 @@ import { MPRS_LABEL } from "@/lib/domain/mprs";
 import { INVESTMENT_LABEL } from "@/lib/domain/investment";
 import { ExecutionEditor } from "@/components/project-detail/execution-editor";
 import { AttachmentsField } from "@/components/project-form/attachments-field";
+import { DeleteProjectButton } from "@/components/project-form/delete-project-button";
 import { LIFECYCLE_LABEL, HEALTH_LABEL } from "@/lib/domain/lifecycle";
 import type { MasterOption, PersonOption } from "@/lib/repositories/masters";
 import type { ProjectAttachment } from "@/lib/repositories/attachments";
@@ -512,28 +513,41 @@ export function ProjectForm({
 
       {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
-      <div className="flex justify-end gap-2.5">
-        <button
-          type="button"
-          onClick={() =>
-            onCancel
-              ? onCancel()
-              : returnTo
-                ? router.push(returnTo)
-                : router.back()
-          }
-          disabled={isSubmitting}
-          className="border-border-strong text-muted-foreground hover:bg-muted rounded-[10px] border px-[18px] py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-50"
-        >
-          취소
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-primary text-primary-foreground rounded-[10px] px-5 py-2.5 text-[13px] font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          {isSubmitting ? "저장 중…" : mode === "create" ? "과제 등록" : "저장"}
-        </button>
+      <div className="flex items-center justify-between gap-2.5">
+        {/* 좌: 삭제(편집·저장된 과제만) — critical, 2단계 확인 */}
+        <div>
+          {mode === "edit" && projectId && (
+            <DeleteProjectButton
+              projectId={projectId}
+              projectName={defaultValues.name}
+              onDeleted={onSuccess ? onCancel : undefined}
+            />
+          )}
+        </div>
+        {/* 우: 취소 / 저장 */}
+        <div className="flex gap-2.5">
+          <button
+            type="button"
+            onClick={() =>
+              onCancel
+                ? onCancel()
+                : returnTo
+                  ? router.push(returnTo)
+                  : router.back()
+            }
+            disabled={isSubmitting}
+            className="border-border-strong text-muted-foreground hover:bg-muted rounded-[10px] border px-[18px] py-2.5 text-[13px] font-semibold transition-colors disabled:opacity-50"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-primary text-primary-foreground rounded-[10px] px-5 py-2.5 text-[13px] font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {isSubmitting ? "저장 중…" : mode === "create" ? "과제 등록" : "저장"}
+          </button>
+        </div>
       </div>
     </form>
   );

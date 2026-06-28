@@ -12,6 +12,7 @@ import {
 import {
   createProject,
   updateProject,
+  archiveProject,
   fetchHeadquarters,
   fetchProjectEditData,
   type ProjectWriteInput,
@@ -286,6 +287,22 @@ export async function deleteExecutionAction(
     };
   }
   revalidateExecution(projectId);
+  return { ok: true };
+}
+
+/** 과제 보관(삭제) — is_archived=true. 모든 화면에서 제외 (D-027) */
+export async function archiveProjectAction(
+  id: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    await archiveProject(id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "삭제에 실패했습니다." };
+  }
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/budget");
+  revalidatePath("/performance");
   return { ok: true };
 }
 

@@ -12,6 +12,7 @@ const SORT_KEYS: readonly SortKey[] = [
   "mprs",
   "hq",
   "name",
+  "pm",
   "aitech",
   "lifecycle",
   "health",

@@ -257,13 +257,22 @@ export function ProjectTable({
                   {LIFECYCLE_LABEL[item.lifecycle]}
                 </Cell>
                 <Cell col="w-16 shrink-0" center>
-                  <span
-                    role="img"
-                    aria-label={HEALTH_LABEL[item.health]}
-                    className="inline-block h-3 w-3 rounded-full"
-                    style={{ background: HEALTH_COLOR_VAR[item.health] }}
-                    title={HEALTH_LABEL[item.health]}
-                  />
+                  {item.health === "none" ? (
+                    <span
+                      className="text-faint text-xs"
+                      title={HEALTH_LABEL[item.health]}
+                    >
+                      -
+                    </span>
+                  ) : (
+                    <span
+                      role="img"
+                      aria-label={HEALTH_LABEL[item.health]}
+                      className="inline-block h-3 w-3 rounded-full"
+                      style={{ background: HEALTH_COLOR_VAR[item.health] }}
+                      title={HEALTH_LABEL[item.health]}
+                    />
+                  )}
                 </Cell>
               </div>
             );

@@ -806,7 +806,7 @@ export type Database = {
         | "other"
       investment_type: "ai" | "dt" | "it" | "security" | "infra"
       mprs_category: "marketing" | "production" | "research" | "support"
-      project_health: "green" | "yellow" | "red" | "completed"
+      project_health: "green" | "yellow" | "red" | "completed" | "none"
       project_lifecycle:
         | "not_started"
         | "under_review"
@@ -956,7 +956,7 @@ export const Constants = {
       ],
       investment_type: ["ai", "dt", "it", "security", "infra"],
       mprs_category: ["marketing", "production", "research", "support"],
-      project_health: ["green", "yellow", "red", "completed"],
+      project_health: ["green", "yellow", "red", "completed", "none"],
       project_lifecycle: [
         "not_started",
         "under_review",

@@ -1,7 +1,13 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import type { Lifecycle, Health } from "@/lib/domain/lifecycle";
+import { type Lifecycle, type Health, effectiveHealth } from "@/lib/domain/lifecycle";
+
+/** 오늘 ISO(YYYY-MM-DD) — 표시용 진행상태 파생에 사용 */
+function todayISODate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 import type { Mprs } from "@/lib/domain/mprs";
 import type { InvestmentType } from "@/lib/domain/investment";
 import type { Enums } from "@/lib/supabase/types";
@@ -124,7 +130,15 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     mprs: row.mprs,
     investment_type: row.investment_type,
     lifecycle: row.lifecycle,
-    health: row.health,
+    health: effectiveHealth(
+      {
+        lifecycle: row.lifecycle,
+        health: row.health,
+        start_date: row.start_date,
+        end_date: row.end_date,
+      },
+      todayISODate(),
+    ),
     progress_pct: row.progress_pct,
     start_date: row.start_date,
     end_date: row.end_date,
@@ -344,7 +358,15 @@ export async function fetchProjectDetail(
     mprs: data.mprs,
     investment_type: data.investment_type,
     lifecycle: data.lifecycle,
-    health: data.health,
+    health: effectiveHealth(
+      {
+        lifecycle: data.lifecycle,
+        health: data.health,
+        start_date: data.start_date,
+        end_date: data.end_date,
+      },
+      todayISODate(),
+    ),
     progress_pct: data.progress_pct,
     start_date: data.start_date,
     end_date: data.end_date,
@@ -530,6 +552,17 @@ export async function updateProject(
   }
 
   await replaceRelations(supabase, id, input);
+}
+
+/** 과제 보관(삭제) — is_archived=true. 목록·대시보드에서 제외됨 (D-027) */
+export async function archiveProject(id: string): Promise<void> {
+  if (!UUID_RE.test(id)) throw new Error("잘못된 과제 ID입니다.");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({ is_archived: true })
+    .eq("id", id);
+  if (error) throw new Error(`과제 삭제(보관) 실패: ${error.message}`);
 }
 
 interface RawEditRow {

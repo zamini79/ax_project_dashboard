@@ -35,7 +35,13 @@ export const EMPTY_FILTER: DashboardFilter = {
  */
 export const UNTAGGED = "__none__";
 
-const HEALTH_SET = new Set<string>(["green", "yellow", "red", "completed"]);
+const HEALTH_SET = new Set<string>([
+  "green",
+  "yellow",
+  "red",
+  "completed",
+  "none",
+]);
 
 /** URL searchParams → 필터 (순수 파싱, 잘못된 값은 무시) */
 export function parseFilter(params: {
@@ -125,6 +131,7 @@ const HEALTH_RANK: Record<Health, number> = {
   yellow: 1,
   green: 2,
   completed: 3,
+  none: 4,
 };
 
 /** 과제 목록 기본 MPRS 순서: 마케팅 → 연구 → 생산 → 지원 */
@@ -178,6 +185,18 @@ export function sortProjectList(
       return compareListDefault(a, b, hqRank);
     }
 
+    if (key === "pm") {
+      const ap = a.pms.map((p) => p.name).join(", ");
+      const bp = b.pms.map((p) => p.name).join(", ");
+      // PM 빈칸(미정)은 정렬 방향과 무관하게 항상 마지막
+      if (ap === "" && bp !== "") return 1;
+      if (bp === "" && ap !== "") return -1;
+      if (ap !== "" && bp !== "" && ap !== bp) {
+        return ap.localeCompare(bp, "ko") * sign;
+      }
+      return compareListDefault(a, b, hqRank);
+    }
+
     let c = 0;
     switch (key) {
       case "mprs":
@@ -191,12 +210,6 @@ export function sortProjectList(
       }
       case "name":
         c = a.name.localeCompare(b.name, "ko");
-        break;
-      case "pm":
-        c = a.pms
-          .map((p) => p.name)
-          .join(", ")
-          .localeCompare(b.pms.map((p) => p.name).join(", "), "ko");
         break;
       case "aitech":
         c = a.ai_techs.join(", ").localeCompare(b.ai_techs.join(", "), "ko");
