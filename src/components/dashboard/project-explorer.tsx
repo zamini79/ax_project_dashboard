@@ -41,6 +41,7 @@ export interface ExplorerSearchParams {
   dir?: string;
   mprs?: string;
   tags?: string;
+  hideDone?: string;
   detail?: string;
 }
 
@@ -261,8 +262,35 @@ export async function ProjectExplorer({
           )}
         </div>
 
-        {/* 우: 드래그 안내 · 현재 · 표/맵 */}
+        {/* 우: 완료 제외 · 드래그 안내 · 현재 · 표/맵 */}
         <div className="flex shrink-0 items-center gap-2">
+          {/* 완료 과제 제외 토글 (체크박스) */}
+          <Link
+            href={dashboardHref(state, {
+              hideCompleted: !filter.hideCompleted,
+            })}
+            role="checkbox"
+            aria-checked={filter.hideCompleted}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold transition-colors",
+              filter.hideCompleted
+                ? "border-navy bg-navy text-white"
+                : "border-border-strong text-muted-foreground hover:bg-muted bg-card",
+            )}
+          >
+            <span
+              aria-hidden
+              className={cn(
+                "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border text-[9px] leading-none",
+                filter.hideCompleted
+                  ? "border-white bg-white text-navy"
+                  : "border-border-strong",
+              )}
+            >
+              {filter.hideCompleted ? "✓" : ""}
+            </span>
+            완료 제외
+          </Link>
           {view === "table" && (
             <span className="text-muted-foreground hidden text-[11px] lg:inline">
               타임라인을 드래그하거나 ←/→ 키로 기간 이동

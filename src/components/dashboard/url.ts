@@ -78,6 +78,7 @@ type Override = Partial<{
   dir: SortDir;
   mprs: Mprs[];
   tags: string[];
+  hideCompleted: boolean;
   detail: string | null;
 }>;
 
@@ -106,6 +107,10 @@ export function dashboardHref(
   const mprs = "mprs" in override ? override.mprs : (state.mprs ?? []);
   const tags =
     "tags" in override ? override.tags : (state.filter.tags ?? []);
+  const hideCompleted =
+    "hideCompleted" in override
+      ? override.hideCompleted
+      : state.filter.hideCompleted;
   const detail = "detail" in override ? override.detail : (state.detail ?? null);
   const base = state.base ?? "/";
 
@@ -131,6 +136,7 @@ export function dashboardHref(
   if (tags && tags.length > 0) {
     params.set("tags", tags.join(","));
   }
+  if (hideCompleted) params.set("hideDone", "1");
   if (detail) params.set("detail", detail);
 
   const qs = params.toString();

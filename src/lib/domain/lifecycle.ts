@@ -71,8 +71,8 @@ export const HEALTH_KPI_ORDER: readonly Health[] = [
 /**
  * 표시용 진행 상태(신호등) 파생 (순수). DB 저장값은 변경하지 않음.
  * 1) 일정(시작·종료일) 미입력 → "-"(none): 신호로 판단할 근거가 없음.
- * 2) 진행 전·검토 중인데 시작일이 이미 지났으면 → "주의(yellow)".
- *    단, 이미 "위험(red)"이면 더 심각하므로 그대로 둔다.
+ * 2) 진행 전·검토 중인데 시작일이 이미 지났으면 → "주의(yellow)". (위험이면 위험 유지)
+ * 3) 진행 전(not_started)은 기본 "-"(none). (위험이면 위험 유지)
  */
 export function effectiveHealth(
   item: {
@@ -89,6 +89,10 @@ export function effectiveHealth(
     item.lifecycle === "not_started" || item.lifecycle === "under_review";
   const startPassed = item.start_date != null && item.start_date < todayISO;
   if (notStartedYet && startPassed && item.health !== "red") return "yellow";
+
+  // 진행 전 과제는 기본적으로 '-' (시작 전이라 진행 신호 없음). 위험은 유지.
+  if (item.lifecycle === "not_started" && item.health !== "red") return "none";
+
   return item.health;
 }
 

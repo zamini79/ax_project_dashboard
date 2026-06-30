@@ -20,6 +20,8 @@ export interface DashboardFilter {
   headquarterId: string | null;
   /** 과제 속성(태그) 필터 — 선택된 태그명 목록. 빈 배열 = 전체. OR 매칭. */
   tags: string[];
+  /** 완료 과제 제외하고 보기 */
+  hideCompleted: boolean;
 }
 
 export const EMPTY_FILTER: DashboardFilter = {
@@ -27,6 +29,7 @@ export const EMPTY_FILTER: DashboardFilter = {
   progress: null,
   headquarterId: null,
   tags: [],
+  hideCompleted: false,
 };
 
 /**
@@ -49,6 +52,7 @@ export function parseFilter(params: {
   progress?: string;
   hq?: string;
   tags?: string;
+  hideDone?: string;
 }): DashboardFilter {
   const lifecycle = (
     [
@@ -72,6 +76,7 @@ export function parseFilter(params: {
     progress,
     headquarterId: params.hq?.trim() || null,
     tags: parseTagFilter(params.tags),
+    hideCompleted: params.hideDone === "1",
   };
 }
 
@@ -235,6 +240,7 @@ export function applyFilter(
   const weekStart = weekStartISO(now);
 
   const filtered = items.filter((it) => {
+    if (filter.hideCompleted && it.lifecycle === "completed") return false;
     if (filter.lifecycle && it.lifecycle !== filter.lifecycle) return false;
     if (filter.headquarterId && it.headquarter_id !== filter.headquarterId)
       return false;
