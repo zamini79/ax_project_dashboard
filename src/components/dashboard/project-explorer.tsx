@@ -101,6 +101,8 @@ export async function ProjectExplorer({
   const hqNameById = Object.fromEntries(
     headquarters.map((h) => [h.id, h.name]),
   );
+  // 엑셀 내보내기 — 현재 필터·정렬을 그대로 export 라우트로 전달
+  const exportHref = dashboardHref({ ...state, base: "/projects/export" });
 
   // 상세 드로어 (?detail=<id>)
   const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
@@ -291,6 +293,17 @@ export async function ProjectExplorer({
             </span>
             완료 제외
           </Link>
+          {/* 엑셀 내보내기 (현재 보이는 목록 그대로) */}
+          <a
+            href={exportHref}
+            className="border-border-strong text-muted-foreground hover:bg-muted bg-card inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold transition-colors"
+            title="현재 목록을 엑셀(.xlsx)로 내보내기"
+          >
+            <span aria-hidden className="text-[13px] leading-none">
+              ⤓
+            </span>
+            엑셀
+          </a>
           {view === "table" && (
             <span className="text-muted-foreground hidden text-[11px] lg:inline">
               타임라인을 드래그하거나 ←/→ 키로 기간 이동
