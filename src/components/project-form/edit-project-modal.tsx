@@ -91,9 +91,9 @@ export function EditProjectModal({
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-background w-full max-w-[1040px] rounded-2xl shadow-2xl"
+              className="bg-background flex max-h-[calc(100vh-64px)] w-full max-w-[1040px] flex-col overflow-hidden rounded-2xl shadow-2xl"
             >
-              <div className="bg-card sticky top-0 z-[2] flex items-center justify-between rounded-t-2xl border-b px-6 py-4">
+              <div className="bg-card flex shrink-0 items-center justify-between border-b px-6 py-4">
                 <h1 className="text-xl font-semibold">과제 편집</h1>
                 <button
                   type="button"
@@ -105,7 +105,7 @@ export function EditProjectModal({
                 </button>
               </div>
 
-              <div className="p-6">
+              <div className="min-h-0 flex-1 overflow-y-auto p-6">
                 {data ? (
                   <ProjectForm
                     mode="edit"

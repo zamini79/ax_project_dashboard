@@ -28,6 +28,8 @@ import {
   createProjectModalAction,
   updateProjectAction,
   updateProjectModalAction,
+  uploadAttachmentAction,
+  deleteAttachmentsAction,
 } from "@/app/projects/actions";
 
 const inputClass =
@@ -81,6 +83,13 @@ export function ProjectForm({
 }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string>();
+  // 첨부 예약분 (저장 시 반영, 취소 시 무시)
+  const [pendingAttachmentUploads, setPendingAttachmentUploads] = useState<
+    File[]
+  >([]);
+  const [pendingAttachmentDeletes, setPendingAttachmentDeletes] = useState<
+    string[]
+  >([]);
 
   const {
     register,
@@ -146,11 +155,49 @@ export function ProjectForm({
 
   // 입력 변경 여부를 모달에 보고 (외부 클릭 시 저장 확인용)
   useEffect(() => {
-    onDirtyChange?.(isDirty);
-  }, [isDirty, onDirtyChange]);
+    // 폼 입력 변경 + 첨부 예약(추가/삭제)도 미저장 변경으로 간주
+    const staged =
+      pendingAttachmentUploads.length > 0 ||
+      pendingAttachmentDeletes.length > 0;
+    onDirtyChange?.(isDirty || staged);
+  }, [
+    isDirty,
+    onDirtyChange,
+    pendingAttachmentUploads.length,
+    pendingAttachmentDeletes.length,
+  ]);
 
   async function onValid(values: ProjectFormValues) {
     setServerError(undefined);
+
+    // 첨부 예약분 실제 반영 (편집 모드, 저장 시점). 실패 시 저장 중단.
+    if (mode === "edit" && projectId) {
+      // 1) 추가 예약 파일 업로드
+      for (const file of pendingAttachmentUploads) {
+        const fd = new FormData();
+        fd.set("file", file);
+        const up = await uploadAttachmentAction(projectId, fd);
+        if ("error" in up) {
+          setServerError(`첨부 업로드 실패 (${file.name}): ${up.error}`);
+          return;
+        }
+      }
+      if (pendingAttachmentUploads.length) setPendingAttachmentUploads([]);
+
+      // 2) 삭제 예약 반영
+      if (pendingAttachmentDeletes.length) {
+        const del = await deleteAttachmentsAction(
+          pendingAttachmentDeletes,
+          projectId,
+        );
+        if ("error" in del) {
+          setServerError(del.error);
+          return;
+        }
+        setPendingAttachmentDeletes([]);
+      }
+    }
+
     // 모달 모드: redirect 없이 결과만 받고 모달 닫기 + 배경 갱신
     if (onSuccess) {
       if (mode === "create") {
@@ -203,7 +250,12 @@ export function ProjectForm({
                 />
               </Field>
               {mode === "edit" && projectId && (
-                <AttachmentsField projectId={projectId} initial={attachments} />
+                <AttachmentsField
+                  projectId={projectId}
+                  initial={attachments}
+                  onPendingUploadsChange={setPendingAttachmentUploads}
+                  onPendingDeletesChange={setPendingAttachmentDeletes}
+                />
               )}
             </div>
             <div className="flex flex-col gap-[18px]">

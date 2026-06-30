@@ -349,3 +349,19 @@ export async function deleteAttachmentAction(
   revalidatePath(`/projects/${projectId}`);
   return { ok: true };
 }
+
+/** 첨부 여러 개 삭제 (저장 시 예약 삭제 반영) */
+export async function deleteAttachmentsAction(
+  ids: string[],
+  projectId: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    for (const id of ids) await deleteProjectAttachment(id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "삭제에 실패했습니다." };
+  }
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${projectId}`);
+  return { ok: true };
+}
