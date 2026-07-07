@@ -99,6 +99,13 @@ export function ExecutionEditor({
           inputMode="numeric"
           value={display}
           onChange={(e) => setWon(e.target.value.replace(/[^\d]/g, ""))}
+          onKeyDown={(e) => {
+            // 금액 입력 중 Enter는 폼 저장이 아니라 '추가'로 동작
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              if (!pending) add();
+            }
+          }}
           placeholder="금액(원)"
           className={cn(inputCls, "min-w-0 flex-1 text-right")}
         />
