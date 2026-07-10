@@ -46,15 +46,23 @@ function toAttachment(r: RawRow): ProjectAttachment {
   };
 }
 
-/** 파일명 → 경로 안전 문자열 (구분자·공백 정리, 길이 제한) */
+/**
+ * 파일명 → 스토리지 키 안전 문자열.
+ * Supabase Storage는 비ASCII 키를 "Invalid key"로 거부하므로 한글 등은 _로 치환.
+ * 확장자는 Content-Type 판별에 쓰이므로 보존, 원본 파일명은 DB file_name에 따로 저장됨.
+ */
 function sanitize(name: string): string {
-  return (
-    name
-      .replace(/[/\\]/g, "_")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 120) || "file"
-  );
+  const dot = name.lastIndexOf(".");
+  const base = dot > 0 ? name.slice(0, dot) : name;
+  const ext =
+    dot > 0 ? name.slice(dot + 1).replace(/[^A-Za-z0-9]/g, "").toLowerCase() : "";
+  const safeBase =
+    base
+      .replace(/[^A-Za-z0-9._-]+/g, "_")
+      .replace(/_{2,}/g, "_")
+      .replace(/^[_.]+|[_.]+$/g, "")
+      .slice(0, 100) || "file";
+  return ext ? `${safeBase}.${ext}` : safeBase;
 }
 
 // 확장자 → MIME. 브라우저가 type을 비우거나 generic으로 줄 때 보정용.
