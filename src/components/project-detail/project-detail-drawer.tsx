@@ -8,6 +8,7 @@ import { X, Sparkles } from "lucide-react";
 import { Bar } from "@/components/charts/charts";
 import { EditProjectModal } from "@/components/project-form/edit-project-modal";
 import { UpdateCompose } from "@/components/project-detail/update-compose";
+import { AttentionControl } from "@/components/project-detail/attention-control";
 import type { ProjectDetail } from "@/lib/repositories/projects";
 import type { ProjectEffect } from "@/lib/repositories/effects";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
@@ -16,6 +17,7 @@ import {
   LIFECYCLE_LABEL,
   HEALTH_LABEL,
   HEALTH_COLOR_VAR,
+  displayHealth,
 } from "@/lib/domain/lifecycle";
 import { SOURCE_LABEL, PAGE_ROLE_LABEL } from "@/lib/domain/updates";
 import {
@@ -121,9 +123,9 @@ export function ProjectDetailDrawer({
               <span className="text-muted-foreground inline-flex items-center gap-1.5 text-[11.5px]">
                 <span
                   className="h-2 w-2 rounded-full"
-                  style={{ background: HEALTH_COLOR_VAR[p.health] }}
+                  style={{ background: HEALTH_COLOR_VAR[displayHealth(p.health, p.attention.active)] }}
                 />
-                {HEALTH_LABEL[p.health]}
+                {HEALTH_LABEL[displayHealth(p.health, p.attention.active)]}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -156,6 +158,14 @@ export function ProjectDetailDrawer({
         </div>
 
         <div className="flex flex-col gap-3.5 p-5">
+          {/* 확인 필요(이슈) — 일정 신호등과 독립 */}
+          <AttentionControl
+            projectId={p.id}
+            override={p.attention_override}
+            note={p.attention_note}
+            autoIssue={p.updates[0]?.issue_note ?? null}
+          />
+
           {/* 메타 */}
           <Card>
             <div className="grid grid-cols-2 gap-4">

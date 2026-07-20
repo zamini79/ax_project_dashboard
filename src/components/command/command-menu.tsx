@@ -21,6 +21,7 @@ import {
   HEALTH_COLOR_VAR,
   type Lifecycle,
   type Health,
+  displayHealth,
 } from "@/lib/domain/lifecycle";
 
 export interface CommandProject {
@@ -29,6 +30,7 @@ export interface CommandProject {
   hq: string;
   lifecycle: Lifecycle;
   health: Health;
+  attentionActive: boolean;
   progress: number;
   mprs: Mprs;
   pms: string;
@@ -181,7 +183,7 @@ export function CommandMenu({ projects }: { projects: CommandProject[] }) {
                       <span className="flex items-center gap-1.5">
                         <span
                           className="h-2 w-2 rounded-full"
-                          style={{ background: HEALTH_COLOR_VAR[p.health] }}
+                          style={{ background: HEALTH_COLOR_VAR[displayHealth(p.health, p.attentionActive)] }}
                         />
                         <span className="text-muted-foreground text-[11.5px] tabular-nums">
                           {p.progress}%

@@ -29,6 +29,7 @@ export default async function MainLayout({
     hq: p.headquarter_name,
     lifecycle: p.lifecycle,
     health: p.health,
+    attentionActive: p.attention_active,
     progress: p.progress_pct,
     mprs: p.mprs,
     pms: p.pms.map((x) => x.name).join(", "),

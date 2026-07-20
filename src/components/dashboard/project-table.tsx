@@ -10,6 +10,7 @@ import {
   LIFECYCLE_LABEL,
   HEALTH_COLOR_VAR,
   HEALTH_LABEL,
+  displayHealth,
   isOverdue,
 } from "@/lib/domain/lifecycle";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
@@ -18,6 +19,8 @@ import { dashboardHref, type DashboardState } from "./url";
 const MONTH_W = 44; // 월당 px
 const ROW_H = 40; // 행 높이 px
 const HEAD_H = 40; // 헤더 높이 px
+const VISIBLE_ROWS = 20; // 기본 표시 행 수 (초과분은 본문 세로 스크롤)
+const BODY_MAX = VISIBLE_ROWS * ROW_H; // 본문 최대 높이 px
 const TIMELINE_W = 640; // 일정(타임라인) 고정 표시 폭 px — 전체 폭은 유지, 남는 폭은 좌측 컬럼이 흡수
 const PAD_MONTHS = 1; // 데이터 범위 양쪽 여유 개월
 const TODAY_COLOR = "#B70000";
@@ -65,6 +68,23 @@ export function ProjectTable({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ startX: number; startScroll: number } | null>(null);
+
+  // ── 본문 세로 스크롤 동기화 (좌측 정보 컬럼 ↔ 우측 타임라인) ──
+  const leftBodyRef = useRef<HTMLDivElement>(null);
+  const rightBodyRef = useRef<HTMLDivElement>(null);
+  const vSyncing = useRef(false);
+  function syncVScroll(from: HTMLDivElement | null, to: HTMLDivElement | null) {
+    if (!from || !to || vSyncing.current) return;
+    vSyncing.current = true;
+    to.scrollTop = from.scrollTop;
+    requestAnimationFrame(() => {
+      vSyncing.current = false;
+    });
+  }
+  const onLeftScroll = () =>
+    syncVScroll(leftBodyRef.current, rightBodyRef.current);
+  const onRightScroll = () =>
+    syncVScroll(rightBodyRef.current, leftBodyRef.current);
 
   // ── 타임라인 범위 계산 (모든 과제 일정 + 표시연도 + 오늘 포함) ──
   const idxs: number[] = [];
@@ -164,7 +184,7 @@ export function ProjectTable({
   return (
     <div className="bg-card flex overflow-hidden rounded-lg border text-sm">
         {/* ── 좌측 정보 컬럼 (남는 폭 흡수) ── */}
-        <div role="table" aria-label="과제 목록" className="grow min-w-0 border-r">
+        <div role="table" aria-label="과제 목록" className="grow min-w-0 border-r flex flex-col">
           {/* 헤더 */}
           <div
             role="row"
@@ -197,7 +217,13 @@ export function ProjectTable({
               </div>
             ))}
           </div>
-          {/* 행 */}
+          {/* 행 (본문만 세로 스크롤 — 기본 20행) */}
+          <div
+            ref={leftBodyRef}
+            onScroll={onLeftScroll}
+            className="overflow-y-auto"
+            style={{ maxHeight: BODY_MAX }}
+          >
           {items.map((item, idx) => {
             const mprs = MPRS_COLORS[item.mprs];
             return (
@@ -257,26 +283,31 @@ export function ProjectTable({
                   {LIFECYCLE_LABEL[item.lifecycle]}
                 </Cell>
                 <Cell col="w-16 shrink-0" center>
-                  {item.health === "none" ? (
-                    <span
-                      className="text-faint text-xs"
-                      title={HEALTH_LABEL[item.health]}
-                    >
-                      -
-                    </span>
-                  ) : (
-                    <span
-                      role="img"
-                      aria-label={HEALTH_LABEL[item.health]}
-                      className="inline-block h-3 w-3 rounded-full"
-                      style={{ background: HEALTH_COLOR_VAR[item.health] }}
-                      title={HEALTH_LABEL[item.health]}
-                    />
-                  )}
+                  {(() => {
+                    const dh = displayHealth(item.health, item.attention_active);
+                    return dh === "none" ? (
+                      <span className="text-faint text-xs" title={HEALTH_LABEL[dh]}>
+                        -
+                      </span>
+                    ) : (
+                      <span
+                        role="img"
+                        aria-label={HEALTH_LABEL[dh]}
+                        className="inline-block h-3 w-3 rounded-full"
+                        style={{ background: HEALTH_COLOR_VAR[dh] }}
+                        title={
+                          item.attention_active
+                            ? `${HEALTH_LABEL[dh]} · 확인 필요`
+                            : HEALTH_LABEL[dh]
+                        }
+                      />
+                    );
+                  })()}
                 </Cell>
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* ── 우측 타임라인 (드래그 패닝) ── */}
@@ -325,7 +356,13 @@ export function ProjectTable({
               </div>
             </div>
 
-            {/* 행별 막대 */}
+            {/* 행별 막대 (본문만 세로 스크롤 — 좌측과 동기화, 스크롤바 숨김) */}
+            <div
+              ref={rightBodyRef}
+              onScroll={onRightScroll}
+              className="overflow-y-auto [&::-webkit-scrollbar]:hidden"
+              style={{ maxHeight: BODY_MAX, scrollbarWidth: "none" }}
+            >
             {items.map((item) => {
               const sIso = item.start_date ?? item.end_date;
               const eIso = item.end_date ?? item.start_date;
@@ -374,6 +411,7 @@ export function ProjectTable({
                 </div>
               );
             })}
+            </div>
 
             {/* 오늘 세로선 (전체 높이) + 라벨 */}
             <div

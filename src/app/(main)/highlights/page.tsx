@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, User, CalendarDays, Megaphone } from "lucide-react";
+import { Building2, User, CalendarDays, AlertTriangle } from "lucide-react";
 
 import {
   fetchWeeklyHighlights,
@@ -14,6 +14,7 @@ import {
   LIFECYCLE_LABEL,
   HEALTH_LABEL,
   HEALTH_COLOR_VAR,
+  displayHealth,
   type Health,
 } from "@/lib/domain/lifecycle";
 
@@ -45,7 +46,7 @@ function toLines(body: string): string[] {
     .filter(Boolean);
 }
 
-type SearchParams = Promise<{ detail?: string }>;
+type SearchParams = Promise<{ detail?: string; only?: string }>;
 
 export default async function HighlightsPage({
   searchParams,
@@ -54,22 +55,25 @@ export default async function HighlightsPage({
 }) {
   const sp = await searchParams;
   const items = await fetchWeeklyHighlights();
+  const onlyAttention = sp.only === "attention";
 
-  const sorted = [...items].sort((a, b) => {
+  const attentionCount = items.filter((i) => i.attention.active).length;
+  const latestDate = items.reduce(
+    (acc, i) => (i.latest_date > acc ? i.latest_date : acc),
+    "",
+  );
+
+  const base = onlyAttention ? items.filter((i) => i.attention.active) : items;
+  const sorted = [...base].sort((a, b) => {
+    // 확인 필요 과제를 최상단으로
+    if (a.attention.active !== b.attention.active)
+      return a.attention.active ? -1 : 1;
     const r = HEALTH_RANK[a.health] - HEALTH_RANK[b.health];
     if (r !== 0) return r;
     if (a.latest_date !== b.latest_date)
       return a.latest_date < b.latest_date ? 1 : -1;
     return a.name < b.name ? -1 : 1;
   });
-
-  const attention = items.filter(
-    (i) => i.health === "red" || i.health === "yellow",
-  ).length;
-  const latestDate = items.reduce(
-    (acc, i) => (i.latest_date > acc ? i.latest_date : acc),
-    "",
-  );
 
   const detail = sp.detail ? await fetchProjectDetail(sp.detail) : null;
   const detailEffect = detail ? await fetchEffectForProject(detail.id) : null;
@@ -89,12 +93,15 @@ export default async function HighlightsPage({
       {/* 요약 스트립 */}
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
         <StatCard label="진척 반영 과제" value={`${items.length}건`} sub="업데이트 1건 이상" />
-        <StatCard
-          label="주의·위험 과제"
-          value={`${attention}건`}
-          valueColor={attention > 0 ? "var(--health-red)" : undefined}
-          sub="즉시 확인 권장"
-        />
+        <Link href={onlyAttention ? "/highlights" : "/highlights?only=attention"}>
+          <StatCard
+            label="확인 필요 과제"
+            value={`${attentionCount}건`}
+            valueColor={attentionCount > 0 ? "#B45309" : undefined}
+            sub={onlyAttention ? "↩ 전체 보기" : "이슈·확인 항목 · 눌러서 필터"}
+            highlight={onlyAttention}
+          />
+        </Link>
         <StatCard
           label="최신 반영일"
           value={latestDate || "-"}
@@ -104,7 +111,9 @@ export default async function HighlightsPage({
 
       {sorted.length === 0 ? (
         <Card className="text-muted-foreground p-8 text-center text-sm">
-          아직 반영된 진척 내용이 없습니다.
+          {onlyAttention
+            ? "확인 필요로 표시된 과제가 없습니다."
+            : "아직 반영된 진척 내용이 없습니다."}
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2 xl:grid-cols-3">
@@ -129,13 +138,22 @@ export default async function HighlightsPage({
 function HighlightCard({ it }: { it: WeeklyHighlightItem }) {
   const mprs = MPRS_COLORS[it.mprs];
   const { tag, body } = splitTag(it.latest_content);
+  const attn = it.attention;
+  const dh = displayHealth(it.health, attn.active);
   return (
     <Link href={`/highlights?detail=${it.id}`}>
-      <Card className="p-hovercard relative overflow-hidden p-[18px] pl-[22px]">
+      <Card
+        className="p-hovercard relative overflow-hidden p-[18px] pl-[22px]"
+        style={
+          attn.active
+            ? { boxShadow: "inset 0 0 0 1.5px #F59E0B", background: "#FFFCF5" }
+            : undefined
+        }
+      >
         {/* 좌측 헬스 컬러바 */}
         <span
           className="absolute inset-y-0 left-0 w-[5px]"
-          style={{ background: HEALTH_COLOR_VAR[it.health] }}
+          style={{ background: HEALTH_COLOR_VAR[dh] }}
           aria-hidden
         />
         <div className="mb-2 flex items-center gap-2">
@@ -148,18 +166,28 @@ function HighlightCard({ it }: { it: WeeklyHighlightItem }) {
           <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold">
             {it.name}
           </span>
+          {attn.active && (
+            <span
+              className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+              style={{ background: "#FEF3C7", color: "#B45309" }}
+              title={attn.source === "manual" ? "PM 지정" : "주간보고 이슈 자동 감지"}
+            >
+              <AlertTriangle size={11} />
+              확인 필요
+            </span>
+          )}
         </div>
 
         <div className="text-muted-foreground mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]">
           <span
             className="inline-flex items-center gap-1 font-semibold"
-            style={{ color: healthTextColor(it.health) }}
+            style={{ color: healthTextColor(dh) }}
           >
             <span
               className="inline-block h-2 w-2 rounded-full"
-              style={{ background: HEALTH_COLOR_VAR[it.health] }}
+              style={{ background: HEALTH_COLOR_VAR[dh] }}
             />
-            {HEALTH_LABEL[it.health]}
+            {HEALTH_LABEL[dh]}
           </span>
           <span className="text-border-strong">·</span>
           <span>{LIFECYCLE_LABEL[it.lifecycle]}</span>
@@ -186,6 +214,15 @@ function HighlightCard({ it }: { it: WeeklyHighlightItem }) {
             </span>
           )}
         </div>
+        {attn.active && attn.note && (
+          <p
+            className="mb-2 flex gap-1.5 rounded-md px-2 py-1.5 text-[12px] font-medium leading-relaxed"
+            style={{ background: "#FEF3C7", color: "#7C4A03" }}
+          >
+            <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+            <span>{attn.note}</span>
+          </p>
+        )}
         <ul className="flex flex-col gap-1">
           {toLines(body).map((ln, i) => (
             <li
@@ -217,14 +254,23 @@ function StatCard({
   value,
   sub,
   valueColor,
+  highlight,
 }: {
   label: string;
   value: string;
   sub?: string;
   valueColor?: string;
+  highlight?: boolean;
 }) {
   return (
-    <Card className="p-4">
+    <Card
+      className="p-4 transition-colors"
+      style={
+        highlight
+          ? { boxShadow: "inset 0 0 0 1.5px #F59E0B", background: "#FFFCF5" }
+          : undefined
+      }
+    >
       <p className="text-muted-foreground text-xs">{label}</p>
       <p
         className="mt-1 text-2xl font-extrabold tabular-nums"

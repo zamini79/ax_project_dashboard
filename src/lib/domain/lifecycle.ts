@@ -97,6 +97,16 @@ export function effectiveHealth(
 }
 
 /**
+ * 표시용 신호등 승격 (순수): '확인 필요(이슈)'가 활성인데 정상(green)·미표시(none)이면
+ * 주의(yellow)로 올려 색만 바꾼다. 위험(red)·완료(completed)는 유지.
+ * ★ 색 표시 전용 — KPI 집계·필터는 원래 health를 그대로 쓴다(집계 왜곡 방지).
+ */
+export function displayHealth(health: Health, attentionActive: boolean): Health {
+  if (attentionActive && (health === "green" || health === "none")) return "yellow";
+  return health;
+}
+
+/**
  * 지연 여부 (순수): 종료일이 오늘보다 이전인데 아직 완료되지 않은 과제.
  * 날짜는 ISO "YYYY-MM-DD" 문자열 비교(사전식 = 시간순). 종료일 없으면 지연 아님.
  */

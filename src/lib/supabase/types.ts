@@ -651,6 +651,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          issue_note: string | null
           project_id: string
           raw_content: string | null
           source: Database["public"]["Enums"]["update_source"]
@@ -663,6 +664,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          issue_note?: string | null
           project_id: string
           raw_content?: string | null
           source?: Database["public"]["Enums"]["update_source"]
@@ -675,6 +677,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          issue_note?: string | null
           project_id?: string
           raw_content?: string | null
           source?: Database["public"]["Enums"]["update_source"]
@@ -708,6 +711,8 @@ export type Database = {
       }
       projects: {
         Row: {
+          attention_note: string | null
+          attention_override: Database["public"]["Enums"]["attention_override"]
           created_at: string
           description: string | null
           end_date: string | null
@@ -726,6 +731,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attention_note?: string | null
+          attention_override?: Database["public"]["Enums"]["attention_override"]
           created_at?: string
           description?: string | null
           end_date?: string | null
@@ -744,6 +751,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attention_note?: string | null
+          attention_override?: Database["public"]["Enums"]["attention_override"]
           created_at?: string
           description?: string | null
           end_date?: string | null
@@ -800,6 +809,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      attention_override: "auto" | "on" | "off"
       classification_method: "manual" | "rule" | "llm" | "unclassified"
       confluence_page_role:
         | "root"
@@ -949,6 +959,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      attention_override: ["auto", "on", "off"],
       classification_method: ["manual", "rule", "llm", "unclassified"],
       confluence_page_role: [
         "root",

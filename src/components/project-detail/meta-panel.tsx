@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import type { ProjectDetail } from "@/lib/repositories/projects";
-import { HEALTH_LABEL, HEALTH_COLOR_VAR } from "@/lib/domain/lifecycle";
+import { HEALTH_LABEL, HEALTH_COLOR_VAR, displayHealth } from "@/lib/domain/lifecycle";
 import { INVESTMENT_LABEL } from "@/lib/domain/investment";
 import { PAGE_ROLE_LABEL } from "@/lib/domain/updates";
 import {
@@ -23,13 +23,13 @@ export function MetaPanel({ project }: { project: ProjectDetail }) {
           <Field>진행률</Field>
           <span
             className="inline-flex items-center gap-1 text-xs font-medium"
-            title={`헬스: ${HEALTH_LABEL[project.health]}`}
+            title={`헬스: ${HEALTH_LABEL[displayHealth(project.health, project.attention.active)]}`}
           >
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ background: HEALTH_COLOR_VAR[project.health] }}
+              style={{ background: HEALTH_COLOR_VAR[displayHealth(project.health, project.attention.active)] }}
             />
-            {HEALTH_LABEL[project.health]}
+            {HEALTH_LABEL[displayHealth(project.health, project.attention.active)]}
           </span>
         </div>
         <div className="flex items-center gap-2">

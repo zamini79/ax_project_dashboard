@@ -16,6 +16,7 @@ import {
   HEALTH_LABEL,
   HEALTH_COLOR_VAR,
   HEALTH_KPI_ORDER,
+  displayHealth,
 } from "@/lib/domain/lifecycle";
 import { formatBudgetEok } from "@/lib/domain/format";
 import { dashboardHref, type DashboardState } from "./url";
@@ -178,7 +179,7 @@ export function PortfolioMap({
                   transform: `translate(-50%,-50%) scale(${isH ? 1.12 : 1})`,
                   borderRadius: 99,
                   background: MPRS_COLORS[p.mprs].main,
-                  border: `3px solid ${HEALTH_COLOR_VAR[p.health]}`,
+                  border: `3px solid ${HEALTH_COLOR_VAR[displayHealth(p.health, p.attention_active)]}`,
                   opacity: on ? (hover && !isH ? 0.5 : 0.92) : 0.1,
                   cursor: "pointer",
                   boxShadow: isH ? `0 6px 18px ${MPRS_COLORS[p.mprs].main}66` : "none",
@@ -218,9 +219,9 @@ export function PortfolioMap({
                 <span style={{ fontSize: 9.5, fontWeight: 700, background: MPRS_COLORS[hp.mprs].main, borderRadius: 4, padding: "1px 6px" }}>
                   {MPRS_LABEL[hp.mprs]}
                 </span>
-                <span style={{ width: 7, height: 7, borderRadius: 99, background: HEALTH_COLOR_VAR[hp.health] }} />
+                <span style={{ width: 7, height: 7, borderRadius: 99, background: HEALTH_COLOR_VAR[displayHealth(hp.health, hp.attention_active)] }} />
                 <span style={{ fontSize: 10, color: "rgba(255,255,255,.6)" }}>
-                  {HEALTH_LABEL[hp.health]}
+                  {HEALTH_LABEL[displayHealth(hp.health, hp.attention_active)]}
                 </span>
               </div>
               <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.3, marginBottom: 6 }}>

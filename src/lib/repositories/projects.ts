@@ -2,6 +2,11 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { type Lifecycle, type Health, effectiveHealth } from "@/lib/domain/lifecycle";
+import {
+  type AttentionOverride,
+  type AttentionState,
+  resolveAttention,
+} from "@/lib/domain/attention";
 
 /** 오늘 ISO(YYYY-MM-DD) — 표시용 진행상태 파생에 사용 */
 function todayISODate(): string {
@@ -38,6 +43,8 @@ export interface ProjectListItem {
   tags: string[];
   executed_budget: number;
   last_update_date: string | null;
+  /** '확인 필요' 활성 여부 (표시용 신호등 승격에 사용, 집계엔 미반영) */
+  attention_active: boolean;
 }
 
 export interface Headquarter {
@@ -58,11 +65,17 @@ interface RawProjectRow {
   end_date: string | null;
   total_budget: number | null;
   headquarter_id: string;
+  attention_override: AttentionOverride;
+  attention_note: string | null;
   headquarters: { name: string } | null;
   project_pms: {
     people: { name: string; departments: { name: string } | null } | null;
   }[];
-  project_updates: { update_date: string }[];
+  project_updates: {
+    update_date: string;
+    created_at: string;
+    issue_note: string | null;
+  }[];
   project_budget_monthly: { amount: number }[];
   project_ai_techs: { ai_techs: { name: string } | null }[];
   project_tags: { tags: { name: string } | null }[];
@@ -71,11 +84,12 @@ interface RawProjectRow {
 const PROJECT_SELECT = `
   id, name, mprs, investment_type, lifecycle, health, progress_pct,
   start_date, end_date, total_budget, headquarter_id,
+  attention_override, attention_note,
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
   project_ai_techs ( ai_techs ( name ) ),
   project_tags ( tags ( name ) ),
-  project_updates ( update_date ),
+  project_updates ( update_date, created_at, issue_note ),
   project_budget_monthly ( amount )
 ` as const;
 
@@ -110,11 +124,17 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     0,
   );
 
-  const last_update_date =
-    (row.project_updates ?? [])
-      .map((u) => u.update_date)
-      .sort()
-      .at(-1) ?? null;
+  const sortedUpdates = [...(row.project_updates ?? [])].sort((a, b) => {
+    if (a.update_date !== b.update_date)
+      return a.update_date < b.update_date ? 1 : -1;
+    return a.created_at < b.created_at ? 1 : -1;
+  });
+  const last_update_date = sortedUpdates[0]?.update_date ?? null;
+  const attention_active = resolveAttention(
+    row.attention_override,
+    sortedUpdates[0]?.issue_note ?? null,
+    row.attention_note,
+  ).active;
 
   const ai_techs = (row.project_ai_techs ?? [])
     .map((t) => t.ai_techs?.name)
@@ -150,6 +170,7 @@ function mapRowToItem(row: RawProjectRow): ProjectListItem {
     tags,
     executed_budget,
     last_update_date,
+    attention_active,
   };
 }
 
@@ -187,6 +208,8 @@ export interface WeeklyHighlightItem {
   latest_source: UpdateSource;
   latest_source_url: string | null;
   update_count: number;
+  /** '확인 필요' 유효 상태 (일정 신호등과 독립) */
+  attention: AttentionState;
 }
 
 interface RawHighlightRow {
@@ -198,6 +221,8 @@ interface RawHighlightRow {
   progress_pct: number;
   start_date: string | null;
   end_date: string | null;
+  attention_override: AttentionOverride;
+  attention_note: string | null;
   headquarters: { name: string } | null;
   project_pms: { people: { name: string } | null }[];
   project_updates: {
@@ -206,14 +231,16 @@ interface RawHighlightRow {
     source: UpdateSource;
     source_url: string | null;
     created_at: string;
+    issue_note: string | null;
   }[];
 }
 
 const HIGHLIGHT_SELECT = `
   id, name, mprs, lifecycle, health, progress_pct, start_date, end_date,
+  attention_override, attention_note,
   headquarters ( name ),
   project_pms ( people ( name ) ),
-  project_updates ( update_date, content, source, source_url, created_at )
+  project_updates ( update_date, content, source, source_url, created_at, issue_note )
 ` as const;
 
 /**
@@ -264,6 +291,11 @@ export async function fetchWeeklyHighlights(): Promise<WeeklyHighlightItem[]> {
       latest_source: latest.source,
       latest_source_url: latest.source_url,
       update_count: updates.length,
+      attention: resolveAttention(
+        row.attention_override,
+        latest.issue_note,
+        row.attention_note,
+      ),
     });
   }
   return items;
@@ -283,6 +315,7 @@ export interface ProjectUpdateItem {
   page_role: PageRole | null;
   page_title: string | null;
   created_at: string;
+  issue_note: string | null;
 }
 
 export interface ProjectConnectedPage {
@@ -315,6 +348,9 @@ export interface ProjectDetail {
   monthly: { id: string; year_month: string; amount: number }[];
   pages: ProjectConnectedPage[];
   updates: ProjectUpdateItem[];
+  attention: AttentionState;
+  attention_override: AttentionOverride;
+  attention_note: string | null;
 }
 
 interface RawDetailRow {
@@ -330,6 +366,8 @@ interface RawDetailRow {
   end_date: string | null;
   total_budget: number | null;
   last_synced_at: string | null;
+  attention_override: AttentionOverride;
+  attention_note: string | null;
   headquarters: { name: string } | null;
   project_pms: {
     people: { name: string; departments: { name: string } | null } | null;
@@ -355,6 +393,7 @@ interface RawDetailRow {
     source: UpdateSource;
     source_url: string | null;
     created_at: string;
+    issue_note: string | null;
     author: { name: string } | null;
     source_page: { page_role: PageRole; title: string | null } | null;
   }[];
@@ -363,6 +402,7 @@ interface RawDetailRow {
 const DETAIL_SELECT = `
   id, name, description, mprs, investment_type, lifecycle, health, progress_pct,
   start_date, end_date, total_budget, last_synced_at,
+  attention_override, attention_note,
   headquarters ( name ),
   project_pms ( people ( name, departments ( name ) ) ),
   project_stakeholders ( departments ( name ), people ( name ) ),
@@ -371,7 +411,7 @@ const DETAIL_SELECT = `
   project_budget_monthly ( id, year_month, amount ),
   project_confluence_pages ( id, title, page_role, confluence_page_id, is_active ),
   project_updates (
-    id, update_date, content, source, source_url, created_at,
+    id, update_date, content, source, source_url, created_at, issue_note,
     author:people!project_updates_author_id_fkey ( name ),
     source_page:project_confluence_pages!project_updates_source_page_id_fkey ( page_role, title )
   )
@@ -444,12 +484,19 @@ export async function fetchProjectDetail(
       page_role: u.source_page?.page_role ?? null,
       page_title: u.source_page?.title ?? null,
       created_at: u.created_at,
+      issue_note: u.issue_note,
     }))
     .sort((a, b) => {
       if (a.update_date !== b.update_date)
         return a.update_date < b.update_date ? 1 : -1;
       return a.created_at < b.created_at ? 1 : -1;
     });
+
+  const attention = resolveAttention(
+    data.attention_override,
+    updates[0]?.issue_note ?? null,
+    data.attention_note,
+  );
 
   return {
     id: data.id,
@@ -481,7 +528,28 @@ export async function fetchProjectDetail(
     monthly,
     pages,
     updates,
+    attention,
+    attention_override: data.attention_override,
+    attention_note: data.attention_note,
   };
+}
+
+/** '확인 필요' 수동 오버라이드 저장 (auto/on/off + 메모). D-014: DB 접근은 여기 경유. */
+export async function setProjectAttention(
+  id: string,
+  override: AttentionOverride,
+  note: string | null,
+): Promise<void> {
+  if (!UUID_RE.test(id)) throw new Error("잘못된 과제 ID입니다.");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      attention_override: override,
+      attention_note: note && note.trim() ? note.trim() : null,
+    })
+    .eq("id", id);
+  if (error) throw new Error(`확인 필요 저장 실패: ${error.message}`);
 }
 
 // ============================================

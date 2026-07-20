@@ -15,8 +15,10 @@ import {
   archiveProject,
   fetchHeadquarters,
   fetchProjectEditData,
+  setProjectAttention,
   type ProjectWriteInput,
 } from "@/lib/repositories/projects";
+import type { AttentionOverride } from "@/lib/domain/attention";
 import {
   fetchDepartments,
   fetchPeople,
@@ -303,6 +305,31 @@ export async function archiveProjectAction(
   revalidatePath("/projects");
   revalidatePath("/budget");
   revalidatePath("/performance");
+  return { ok: true };
+}
+
+// ── '확인 필요' 오버라이드 ──
+
+const ATTENTION_VALUES: AttentionOverride[] = ["auto", "on", "off"];
+
+/** '확인 필요' 수동 오버라이드 저장 (auto/on/off + 메모) */
+export async function setAttentionAction(
+  projectId: string,
+  override: AttentionOverride,
+  note: string | null,
+): Promise<{ ok: true } | { error: string }> {
+  if (!ATTENTION_VALUES.includes(override)) {
+    return { error: "잘못된 값입니다." };
+  }
+  try {
+    await setProjectAttention(projectId, override, override === "on" ? note : null);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "저장에 실패했습니다." };
+  }
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/highlights");
+  revalidatePath(`/projects/${projectId}`);
   return { ok: true };
 }
 
