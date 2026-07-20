@@ -170,6 +170,106 @@ export async function fetchHeadquarters(): Promise<Headquarter[]> {
 }
 
 // ============================================
+// 금주 주요 사항 (과제별 최신 업데이트 집약)
+// ============================================
+
+export interface WeeklyHighlightItem {
+  id: string;
+  name: string;
+  mprs: Mprs;
+  lifecycle: Lifecycle;
+  health: Health;
+  progress_pct: number;
+  headquarter_name: string;
+  pms: string[];
+  latest_date: string;
+  latest_content: string;
+  latest_source: UpdateSource;
+  latest_source_url: string | null;
+  update_count: number;
+}
+
+interface RawHighlightRow {
+  id: string;
+  name: string;
+  mprs: Mprs;
+  lifecycle: Lifecycle;
+  health: Health;
+  progress_pct: number;
+  start_date: string | null;
+  end_date: string | null;
+  headquarters: { name: string } | null;
+  project_pms: { people: { name: string } | null }[];
+  project_updates: {
+    update_date: string;
+    content: string;
+    source: UpdateSource;
+    source_url: string | null;
+    created_at: string;
+  }[];
+}
+
+const HIGHLIGHT_SELECT = `
+  id, name, mprs, lifecycle, health, progress_pct, start_date, end_date,
+  headquarters ( name ),
+  project_pms ( people ( name ) ),
+  project_updates ( update_date, content, source, source_url, created_at )
+` as const;
+
+/**
+ * '금주 주요 사항' 페이지용 조회.
+ * 업데이트가 1건 이상 있는 비-아카이브 과제만, 과제별 '최신' 업데이트 1건과 함께 반환.
+ * 최신 판정: update_date DESC → created_at DESC. 정렬·강조는 페이지(도메인)에서 처리.
+ */
+export async function fetchWeeklyHighlights(): Promise<WeeklyHighlightItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .select(HIGHLIGHT_SELECT)
+    .eq("is_archived", false)
+    .returns<RawHighlightRow[]>();
+  if (error) throw new Error(`주요 사항 조회 실패: ${error.message}`);
+
+  const today = todayISODate();
+  const items: WeeklyHighlightItem[] = [];
+  for (const row of data ?? []) {
+    const updates = row.project_updates ?? [];
+    if (updates.length === 0) continue;
+    const latest = [...updates].sort((a, b) => {
+      if (a.update_date !== b.update_date)
+        return a.update_date < b.update_date ? 1 : -1;
+      return a.created_at < b.created_at ? 1 : -1;
+    })[0];
+    items.push({
+      id: row.id,
+      name: row.name,
+      mprs: row.mprs,
+      lifecycle: row.lifecycle,
+      health: effectiveHealth(
+        {
+          lifecycle: row.lifecycle,
+          health: row.health,
+          start_date: row.start_date,
+          end_date: row.end_date,
+        },
+        today,
+      ),
+      progress_pct: row.progress_pct,
+      headquarter_name: row.headquarters?.name ?? "-",
+      pms: (row.project_pms ?? [])
+        .map((pm) => pm.people?.name)
+        .filter((n): n is string => n != null),
+      latest_date: latest.update_date,
+      latest_content: latest.content,
+      latest_source: latest.source,
+      latest_source_url: latest.source_url,
+      update_count: updates.length,
+    });
+  }
+  return items;
+}
+
+// ============================================
 // 과제 상세 (D-024 / §7.3)
 // ============================================
 

@@ -61,7 +61,7 @@ export function UpdateTimeline({
             value="atlassian_sync"
             active={activeSource === "atlassian_sync"}
           >
-            Atlassian
+            Confluence
           </SourceTab>
         </div>
 

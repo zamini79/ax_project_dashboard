@@ -7,6 +7,7 @@ import {
   List,
   TrendingUp,
   CircleDollarSign,
+  Megaphone,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ const TABS = [
   { href: "/projects", label: "과제 현황", icon: List },
   { href: "/performance", label: "성과 현황", icon: TrendingUp },
   { href: "/budget", label: "투자비 현황", icon: CircleDollarSign },
+  { href: "/highlights", label: "금주 주요 사항", icon: Megaphone },
 ] as const;
 
 /** 상단 플로팅 필 내비 (active = navy 배경 + 흰 텍스트) */

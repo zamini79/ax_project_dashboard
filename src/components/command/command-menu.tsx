@@ -12,6 +12,7 @@ import {
   CircleDollarSign,
   Plus,
   Building2,
+  Megaphone,
 } from "lucide-react";
 
 import { MPRS_COLORS, MPRS_LABEL, type Mprs } from "@/lib/domain/mprs";
@@ -39,6 +40,7 @@ const NAV = [
   { href: "/projects", label: "과제 현황", sub: "표 · 포트폴리오 맵", Icon: List },
   { href: "/performance", label: "성과 현황", sub: "운영 효과지표", Icon: TrendingUp },
   { href: "/budget", label: "투자비 현황", sub: "CAPEX 집행", Icon: CircleDollarSign },
+  { href: "/highlights", label: "금주 주요 사항", sub: "과제별 최신 진척", Icon: Megaphone },
   { href: "/projects/new", label: "새 과제 등록", sub: "생성 폼 열기", Icon: Plus },
   { href: "/masters", label: "마스터 관리", sub: "본부·부서·사람·AI기술", Icon: Building2 },
 ] as const;

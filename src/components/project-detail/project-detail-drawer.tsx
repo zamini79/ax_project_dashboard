@@ -281,7 +281,7 @@ export function ProjectDetailDrawer({
           {/* 업데이트 타임라인 */}
           <Card>
             <div className="mb-3.5 flex items-center justify-between">
-              <span className="text-[13px] font-bold">업데이트 타임라인</span>
+              <span className="text-[13px] font-bold">주요 진행 상황</span>
               <UpdateCompose projectId={p.id} defaultDate={todayISO} />
             </div>
             {p.updates.length === 0 ? (

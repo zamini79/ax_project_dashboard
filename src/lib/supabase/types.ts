@@ -652,6 +652,7 @@ export type Database = {
           created_at: string
           id: string
           project_id: string
+          raw_content: string | null
           source: Database["public"]["Enums"]["update_source"]
           source_page_id: string | null
           source_url: string | null
@@ -663,6 +664,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id: string
+          raw_content?: string | null
           source?: Database["public"]["Enums"]["update_source"]
           source_page_id?: string | null
           source_url?: string | null
@@ -674,6 +676,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_id?: string
+          raw_content?: string | null
           source?: Database["public"]["Enums"]["update_source"]
           source_page_id?: string | null
           source_url?: string | null
