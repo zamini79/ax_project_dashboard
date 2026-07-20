@@ -18,6 +18,7 @@ import {
 import { performanceSummary } from "@/lib/domain/analytics";
 import { KpiStrip } from "@/components/dashboard/kpi-strip";
 import { ProjectTable } from "@/components/dashboard/project-table";
+import { ProjectCards } from "@/components/dashboard/project-cards";
 import { PortfolioMap } from "@/components/dashboard/portfolio-map";
 import { ScheduleHomeButton } from "@/components/dashboard/schedule-home-button";
 import {
@@ -25,6 +26,7 @@ import {
   parseDir,
   parseYear,
   parseMprs,
+  parseView,
   dashboardHref,
   type ViewMode,
 } from "@/components/dashboard/url";
@@ -72,7 +74,7 @@ export async function ProjectExplorer({
   ]);
 
   const filter = parseFilter(sp);
-  const view: ViewMode = sp.view === "map" ? "map" : "table";
+  const view: ViewMode = parseView(sp.view);
   const now = new Date();
   const year = parseYear(sp.year, now.getFullYear());
   const sort = parseSort(sp.sort);
@@ -317,6 +319,11 @@ export async function ProjectExplorer({
               active={view === "table"}
             />
             <ViewTab
+              href={dashboardHref(state, { view: "card" })}
+              label="카드"
+              active={view === "card"}
+            />
+            <ViewTab
               href={dashboardHref(state, { view: "map" })}
               label="맵"
               active={view === "map"}
@@ -326,6 +333,8 @@ export async function ProjectExplorer({
       </div>
       {view === "table" ? (
         <ProjectTable items={sortedItems} state={state} todayISO={todayISO} />
+      ) : view === "card" ? (
+        <ProjectCards items={sortedItems} state={state} todayISO={todayISO} />
       ) : (
         <PortfolioMap items={visible} state={state} />
       )}

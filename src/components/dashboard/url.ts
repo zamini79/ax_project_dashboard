@@ -24,7 +24,9 @@ export function parseGroup(value: string | undefined): GroupMode {
 }
 
 export function parseView(value: string | undefined): ViewMode {
-  return value === "table" ? "table" : "card";
+  if (value === "map") return "map";
+  if (value === "card") return "card";
+  return "table";
 }
 
 export function parseSort(value: string | undefined): SortKey | null {
@@ -119,7 +121,7 @@ export function dashboardHref(
   if (progress) params.set("progress", progress);
   if (headquarterId) params.set("hq", headquarterId);
   if (group === "mprs") params.set("group", "mprs");
-  if (view === "table" || view === "map") {
+  if (view === "table" || view === "map" || view === "card") {
     params.set("view", view);
     if (view === "table") params.set("year", String(year));
   }
