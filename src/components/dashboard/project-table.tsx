@@ -69,22 +69,28 @@ export function ProjectTable({
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ startX: number; startScroll: number } | null>(null);
 
-  // ── 본문 세로 스크롤 동기화 (좌측 정보 컬럼 ↔ 우측 타임라인) ──
+  // ── 본문 세로 스크롤 동기화 (좌측 정보 컬럼 ↔ 우측 타임라인 ↔ 표 끝 스크롤바) ──
   const leftBodyRef = useRef<HTMLDivElement>(null);
   const rightBodyRef = useRef<HTMLDivElement>(null);
+  const vScrollbarRef = useRef<HTMLDivElement>(null);
   const vSyncing = useRef(false);
-  function syncVScroll(from: HTMLDivElement | null, to: HTMLDivElement | null) {
-    if (!from || !to || vSyncing.current) return;
+  function syncVScroll(from: HTMLDivElement | null) {
+    if (!from || vSyncing.current) return;
     vSyncing.current = true;
-    to.scrollTop = from.scrollTop;
+    for (const el of [
+      leftBodyRef.current,
+      rightBodyRef.current,
+      vScrollbarRef.current,
+    ]) {
+      if (el && el !== from) el.scrollTop = from.scrollTop;
+    }
     requestAnimationFrame(() => {
       vSyncing.current = false;
     });
   }
-  const onLeftScroll = () =>
-    syncVScroll(leftBodyRef.current, rightBodyRef.current);
-  const onRightScroll = () =>
-    syncVScroll(rightBodyRef.current, leftBodyRef.current);
+  const onLeftScroll = () => syncVScroll(leftBodyRef.current);
+  const onRightScroll = () => syncVScroll(rightBodyRef.current);
+  const onVScrollbarScroll = () => syncVScroll(vScrollbarRef.current);
 
   // ── 타임라인 범위 계산 (모든 과제 일정 + 표시연도 + 오늘 포함) ──
   const idxs: number[] = [];
@@ -217,12 +223,12 @@ export function ProjectTable({
               </div>
             ))}
           </div>
-          {/* 행 (본문만 세로 스크롤 — 기본 20행) */}
+          {/* 행 (본문만 세로 스크롤 — 기본 20행, 스크롤바는 표 오른쪽 끝 거터에 표시) */}
           <div
             ref={leftBodyRef}
             onScroll={onLeftScroll}
-            className="overflow-y-auto"
-            style={{ maxHeight: BODY_MAX }}
+            className="overflow-y-auto [&::-webkit-scrollbar]:hidden"
+            style={{ maxHeight: BODY_MAX, scrollbarWidth: "none" }}
           >
           {items.map((item, idx) => {
             const mprs = MPRS_COLORS[item.mprs];
@@ -442,6 +448,21 @@ export function ProjectTable({
             </div>
           </div>
         </div>
+
+        {/* ── 세로 스크롤바 거터 (표 오른쪽 끝) — 본문과 동기화, 오버레이 대신 상시 표시 ── */}
+        {items.length * ROW_H > BODY_MAX && (
+          <div aria-hidden className="flex shrink-0 flex-col border-l">
+            <div className="border-b" style={{ height: HEAD_H }} />
+            <div
+              ref={vScrollbarRef}
+              onScroll={onVScrollbarScroll}
+              className="overflow-y-auto [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-black/25 [&::-webkit-scrollbar-thumb]:bg-clip-padding hover:[&::-webkit-scrollbar-thumb]:bg-black/40"
+              style={{ maxHeight: BODY_MAX, scrollbarWidth: "thin" }}
+            >
+              <div style={{ width: 1, height: items.length * ROW_H }} />
+            </div>
+          </div>
+        )}
       </div>
   );
 }
