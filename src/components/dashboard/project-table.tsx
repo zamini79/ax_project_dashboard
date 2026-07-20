@@ -39,7 +39,6 @@ const LEFT_COLS: LeftCol[] = [
   { key: "hq", label: "본부", width: "w-36 shrink-0", sort: "hq", align: "center" },
   { key: "name", label: "과제명", width: "flex-1 min-w-0", sort: "name" },
   { key: "pm", label: "PM", width: "w-28 shrink-0", sort: "pm" },
-  { key: "aitech", label: "AI기술", width: "w-28 shrink-0", sort: "aitech" },
   { key: "lifecycle", label: "과제현황", width: "w-24 shrink-0", sort: "lifecycle" },
   { key: "health", label: "진행", width: "w-16 shrink-0", sort: "health", align: "center" },
 ];
@@ -278,11 +277,6 @@ export function ProjectTable({
                     {item.pms.length
                       ? item.pms.map((p) => p.name).join(", ")
                       : "-"}
-                  </span>
-                </Cell>
-                <Cell col="w-28 shrink-0" muted truncate>
-                  <span title={item.ai_techs.join(", ")}>
-                    {item.ai_techs.length ? item.ai_techs.join(", ") : "-"}
                   </span>
                 </Cell>
                 <Cell col="w-24 shrink-0" truncate>
