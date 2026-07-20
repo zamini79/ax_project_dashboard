@@ -9,6 +9,7 @@ import {
 import { fetchEffectForProject } from "@/lib/repositories/effects";
 import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import { Card } from "@/components/ui/card";
+import { Donut } from "@/components/charts/charts";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
 import {
   LIFECYCLE_LABEL,
@@ -140,65 +141,72 @@ function HighlightCard({ it }: { it: WeeklyHighlightItem }) {
   const { tag, body } = splitTag(it.latest_content);
   const attn = it.attention;
   const dh = displayHealth(it.health, attn.active);
+  // 링 색 = 헬스 (과제 카드 뷰와 동일 규칙). 미표시(none)는 중립 회색.
+  const ringColor = dh === "none" ? "#C7CBD3" : HEALTH_COLOR_VAR[dh];
+  const pct = Math.min(100, Math.max(0, it.progress_pct));
   return (
     <Link href={`/highlights?detail=${it.id}`}>
       <Card
-        className="p-hovercard relative overflow-hidden p-[18px] pl-[22px]"
+        className="p-hovercard relative overflow-hidden p-[18px]"
         style={
           attn.active
             ? { boxShadow: "inset 0 0 0 1.5px #F59E0B", background: "#FFFCF5" }
             : undefined
         }
       >
-        {/* 좌측 헬스 컬러바 */}
-        <span
-          className="absolute inset-y-0 left-0 w-[5px]"
-          style={{ background: HEALTH_COLOR_VAR[dh] }}
-          aria-hidden
-        />
-        <div className="mb-2 flex items-center gap-2">
-          <span
-            className="inline-flex h-[22px] shrink-0 items-center rounded px-1.5 text-[11px] font-bold"
-            style={{ background: mprs.bg, color: mprs.text }}
-          >
-            {MPRS_LABEL[it.mprs]}
-          </span>
-          <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold">
-            {it.name}
-          </span>
-          {attn.active && (
-            <span
-              className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold"
-              style={{ background: "#FEF3C7", color: "#B45309" }}
-              title={attn.source === "manual" ? "PM 지정" : "주간보고 이슈 자동 감지"}
-            >
-              <AlertTriangle size={11} />
-              확인 필요
-            </span>
-          )}
-        </div>
+        {/* 상단 — 좌: 배지·과제명·메타 / 우: 진행률 링(색=헬스) */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center gap-2">
+              <span
+                className="inline-flex h-[22px] shrink-0 items-center rounded px-1.5 text-[11px] font-bold"
+                style={{ background: mprs.bg, color: mprs.text }}
+              >
+                {MPRS_LABEL[it.mprs]}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold">
+                {it.name}
+              </span>
+              {attn.active && (
+                <span
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+                  style={{ background: "#FEF3C7", color: "#B45309" }}
+                  title={attn.source === "manual" ? "PM 지정" : "주간보고 이슈 자동 감지"}
+                >
+                  <AlertTriangle size={11} />
+                  확인 필요
+                </span>
+              )}
+            </div>
 
-        <div className="text-muted-foreground mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]">
-          <span
-            className="inline-flex items-center gap-1 font-semibold"
-            style={{ color: healthTextColor(dh) }}
-          >
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ background: HEALTH_COLOR_VAR[dh] }}
-            />
-            {HEALTH_LABEL[dh]}
-          </span>
-          <span className="text-border-strong">·</span>
-          <span>{LIFECYCLE_LABEL[it.lifecycle]}</span>
-          <span className="flex items-center gap-1">
-            <Building2 size={13} />
-            {it.headquarter_name}
-          </span>
-          <span className="flex items-center gap-1">
-            <User size={13} />
-            {it.pms.join(", ") || "PM 미정"}
-          </span>
+            <div className="text-muted-foreground mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]">
+              <span>{LIFECYCLE_LABEL[it.lifecycle]}</span>
+              <span className="flex items-center gap-1">
+                <Building2 size={13} />
+                {it.headquarter_name}
+              </span>
+              <span className="flex items-center gap-1">
+                <User size={13} />
+                {it.pms.join(", ") || "PM 미정"}
+              </span>
+            </div>
+          </div>
+          <div className="shrink-0" title={`진행률 ${pct}% · ${HEALTH_LABEL[dh]}`}>
+            <Donut
+              size={56}
+              thickness={6}
+              gap={0}
+              ariaLabel={`진행률 ${pct}% · ${HEALTH_LABEL[dh]}`}
+              segments={[
+                { value: pct, color: ringColor },
+                { value: 100 - pct, color: "transparent" },
+              ]}
+            >
+              <span className="text-[12px] font-extrabold tabular-nums">
+                {pct}%
+              </span>
+            </Donut>
+          </div>
         </div>
 
         <div className="mb-1.5 flex items-center gap-1.5">
@@ -240,13 +248,6 @@ function HighlightCard({ it }: { it: WeeklyHighlightItem }) {
       </Card>
     </Link>
   );
-}
-
-function healthTextColor(h: Health): string {
-  if (h === "red") return "var(--health-red)";
-  if (h === "yellow") return "#92660A";
-  if (h === "green") return "var(--health-green)";
-  return "var(--muted-foreground)";
 }
 
 function StatCard({
