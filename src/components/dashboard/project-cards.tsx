@@ -21,8 +21,9 @@ function ym(iso: string | null): string | null {
 
 /**
  * 과제 카드 그리드 뷰 — 표/맵과 나란한 3번째 뷰.
- * 레이아웃은 카드 킷 #22(뮤트 인트로 줄 + 헤드라인 + 본문) 기반,
- * 우측에 진행률 링(MPRS 색). 좌측 컬러바=헬스, 상단 배지=MPRS·라이프사이클 규칙 유지.
+ * 레이아웃은 카드 킷 #22(뮤트 인트로 줄 + 헤드라인 + 본문) 기반.
+ * 상태 색은 우측 진행률 링 하나로 통합 — 링 색 = 헬스(확인 필요 승격 반영).
+ * 상단 배지=MPRS·라이프사이클 규칙 유지.
  */
 export function ProjectCards({
   items,
@@ -65,6 +66,8 @@ function ProjectCard({
 }) {
   const mprs = MPRS_COLORS[item.mprs];
   const dh = displayHealth(item.health, item.attention_active);
+  // 링 색 = 헬스. 미표시(none)는 진행률이 안 보이지 않도록 중립 회색.
+  const ringColor = dh === "none" ? "#C7CBD3" : HEALTH_COLOR_VAR[dh];
   const pct = Math.min(100, Math.max(0, item.progress_pct));
   const start = ym(item.start_date);
   const end = ym(item.end_date);
@@ -72,15 +75,7 @@ function ProjectCard({
 
   return (
     <Link href={dashboardHref(state, { detail: item.id })} scroll={false}>
-      <Card className="p-hovercard relative flex h-full flex-col overflow-hidden rounded-[20px] p-[18px] pl-[22px]">
-        {/* 좌측 헬스 컬러바 */}
-        <span
-          className="absolute inset-y-0 left-0 w-[5px]"
-          style={{ background: HEALTH_COLOR_VAR[dh] }}
-          title={HEALTH_LABEL[dh]}
-          aria-hidden
-        />
-
+      <Card className="p-hovercard relative flex h-full flex-col overflow-hidden rounded-[20px] p-[18px]">
         {/* 상단 배지 줄 — MPRS · 라이프사이클 (+ 지연 / 확인 필요) */}
         <div className="mb-2 flex items-center gap-1.5">
           <span
@@ -138,9 +133,9 @@ function ProjectCard({
               size={56}
               thickness={6}
               gap={0}
-              ariaLabel={`진행률 ${pct}%`}
+              ariaLabel={`진행률 ${pct}% · ${HEALTH_LABEL[dh]}`}
               segments={[
-                { value: pct, color: mprs.main },
+                { value: pct, color: ringColor },
                 { value: 100 - pct, color: "transparent" },
               ]}
             >
