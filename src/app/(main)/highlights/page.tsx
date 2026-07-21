@@ -8,6 +8,7 @@ import {
 } from "@/lib/repositories/projects";
 import { fetchEffectForProject } from "@/lib/repositories/effects";
 import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
+import { SyncButton } from "@/components/highlights/sync-button";
 import { Card } from "@/components/ui/card";
 import { Donut } from "@/components/charts/charts";
 import { MPRS_COLORS, MPRS_LABEL } from "@/lib/domain/mprs";
@@ -83,12 +84,15 @@ export default async function HighlightsPage({
 
   return (
     <main className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-4 px-6 py-5">
-      <div>
-        <h1 className="text-xl font-extrabold tracking-tight">금주 주요 사항</h1>
-        <p className="text-muted-foreground mt-0.5 text-[12.5px]">
-          과제별 최신 진척·이슈를 한눈에 모아 봅니다. (Confluence 주간보고 동기화
-          내용 기준)
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-extrabold tracking-tight">금주 주요 사항</h1>
+          <p className="text-muted-foreground mt-0.5 text-[12.5px]">
+            과제별 최신 진척·이슈를 한눈에 모아 봅니다. (Confluence 주간보고 동기화
+            내용 기준)
+          </p>
+        </div>
+        <SyncButton lastSynced={latestDate || null} />
       </div>
 
       {/* 요약 스트립 */}
