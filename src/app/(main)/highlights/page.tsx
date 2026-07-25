@@ -92,7 +92,7 @@ export default async function HighlightsPage({
             내용 기준)
           </p>
         </div>
-        <SyncButton lastSynced={latestDate || null} />
+        <SyncButton latestWeek={latestDate || null} />
       </div>
 
       {/* 요약 스트립 */}
@@ -108,9 +108,9 @@ export default async function HighlightsPage({
           />
         </Link>
         <StatCard
-          label="최신 반영일"
+          label="최신 반영 주차"
           value={latestDate || "-"}
-          sub="가장 최근 동기화된 주차"
+          sub="Confluence 주간보고 기준"
         />
       </div>
 

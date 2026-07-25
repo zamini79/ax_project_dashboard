@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  * 클릭 → Confluence 동기화 서버 액션 실행 → 결과 메시지를 배너로 표시.
  * 현재는 사내 IP 정책으로 비활성 상태라 안내 메시지가 뜬다. (사내 이관 후 실동작)
  */
-export function SyncButton({ lastSynced }: { lastSynced?: string | null }) {
+export function SyncButton({ latestWeek }: { latestWeek?: string | null }) {
   const [pending, start] = useTransition();
   const [result, setResult] = useState<SyncResult | null>(null);
 
@@ -33,9 +33,9 @@ export function SyncButton({ lastSynced }: { lastSynced?: string | null }) {
   return (
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex items-center gap-2.5">
-        {lastSynced && (
+        {latestWeek && (
           <span className="text-muted-foreground text-[11.5px]">
-            마지막 동기화 {lastSynced}
+            최신 반영 주차 {latestWeek}
           </span>
         )}
         <button
