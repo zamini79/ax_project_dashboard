@@ -107,6 +107,149 @@ export function effectsSummary(effects: ProjectEffect[]): EffectsSummary {
 }
 
 // ============================================
+// 사용성 지표 기반 Biz Impact 요약 + 성과 KPI 합산
+// ============================================
+
+const MANWON = 10_000; // 1만원
+const HOURLY_WON = 33_700; // 시간당 인건비 3.37만원 (산정기준 공통 전제)
+
+export interface BizImpactSummary {
+  projectCount: number;
+  /** 누계 실측 절감효과(원) */
+  cumulativeWon: number;
+  /** 연환산 절감효과(원) — 관측 기간을 1년으로 환산 */
+  annualizedWon: number;
+  /** 연환산 절감시간(h/년) — unit_hours가 있는 과제만 */
+  annualizedHours: number;
+  /** 시간 환산이 가능한 과제 수 */
+  hoursProjectCount: number;
+  /** 단가 미정(효과 산정 전) 과제 수 */
+  unpricedCount: number;
+  /** 대상 과제 투자비 합(원) */
+  budgetWon: number;
+}
+
+/**
+ * 기간 실측치를 연 단위로 환산 (순수).
+ * 관측 기간이 1년 이상이면 최근 1년 실적을, 미만이면 기간 평균 × 1년으로 환산한다.
+ * (과제별 관측 기간이 21~46주로 달라 단순 합산은 연간 지표로 쓸 수 없음)
+ */
+function annualize(
+  values: number[],
+  periodsPerYear: number,
+): number {
+  if (values.length === 0) return 0;
+  if (values.length >= periodsPerYear) {
+    return values.slice(-periodsPerYear).reduce((a, v) => a + v, 0);
+  }
+  const sum = values.reduce((a, v) => a + v, 0);
+  return (sum / values.length) * periodsPerYear;
+}
+
+/** 사용성 지표 기반 Biz Impact 요약 (순수). 금액은 만원→원으로 환산해 반환. */
+export function bizImpactSummary(
+  items: {
+    unitHours: number | null;
+    budgetWon: number | null;
+    unitValueManwon: number | null;
+    points: { periodKind: "week" | "month"; callCount: number; impactManwon: number }[];
+  }[],
+): BizImpactSummary {
+  let cumulativeManwon = 0;
+  let annualizedManwon = 0;
+  let annualizedHours = 0;
+  let hoursProjectCount = 0;
+  let unpricedCount = 0;
+  let budgetWon = 0;
+
+  for (const it of items) {
+    const perYear = it.points[0]?.periodKind === "month" ? 12 : 52;
+    cumulativeManwon += it.points.reduce((a, p) => a + p.impactManwon, 0);
+    annualizedManwon += annualize(
+      it.points.map((p) => p.impactManwon),
+      perYear,
+    );
+    if (it.unitHours != null) {
+      const annualCalls = annualize(
+        it.points.map((p) => p.callCount),
+        perYear,
+      );
+      annualizedHours += annualCalls * it.unitHours;
+      hoursProjectCount += 1;
+    }
+    if (it.unitValueManwon == null) unpricedCount += 1;
+    budgetWon += it.budgetWon ?? 0;
+  }
+
+  return {
+    projectCount: items.length,
+    cumulativeWon: Math.round(cumulativeManwon * MANWON),
+    annualizedWon: Math.round(annualizedManwon * MANWON),
+    annualizedHours: Math.round(annualizedHours),
+    hoursProjectCount,
+    unpricedCount,
+    budgetWon,
+  };
+}
+
+export interface CombinedPerformanceKpi {
+  /** 효과가 확인된 과제 수 (성과보고 ∪ 사용성 지표) */
+  appliedCount: number;
+  reportedCount: number;
+  usageCount: number;
+  /** 연간 절감비용(원) — 성과보고 + 사용성 지표 연환산 */
+  annualSaveWon: number;
+  /** 그중 사용성 지표 연환산분(원) */
+  usageAnnualWon: number;
+  /** 사용성 지표 누계 실측(원) */
+  usageCumulativeWon: number;
+  /** 월 업무시간 절감(h) — 성과보고 + 사용성 지표 환산 */
+  monthlyHours: number;
+  usageMonthlyHours: number;
+  hoursProjectCount: number;
+  /** 관련 투자비 합(원) */
+  investWon: number;
+  /** 연간 효과 / 관련 투자 (%) — 투자비 0이면 null */
+  recoverPct: number | null;
+  unpricedCount: number;
+}
+
+/**
+ * 성과 현황 상단 KPI (순수) — 수기 성과보고와 사용성 지표를 한 화면 기준으로 합산.
+ * 과제 중복(양쪽 모두 등록)은 projectId 기준으로 1건으로 센다.
+ */
+export function combinedPerformanceKpi(
+  effects: EffectsSummary,
+  effectProjectIds: string[],
+  biz: BizImpactSummary,
+  bizProjectIds: string[],
+): CombinedPerformanceKpi {
+  const union = new Set([...effectProjectIds, ...bizProjectIds]);
+  const annualSaveWon = effects.totalSaveCostWon + biz.annualizedWon;
+  const usageMonthlyHours = Math.round(biz.annualizedHours / 12);
+  const investWon = effects.investAppliedWon + biz.budgetWon;
+
+  return {
+    appliedCount: union.size,
+    reportedCount: effectProjectIds.length,
+    usageCount: bizProjectIds.length,
+    annualSaveWon,
+    usageAnnualWon: biz.annualizedWon,
+    usageCumulativeWon: biz.cumulativeWon,
+    monthlyHours: effects.totalSaveHours + usageMonthlyHours,
+    usageMonthlyHours,
+    hoursProjectCount: biz.hoursProjectCount,
+    investWon,
+    recoverPct:
+      investWon > 0 ? Math.round((annualSaveWon / investWon) * 100) : null,
+    unpricedCount: biz.unpricedCount,
+  };
+}
+
+/** 시간당 인건비 전제 (산정기준 표기용) */
+export const BIZ_HOURLY_WON = HOURLY_WON;
+
+// ============================================
 // 투자비 현황 요약
 // ============================================
 

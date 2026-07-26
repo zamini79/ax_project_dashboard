@@ -372,6 +372,91 @@ export type Database = {
           },
         ]
       }
+      project_biz_impact_points: {
+        Row: {
+          breakdown: Json | null
+          call_count: number
+          id: string
+          impact_id: string
+          impact_manwon: number
+          period_kind: Database["public"]["Enums"]["biz_period_kind"]
+          period_no: number
+          year: number
+        }
+        Insert: {
+          breakdown?: Json | null
+          call_count?: number
+          id?: string
+          impact_id: string
+          impact_manwon?: number
+          period_kind: Database["public"]["Enums"]["biz_period_kind"]
+          period_no: number
+          year: number
+        }
+        Update: {
+          breakdown?: Json | null
+          call_count?: number
+          id?: string
+          impact_id?: string
+          impact_manwon?: number
+          period_kind?: Database["public"]["Enums"]["biz_period_kind"]
+          period_no?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_biz_impact_points_impact_id_fkey"
+            columns: ["impact_id"]
+            isOneToOne: false
+            referencedRelation: "project_biz_impacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_biz_impacts: {
+        Row: {
+          as_of: string | null
+          basis: string[]
+          created_at: string
+          id: string
+          project_id: string
+          source_file: string | null
+          unit_label: string
+          unit_value_manwon: number | null
+          updated_at: string
+        }
+        Insert: {
+          as_of?: string | null
+          basis?: string[]
+          created_at?: string
+          id?: string
+          project_id: string
+          source_file?: string | null
+          unit_label?: string
+          unit_value_manwon?: number | null
+          updated_at?: string
+        }
+        Update: {
+          as_of?: string | null
+          basis?: string[]
+          created_at?: string
+          id?: string
+          project_id?: string
+          source_file?: string | null
+          unit_label?: string
+          unit_value_manwon?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_biz_impacts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_budget_monthly: {
         Row: {
           amount: number
@@ -810,6 +895,7 @@ export type Database = {
     }
     Enums: {
       attention_override: "auto" | "on" | "off"
+      biz_period_kind: "week" | "month"
       classification_method: "manual" | "rule" | "llm" | "unclassified"
       confluence_page_role:
         | "root"
@@ -960,6 +1046,7 @@ export const Constants = {
   public: {
     Enums: {
       attention_override: ["auto", "on", "off"],
+      biz_period_kind: ["week", "month"],
       classification_method: ["manual", "rule", "llm", "unclassified"],
       confluence_page_role: [
         "root",

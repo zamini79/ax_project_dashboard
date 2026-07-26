@@ -16,6 +16,20 @@ export function formatBudgetEok(won: number | null | undefined): string {
   return `${str}억`;
 }
 
+/**
+ * 만원 단위 금액 → 표시 문자열. 1억(10,000만원) 이상은 억 단위로 환산.
+ * 사용성 지표 기반 Biz Impact는 원본이 만원 단위라 별도 포맷터를 둔다.
+ */
+export function formatManwon(manwon: number | null | undefined): string {
+  if (manwon == null || manwon === 0) return "-";
+  if (Math.abs(manwon) >= 10_000) {
+    const eok = Math.round((manwon / 10_000) * 100) / 100;
+    return `${eok.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}억`;
+  }
+  const v = Math.round(manwon * 10) / 10;
+  return `${v.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}만원`;
+}
+
 /** 집행률(%) = 집행액 / 예산. 예산 0이면 null. */
 export function executionRate(
   budget: number | null | undefined,

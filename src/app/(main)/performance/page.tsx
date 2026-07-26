@@ -14,7 +14,14 @@ import {
   fetchEffectForProject,
 } from "@/lib/repositories/effects";
 import { fetchProjectDetail } from "@/lib/repositories/projects";
-import { effectsSummary } from "@/lib/domain/analytics";
+import { fetchProjectBizImpacts } from "@/lib/repositories/biz-impact";
+import { BizImpactSection } from "@/components/performance/biz-impact-section";
+import {
+  effectsSummary,
+  bizImpactSummary,
+  combinedPerformanceKpi,
+  BIZ_HOURLY_WON,
+} from "@/lib/domain/analytics";
 import { ProjectDetailDrawer } from "@/components/project-detail/project-detail-drawer";
 import { Card } from "@/components/ui/card";
 import { Bar } from "@/components/charts/charts";
@@ -40,7 +47,10 @@ export default async function PerformancePage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
-  const effects = await fetchProjectEffects();
+  const [effects, bizImpacts] = await Promise.all([
+    fetchProjectEffects(),
+    fetchProjectBizImpacts(),
+  ]);
   const s = effectsSummary(effects);
 
   // 상세 드로어 (?detail=<id>) — 성과 현황 위에 그대로 띄움
@@ -48,10 +58,14 @@ export default async function PerformancePage({
   const detailEffect = detail ? await fetchEffectForProject(detail.id) : null;
   const now = new Date();
   const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const recoverPct =
-    s.investAppliedWon > 0
-      ? Math.round((s.totalSaveCostWon / s.investAppliedWon) * 100)
-      : 0;
+  // 상단 KPI: 수기 성과보고 + 사용성 지표(Biz Impact)를 한 화면 기준으로 합산
+  const biz = bizImpactSummary(bizImpacts);
+  const kpi = combinedPerformanceKpi(
+    s,
+    s.items.map((e) => e.projectId),
+    biz,
+    bizImpacts.map((b) => b.projectId),
+  );
   const maxSave = Math.max(1, ...s.items.map((e) => e.saveCostWon));
   const sortedBySave = [...s.items].sort((a, b) => b.saveCostWon - a.saveCostWon);
 
@@ -60,8 +74,9 @@ export default async function PerformancePage({
       <div>
         <h1 className="text-xl font-extrabold tracking-tight">성과 현황</h1>
         <p className="text-muted-foreground mt-0.5 text-[12.5px]">
-          완료·운영 적용된 과제가 실제 운영되며 만들어낸 효과 (운영{" "}
-          {s.operatingCount} · 파일럿 {s.pilotCount})
+          운영 적용된 과제가 실제 만들어낸 효과 — 사용량 로그 실측(Biz Impact){" "}
+          {kpi.usageCount}건 + 부서 성과보고 {kpi.reportedCount}건
+          {kpi.unpricedCount > 0 && ` · 단가 미정 ${kpi.unpricedCount}건 제외`}
         </p>
       </div>
 
@@ -69,29 +84,36 @@ export default async function PerformancePage({
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
         <StatCard
           label="운영 적용 과제"
-          value={`${s.appliedCount}건`}
-          sub={`운영 ${s.operatingCount} · 파일럿 ${s.pilotCount}`}
+          value={`${kpi.appliedCount}건`}
+          sub={`사용성 지표 ${kpi.usageCount} · 성과보고 ${kpi.reportedCount}`}
         />
         <StatCard
           label="연간 절감비용 (환산)"
-          value={formatBudgetEok(s.totalSaveCostWon)}
+          value={formatBudgetEok(kpi.annualSaveWon)}
           valueColor={GREEN}
-          sub="확정·추정 합산"
+          sub={`사용성 지표 연환산 ${formatBudgetEok(kpi.usageAnnualWon)} · 누계 실측 ${formatBudgetEok(kpi.usageCumulativeWon)}`}
         />
         <StatCard
           label="월 업무시간 절감"
-          value={`${s.totalSaveHours.toLocaleString()}시간`}
+          value={`${kpi.monthlyHours.toLocaleString("ko-KR")}시간`}
           valueColor={ACCENT}
-          sub="반복 업무 자동화 기준"
+          sub={`사용량 환산 ${kpi.usageMonthlyHours.toLocaleString("ko-KR")}h (${kpi.hoursProjectCount}개 과제) · 시간당 ${(BIZ_HOURLY_WON / 10_000).toFixed(2)}만원 기준`}
         />
         <StatCard
           label="연간 효과 / 관련 투자"
-          value={`${recoverPct}%`}
-          sub={`연 ${formatBudgetEok(s.totalSaveCostWon)} 효과 / ${formatBudgetEok(s.investAppliedWon)} 투자`}
+          value={kpi.recoverPct == null ? "-" : `${kpi.recoverPct}%`}
+          sub={`연 ${formatBudgetEok(kpi.annualSaveWon)} 효과 / ${formatBudgetEok(kpi.investWon)} 투자`}
         >
-          <Bar value={Math.min(100, recoverPct)} color={GREEN} height={6} />
+          <Bar
+            value={Math.min(100, kpi.recoverPct ?? 0)}
+            color={GREEN}
+            height={6}
+          />
         </StatCard>
       </div>
+
+      {/* 사용성 지표 기반 Biz Impact (사용량 로그 실측) */}
+      <BizImpactSection items={bizImpacts} />
 
       {/* 효과 카드 */}
       <div>
