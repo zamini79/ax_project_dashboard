@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { Wand2 } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,11 @@ import { INVESTMENT_LABEL } from "@/lib/domain/investment";
 import { ExecutionEditor } from "@/components/project-detail/execution-editor";
 import { AttachmentsField } from "@/components/project-form/attachments-field";
 import { DeleteProjectButton } from "@/components/project-form/delete-project-button";
-import { LIFECYCLE_LABEL, HEALTH_LABEL } from "@/lib/domain/lifecycle";
+import {
+  LIFECYCLE_LABEL,
+  HEALTH_LABEL,
+  scheduleProgressPct,
+} from "@/lib/domain/lifecycle";
 import type { MasterOption, PersonOption } from "@/lib/repositories/masters";
 import type { ProjectAttachment } from "@/lib/repositories/attachments";
 import {
@@ -35,6 +40,12 @@ import {
 const inputClass =
   "border-border-strong bg-card focus-visible:ring-ring h-[38px] w-full rounded-[9px] border px-3 text-[13.5px] outline-none focus-visible:ring-2";
 const EOK = 100_000_000; // 투자비: 폼은 억 단위 보관, 입력/표시는 원 단위
+
+/** 오늘 ISO(YYYY-MM-DD) — 일정 기반 진행률 '자동' 산정 기준일 (클라이언트 로컬 날짜) */
+function todayISODate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 const searchInputClass =
   "border-border-strong bg-card focus-visible:ring-ring h-[34px] w-[220px] rounded-[9px] border px-3 text-[13px] outline-none focus-visible:ring-2";
 
@@ -117,6 +128,10 @@ export function ProjectForm({
   );
 
   const lifecycle = useWatch({ control, name: "lifecycle" });
+  // 일정 기반 진행률 '자동' 산정 — 시작일·종료일이 바뀌면 즉시 재계산
+  const startDate = useWatch({ control, name: "startDate" });
+  const endDate = useWatch({ control, name: "endDate" });
+  const autoPct = scheduleProgressPct(startDate, endDate, todayISODate());
   // "운영" 단계일 때만 성과 현황 추가 체크박스 노출
   const isOperating = lifecycle === "operating";
   // 완료·운영이면 진행상태/진행률을 자동 완료 처리(아래 useEffect) + 입력 잠금
@@ -543,16 +558,46 @@ export function ProjectForm({
               full
               error={errors.progressPct?.message}
             >
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                value={field.value ?? 0}
-                onChange={(e) => field.onChange(Number(e.target.value))}
-                disabled={isDone}
-                className="accent-primary w-full disabled:opacity-50"
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={field.value ?? 0}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  disabled={isDone}
+                  className="accent-primary min-w-0 flex-1 disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => autoPct != null && field.onChange(autoPct)}
+                  disabled={isDone || autoPct == null}
+                  title={
+                    isDone
+                      ? "완료·운영 단계는 100%로 고정됩니다"
+                      : autoPct == null
+                        ? "시작일·종료일을 먼저 입력하세요"
+                        : `일정 기준 현재 위치 ${autoPct}% 로 설정`
+                  }
+                  className="border-border-strong bg-card hover:bg-muted inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] font-semibold transition-colors disabled:opacity-45"
+                >
+                  <Wand2 size={13} />
+                  자동
+                  {autoPct != null && !isDone && (
+                    <span className="text-muted-foreground tabular-nums">
+                      {autoPct}%
+                    </span>
+                  )}
+                </button>
+              </div>
+              {!isDone && (
+                <p className="text-muted-foreground mt-1.5 text-[11.5px]">
+                  {autoPct == null
+                    ? "‘자동’은 시작일·종료일이 모두 입력되면 전체 일정 대비 오늘의 위치를 계산합니다."
+                    : `일정 기준 오늘 위치 ${autoPct}% (${startDate} ~ ${endDate})`}
+                </p>
+              )}
             </Field>
           )}
         />

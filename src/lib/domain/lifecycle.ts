@@ -107,6 +107,31 @@ export function displayHealth(health: Health, attentionActive: boolean): Health 
 }
 
 /**
+ * 일정 기반 진행률(%) 산정 (순수) — 전체 일정 대비 오늘의 위치.
+ *   (오늘 − 시작일) / (종료일 − 시작일) × 100, 0~100으로 clamp.
+ * 시작 전은 0, 종료일 경과는 100. 일정이 없거나 종료일이 시작일보다 이르면 null.
+ * step 5 슬라이더와 눈금을 맞추기 위해 5% 단위로 반올림한다.
+ */
+export function scheduleProgressPct(
+  startDate: string | null | undefined,
+  endDate: string | null | undefined,
+  todayISO: string,
+): number | null {
+  if (!startDate || !endDate) return null;
+  const start = Date.parse(startDate);
+  const end = Date.parse(endDate);
+  const today = Date.parse(todayISO);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(today)) {
+    return null;
+  }
+  const span = end - start;
+  if (span <= 0) return null;
+  const ratio = (today - start) / span;
+  const pct = Math.min(100, Math.max(0, ratio * 100));
+  return Math.round(pct / 5) * 5;
+}
+
+/**
  * 지연 여부 (순수): 종료일이 오늘보다 이전인데 아직 완료되지 않은 과제.
  * 날짜는 ISO "YYYY-MM-DD" 문자열 비교(사전식 = 시간순). 종료일 없으면 지연 아님.
  */

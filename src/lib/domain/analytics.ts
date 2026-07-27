@@ -1,7 +1,7 @@
 import type { ProjectListItem } from "@/lib/repositories/projects";
 import type { ProjectEffect } from "@/lib/repositories/effects";
 import type { MonthlyExecution } from "@/lib/repositories/budget";
-import { type Health } from "@/lib/domain/lifecycle";
+import { type Health, displayHealth } from "@/lib/domain/lifecycle";
 import { type Mprs, MPRS_ORDER } from "@/lib/domain/mprs";
 
 /**
@@ -61,10 +61,18 @@ export function performanceSummary(
     progressSum += i.progress_pct;
   }
 
+  // 위험·주의 피드는 '표시용' 신호등 기준 — 일정은 정상이나 이슈가 있어
+  // 주의로 승격된 과제도 포함해 표·카드의 신호등 색과 어긋나지 않게 한다.
+  // (health 카운트·KPI 필터는 원본 health 기준 유지 — 집계 왜곡 방지)
   const atRisk = items
-    .filter((i) => i.health === "red" || i.health === "yellow")
+    .filter((i) => {
+      const dh = displayHealth(i.health, i.attention_active);
+      return dh === "red" || dh === "yellow";
+    })
     .sort((a, b) => {
-      const h = HEALTH_RANK[a.health] - HEALTH_RANK[b.health];
+      const h =
+        HEALTH_RANK[displayHealth(a.health, a.attention_active)] -
+        HEALTH_RANK[displayHealth(b.health, b.attention_active)];
       if (h !== 0) return h;
       return a.progress_pct - b.progress_pct; // 더딘 과제 먼저
     });

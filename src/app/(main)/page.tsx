@@ -20,6 +20,7 @@ import {
   HEALTH_LABEL,
   HEALTH_HELP,
   LIFECYCLE_LABEL,
+  displayHealth,
   type Health,
 } from "@/lib/domain/lifecycle";
 import { Donut, Bar, HealthDot } from "@/components/charts/charts";
@@ -213,7 +214,7 @@ export default async function DashboardPage({
                 borderTop: i === 0 ? "none" : `1px solid ${LINE}`,
               }}
             >
-              <HealthDot color={cssHealth(p.health)} size={9} />
+              <HealthDot color={cssHealth(displayHealth(p.health, p.attention_active))} size={9} />
               <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {p.name}
               </span>
@@ -221,7 +222,7 @@ export default async function DashboardPage({
                 {p.headquarter_name}
               </span>
               <div style={{ width: 44 }}>
-                <Bar value={p.progress_pct} color={cssHealth(p.health)} height={5} />
+                <Bar value={p.progress_pct} color={cssHealth(displayHealth(p.health, p.attention_active))} height={5} />
               </div>
               <span style={{ fontSize: 11.5, color: SUB, width: 28, textAlign: "right" }}>
                 {p.progress_pct}%
